@@ -5,6 +5,28 @@ from .models import Student, StudentFile
 from django.contrib.auth.decorators import login_required
 
 @login_required
+def student_dashboard(request):
+    student = Student.objects.get(user = request.user) 
+    student_files = student.studentfile_set.order_by("-uploaded_at")
+
+    if request.method == 'POST':
+        form = StudentFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            student_file = form.save(commit=False)
+            student_file.student = student
+            student_file.save()
+    else:
+        form = StudentFileForm()
+    
+    
+    return render(request, 'student_dashboard.html', {
+        'form' : form, 
+        'student': student,
+        'files': student_files
+    })
+
+
+@login_required
 def upload_student_file(request):
     student = Student.objects.get(user = request.user) 
 
@@ -18,6 +40,8 @@ def upload_student_file(request):
         form = StudentFileForm()
 
     return render(request, 'upload_file.html', {'form': form})
+
+
 @login_required
 def student_file_view(request):
     student = Student.objects.get(user = request.user) 
