@@ -30,6 +30,9 @@ class Student (models.Model):
     date_of_birth = models.DateField
     classes = models.ManyToManyField(Class, related_name = 'students', null = True)
 
+    def latest_file(self):
+        return self.studentfile_set.order_by('-uploaded_at').first()
+
 class StudentFile (models.Model):
     student = models.ForeignKey(Student, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)

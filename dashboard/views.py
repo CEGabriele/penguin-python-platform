@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
         if not Student.objects.filter(user = request.user).exists():
-            return redirect('login')
+            return redirect('teacher_dashboard')
         
         return view_function(request, *args, **kwargs)
     return wrapper
@@ -15,7 +15,7 @@ def student_required(view_function):
 def teacher_required(view_function):
     def wrapper(request, *args, **kwargs):
         if not Teacher.objects.filter(user = request.user).exists():
-            return redirect('login')
+            return redirect('student_dashboard')
         
         return view_function(request, *args, **kwargs)
     return wrapper
@@ -40,6 +40,34 @@ def student_dashboard(request):
         'form' : form, 
         'student': student,
         'files': student_files
+    })
+
+@login_required
+@teacher_required
+def teacher_dashboard(request):
+    teacher = Teacher.objects.get(user = request.user)
+    classes = teacher.classes.all()
+
+    class_info = []
+
+    for section in classes:
+        student_info = []
+        for student in section.students.all():
+            last_file = student.latest_file()
+            student_info.append({
+                'student': student,
+                'last_file': last_file
+            })
+
+        class_info.append({
+            'class': section,
+            'students': student_info
+        })
+
+            
+    return render(request, 'teacher_dashboard.html', {
+        'teacher': teacher,
+        'classes': class_info
     })
 
 

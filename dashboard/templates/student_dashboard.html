@@ -8,7 +8,7 @@
 
 <body>
 
-    <h1>{{ student.user.get_short_name|default:student.user.username }}'s Dashboard</h1>
+    <h1>Welcome {{ student.user.get_short_name|default:student.user.username }}</h1>
     <h2>My Files</h2>
     {% if files%}
         <ul>
