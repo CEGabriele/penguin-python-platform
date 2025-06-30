@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>Student Login</h2>
+    {% if form.errors %}
+        <p style = "color:red;">Invalid username or password</p>
+    {%endif%}
+
+    <form method = "post">
+        {%csrf_token%}
+        {{ form.username.label_tag }} {{ form.username }}
+        {{ form.password.label_tag }} {{ form.password }}
+        <button type = "submit">Login</button>
+    </form>
+</body>
+</html>

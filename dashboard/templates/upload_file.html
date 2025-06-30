@@ -11,5 +11,11 @@
     </form>
 
     <p><a href="{% url 'student_files' %}"> View My Files</a></p>
+
+
+    <form action="{% url 'logout' %}" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
 </body>
 </html>

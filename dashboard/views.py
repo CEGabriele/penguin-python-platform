@@ -2,9 +2,11 @@ from django.shortcuts import render
 from django.http import FileResponse, Http404
 from .forms import StudentFileForm
 from .models import Student, StudentFile
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def upload_student_file(request):
-    student = Student.objects.first() #only works for one user
+    student = Student.objects.get(user = request.user) 
 
     if request.method == 'POST':
         form = StudentFileForm(request.POST, request.FILES)
@@ -16,15 +18,17 @@ def upload_student_file(request):
         form = StudentFileForm()
 
     return render(request, 'upload_file.html', {'form': form})
-
+@login_required
 def student_file_view(request):
-    student = Student.objects.first() #only works for one user
-    files = student.studentfile_set.all() 
+    student = Student.objects.get(user = request.user) 
+    student_files = student.studentfile_set.order_by("-uploaded_at")
+    
     return render(request, 'student_files.html', {
         'student': student,
-        'files': files
+        'files': student_files
     })
 
+@login_required
 def download_file_view(request, file_id):
     try:
         studentFile = StudentFile.objects.get(id = file_id)
@@ -34,4 +38,4 @@ def download_file_view(request, file_id):
             filename = studentFile.file.name.split('/')[-1]
         )
     except StudentFile.DoesNotExist:
-        raise Http404("File not found")
+        raise Http404("File not found or student access denied")
