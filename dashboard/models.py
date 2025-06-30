@@ -10,24 +10,25 @@ class Parent (models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length = 10)
     password = models.CharField()
+"""
+
+def generate_code():
+    return uuid.uuid4().hex[:6].upper()
 
 class Teacher (models.Model):
-    name = models.CharField(max_length = 100)
-    email = models.EmailField()
-    password = models.CharField()
+    user = models.OneToOneField(User, on_delete = models.CASCADE)
 
 class Class(models.Model):
     name = models.CharField(max_length = 100)
-    day = models.TextField()
-    time = models.IntegerField()
-    semester = models.TextField()
-    teacher = models.ForeignKey(Teacher, on_delete = models.SET_NULL, null = True)
-
-"""
+    day = models.TextField(max_length = 9)
+    time = models.TimeField()
+    code = models.CharField(unique = True, default = generate_code())
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
 
 class Student (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
     date_of_birth = models.DateField
+    classes = models.ManyToManyField(Class, related_name = 'students', null = True)
 
 class StudentFile (models.Model):
     student = models.ForeignKey(Student, on_delete = models.SET_NULL, null = True)
