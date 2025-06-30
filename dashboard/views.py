@@ -1,10 +1,27 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import FileResponse, Http404
 from .forms import StudentFileForm
-from .models import Student, StudentFile
+from .models import Student, StudentFile, Teacher
 from django.contrib.auth.decorators import login_required
 
+def student_required(view_function):
+    def wrapper(request, *args, **kwargs):
+        if not Student.objects.filter(user = request.user).exists():
+            return redirect('login')
+        
+        return view_function(request, *args, **kwargs)
+    return wrapper
+
+def teacher_required(view_function):
+    def wrapper(request, *args, **kwargs):
+        if not Teacher.objects.filter(user = request.user).exists():
+            return redirect('login')
+        
+        return view_function(request, *args, **kwargs)
+    return wrapper
+
 @login_required
+@student_required
 def student_dashboard(request):
     student = Student.objects.get(user = request.user) 
     student_files = student.studentfile_set.order_by("-uploaded_at")
