@@ -7,7 +7,7 @@
 </head>
 <body>
 
-    <h1>Welcome {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
+    <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
     {% if classes%}
         <ul>
             {%for class in classes%}

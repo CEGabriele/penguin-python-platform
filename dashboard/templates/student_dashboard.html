@@ -8,11 +8,12 @@
 
 <body>
 
-    <h1>Welcome {{ student.user.get_short_name|default:student.user.username }}</h1>
+    <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
     <h2>My Files</h2>
-    {% if files%}
+    <h4>Classwork</h4>
+    {% if cw_files%}
         <ul>
-            {%for file in files%}
+            {%for file in cw_files%}
                 <li>
                     <p>{{ file.file.name |cut:"student_files/"}}</p>
                     <i class = "bi bi-file-earmark-code"></i>
@@ -24,19 +25,40 @@
             {%endfor%}
         </ul>
     {%else%}
-        <p>No files uploaded yet.</p>
+        <p>No classwork uploaded yet.</p>
     {%endif%}
-    <h2>Upload Classwork Files</h2>
+    
+    <h4>Homework</h4>
+    {% if hw_files%}
+        <ul>
+            {%for file in hw_files%}
+                <li>
+                    <p>{{ file.file.name |cut:"student_files/"}}</p>
+                    <i class = "bi bi-file-earmark-code"></i>
+                    <br><br>
+                    <a href="{% url 'download_file' file.id %}" >
+                        Download
+                    </a> 
+                </li>
+            {%endfor%}
+        </ul>
+    {%else%}
+        <p>No homework uploaded yet.</p>
+    {%endif%}
+
+
+    <h2>Upload Files</h2>
+    <h4>Upload Classwork Files</h4>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token%}
         {{cw_form.as_p}}
-        <button type = "submit">Upload</button>
+        <button type = "submit" name="upload_cw">Upload</button>
     </form>
-    <h2>Upload Homework Files</h2>
+    <h4>Upload Homework Files</h4>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token%}
         {{hw_form.as_p}}
-        <button type = "submit">Upload</button>
+        <button type = "submit" name = "upload_hw">Upload</button>
     </form>
 
 
