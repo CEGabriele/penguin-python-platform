@@ -30,8 +30,8 @@ class Student (models.Model):
     date_of_birth = models.DateField
     classes = models.ManyToManyField(Class, related_name = 'students', null = True)
 
-    def latest_file(self):
-        self.user.uploads_set.order_by("uploaded_at").first()
+    def latest_file(self, which_type, which_class):
+        return self.user.uploads_set.order_by("-uploaded_at").filter(file_type = which_type, for_class = which_class).first()
 
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
@@ -39,4 +39,4 @@ class Uploads (models.Model):
     file = models.FileField(upload_to="student_files")
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.CASCADE, null = True)
-    type = models.CharField(max_length = 2)
+    file_type = models.CharField(max_length = 2)

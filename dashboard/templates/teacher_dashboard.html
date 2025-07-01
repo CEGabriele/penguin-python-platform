@@ -7,19 +7,20 @@
 </head>
 <body>
 
-    <h1>Welcome {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
+    <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
     {% if classes%}
         <ul>
             {%for class in classes%}
                 <li>
                     <h2>{{class.class.name}} </h2>
+                    <h3>Classwork</h3>
                     {% for student in class.students%}
                         <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
-                        {%if student.last_file%}
-                        <p>{{ student.last_file.file.name |cut:"student_files/"}}</p>
+                        {%if student.last_cw_file%}
+                        <p>{{ student.last_cw_file.file.name |cut:"student_files/"}}</p>
                         <i class = "bi bi-file-earmark-code"></i>
                         <br>
-                        <a href="{% url 'download_file' student.last_file.id %}" >
+                        <a href="{% url 'download_file' student.last_cw_file.id %}" >
                             Download
                         </a>
                         {%else%}
@@ -28,7 +29,23 @@
 
                         
                     {%endfor%}
+                    
+                    <h3>Homework</h3>
+                    {% for student in class.students%}
+                        <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
+                        {%if student.last_hw_file%}
+                        <p>{{ student.last_hw_file.file.name |cut:"student_files/"}}</p>
+                        <i class = "bi bi-file-earmark-code"></i>
+                        <br>
+                        <a href="{% url 'download_file' student.last_hw_file.id %}" >
+                            Download
+                        </a>
+                        {%else%}
+                        <p>No files found</p>
+                        {%endif%}
 
+                        
+                    {%endfor%}
                 </li>
             {%endfor%}
         </ul>

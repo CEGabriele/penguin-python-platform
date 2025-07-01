@@ -26,8 +26,8 @@ def student_dashboard(request):
     student = Student.objects.get(user = request.user) 
     user = request.user
 
-    hw_files = user.uploads_set.filter(type = 'HW').order_by("-uploaded_at")
-    cw_files = user.uploads_set.filter(type = 'CW').order_by("-uploaded_at")
+    hw_files = user.uploads_set.filter(file_type = 'HW').order_by("-uploaded_at")
+    cw_files = user.uploads_set.filter(file_type = 'CW').order_by("-uploaded_at")
 
     hw_form = HomeworkUpload()
     cw_form = HomeworkUpload()
@@ -54,8 +54,8 @@ def student_dashboard(request):
     for section in student.classes.all():
         hw_form = HomeworkUpload(initial={'for_class': section})
         cw_form = ClassworkUpload(initial = {'for_class': section})
-        hw_files = student.user.uploads_set.filter(type = 'HW').filter(for_class = section).order_by("uploaded_at")
-        cw_files = student.user.uploads_set.filter(type = 'CW').filter(for_class = section).order_by("uploaded_at")
+        hw_files = student.user.uploads_set.filter(file_type = 'HW').filter(for_class = section).order_by("-uploaded_at")
+        cw_files = student.user.uploads_set.filter(file_type = 'CW').filter(for_class = section).order_by("-uploaded_at")
 
         classes.append({
             'class': section,
@@ -83,10 +83,12 @@ def teacher_dashboard(request):
     for section in classes:
         student_info = []
         for student in section.students.all():
-            last_file = student.latest_file()
+            last_hw_file = student.latest_file('HW', section)
+            last_cw_file = student.latest_file('CW', section)
             student_info.append({
                 'student': student,
-                'last_file': last_file
+                'last_hw_file': last_hw_file,
+                'last_cw_file': last_cw_file,
             })
 
         class_info.append({
