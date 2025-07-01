@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import upload_student_file, student_file_view, download_file_view, student_dashboard, teacher_dashboard
+from .views import download_file_view, student_dashboard, teacher_dashboard
 
 
 urlpatterns = [

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import FileResponse, Http404
-from .forms import StudentFileForm
-from .models import Student, StudentFile, Teacher
+from .forms import HomeworkUpload, ClassworkUpload
+from .models import Student, Uploads, Teacher, User
 from django.contrib.auth.decorators import login_required
 
 def student_required(view_function):
@@ -24,20 +24,28 @@ def teacher_required(view_function):
 @student_required
 def student_dashboard(request):
     student = Student.objects.get(user = request.user) 
-    student_files = student.studentfile_set.order_by("-uploaded_at")
+    user = request.user
+    
+    student_files = user.uploads_set.order_by("-uploaded_at")
+    hw_form = HomeworkUpload()
+    cw_form = HomeworkUpload()
 
     if request.method == 'POST':
-        form = StudentFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            student_file = form.save(commit=False)
-            student_file.student = student
-            student_file.save()
-    else:
-        form = StudentFileForm()
+        if 'upload_homework' in request.POST:
+            hw_form = HomeworkUpload(request.POST, request.FILES)
+            if hw_form.is_valid():
+                hw_form.save(user = request.user)
+                return redirect('student_dashboard')
+        elif 'upload_classwork' in request.POST:
+            cw_form = HomeworkUpload(request.POST, request.FILES)
+            if cw_form.is_valid():
+                cw_form.save(user = request.user)
+                return redirect('student_dashboard')
     
     
     return render(request, 'student_dashboard.html', {
-        'form' : form, 
+        'hw_form' : hw_form, 
+        'cw_form': cw_form,
         'student': student,
         'files': student_files
     })
@@ -70,6 +78,7 @@ def teacher_dashboard(request):
         'classes': class_info
     })
 
+"""
 
 @login_required
 def upload_student_file(request):
@@ -97,14 +106,16 @@ def student_file_view(request):
         'files': student_files
     })
 
+"""
+
 @login_required
 def download_file_view(request, file_id):
     try:
-        studentFile = StudentFile.objects.get(id = file_id)
+        file = Uploads.objects.get(id = file_id)
         return FileResponse(
-            studentFile.file.open('rb'),
+            file.file.open('rb'),
             as_attachment=True,
-            filename = studentFile.file.name.split('/')[-1]
+            filename = file.file.name.split('/')[-1]
         )
-    except StudentFile.DoesNotExist:
+    except Uploads.DoesNotExist:
         raise Http404("File not found or student access denied")

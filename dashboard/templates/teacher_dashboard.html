@@ -14,8 +14,18 @@
                 <li>
                     <h2>{{class.class.name}} </h2>
                     {% for student in class.students%}
-                        <p> {{student.student.user.get_full_name|default:student.student.user.username}}</p>
+                        <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
+                        {%if student.last_file%}
+                        <p>{{ student.last_file.file.name |cut:"student_files/"}}</p>
                         <i class = "bi bi-file-earmark-code"></i>
+                        <br> <br>
+                        <a href="{% url 'download_file' student.last_file.id %}" >
+                            Download
+                        </a>
+                        {%else%}
+                        <p>No files found</p>
+                        {%endif%}
+
                         
                     {%endfor%}
 

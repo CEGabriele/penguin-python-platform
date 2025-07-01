@@ -31,10 +31,12 @@ class Student (models.Model):
     classes = models.ManyToManyField(Class, related_name = 'students', null = True)
 
     def latest_file(self):
-        return self.studentfile_set.order_by('-uploaded_at').first()
+        self.user.uploads_set.order_by("-uploaded_at").first()
 
-class StudentFile (models.Model):
-    student = models.ForeignKey(Student, on_delete = models.SET_NULL, null = True)
+class Uploads (models.Model):
+    person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)
     file = models.FileField(upload_to="student_files")
     uploaded_at = models.DateTimeField(auto_now_add = True)
+    for_class = models.OneToOneField(Class, related_name = 'files', on_delete=models.CASCADE, null = True)
+    type = models.CharField(max_length = 2)
