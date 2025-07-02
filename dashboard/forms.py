@@ -1,5 +1,5 @@
 from django import forms
-from .models import Uploads
+from .models import Uploads, Assignment
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -26,3 +26,8 @@ class ClassworkUpload(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ['title', 'description', 'for_class', 'due_date']

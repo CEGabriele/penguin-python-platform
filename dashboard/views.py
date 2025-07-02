@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import FileResponse, Http404
-from .forms import HomeworkUpload, ClassworkUpload
-from .models import Student, Uploads, Teacher, User
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm
+from .models import Student, Uploads, Teacher, User, Class
 from django.contrib.auth.decorators import login_required
 
 def student_required(view_function):
@@ -129,3 +129,20 @@ def download_file_view(request, file_id):
         )
     except Uploads.DoesNotExist:
         raise Http404("File not found or access denied")
+
+
+@login_required
+@teacher_required
+def create_assignment(request):
+    teacher = Teacher.objects.get(user  = request.user)
+    if request.method == 'POST':
+        form = AssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save()
+        return redirect('teacher_dashboard')
+    else:
+        form = AssignmentForm()
+
+        form.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
+    return render(request, 'create_assignment.html', {'form': form})
+    

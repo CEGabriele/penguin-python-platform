@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
-# Create your models here.
-
 """
 class Parent (models.Model):
     name = models.CharField(max_length = 100)
@@ -33,10 +31,22 @@ class Student (models.Model):
     def latest_file(self, which_type, which_class):
         return self.user.uploads_set.order_by("-uploaded_at").filter(file_type = which_type, for_class = which_class).first()
 
+
+class Assignment (models.Model):
+    title = models.TextField()
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE)
+    due_date = models.DateField()
+    description = models.TextField()
+    #how do we want teachers to share more information: file or doc? Do they need to share more information or is description enough?
+
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)
     file = models.FileField(upload_to="student_files")
     uploaded_at = models.DateTimeField(auto_now_add = True)
-    for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.CASCADE, null = True)
+    for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
+    for_assignment = models.ForeignKey(Assignment, on_delete = models.SET_NULL, null = True)
+
+
+
