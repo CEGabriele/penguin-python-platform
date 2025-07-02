@@ -16,10 +16,13 @@
                     <h3>Classwork</h3>
                     {% for student in class.students%}
                         <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
+                        <a href = "{% url 'view_student' student.student.user.username%}"> View Student</a>
+
                         {%if student.last_cw_file%}
                         <p>{{ student.last_cw_file.file.name |cut:"student_files/"}}</p>
                         <i class = "bi bi-file-earmark-code"></i>
                         <br>
+                        <p> Uploaded {{student.last_cw_file.uploaded_at | date:"n/j/y"}}</p>
                         <a href="{% url 'download_file' student.last_cw_file.id %}" >
                             Download
                         </a>
@@ -37,6 +40,7 @@
                         <p>{{ student.last_hw_file.file.name |cut:"student_files/"}}</p>
                         <i class = "bi bi-file-earmark-code"></i>
                         <br>
+                        <p> Uploaded {{student.last_hw_file.uploaded_at | date:"n/j/y"}}</p>
                         <a href="{% url 'download_file' student.last_hw_file.id %}" >
                             Download
                         </a>

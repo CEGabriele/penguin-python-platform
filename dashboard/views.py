@@ -8,7 +8,6 @@ def student_required(view_function):
     def wrapper(request, *args, **kwargs):
         if not Student.objects.filter(user = request.user).exists():
             return redirect('teacher_dashboard')
-        
         return view_function(request, *args, **kwargs)
     return wrapper
 
@@ -46,8 +45,6 @@ def student_dashboard(request):
             if cw_form.is_valid():
                 cw_form.save(user = user)
                 return redirect('student_dashboard')
-            else:
-                print("Form NOT valid:", cw_form.errors)
     
     classes = []
     
@@ -84,7 +81,8 @@ def teacher_dashboard(request):
         student_info = []
         for student in section.students.all():
             last_hw_file = student.latest_file('HW', section)
-            last_cw_file = student.latest_file('CW', section)
+            
+            last_cw_file = student.latest_file('CW', section) 
             student_info.append({
                 'student': student,
                 'last_hw_file': last_hw_file,
@@ -102,35 +100,23 @@ def teacher_dashboard(request):
         'classes': class_info
     })
 
-"""
-
 @login_required
-def upload_student_file(request):
-    student = Student.objects.get(user = request.user) 
+@teacher_required
+def view_student(request, username):
 
-    if request.method == 'POST':
-        form = StudentFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            student_file = form.save(commit=False)
-            student_file.student = student
-            student_file.save()
-    else:
-        form = StudentFileForm()
+    teacher = Teacher.objects.get(user = request.user)
+    student = Student.objects.get(user = User.objects.get(username = username))
 
-    return render(request, 'upload_file.html', {'form': form})
+    classes = student.classes.filter(teacher = teacher)
 
+    student_files = []
+    for section in classes:
+        hw_files = student.user.uploads_set.filter(file_type = 'HW').filter(for_class = section).order_by("-uploaded_at")
+        cw_files = student.user.uploads_set.filter(file_type = 'CW').filter(for_class = section).order_by("-uploaded_at")
 
-@login_required
-def student_file_view(request):
-    student = Student.objects.get(user = request.user) 
-    student_files = student.studentfile_set.order_by("-uploaded_at")
-    
-    return render(request, 'student_files.html', {
-        'student': student,
-        'files': student_files
-    })
+        student_files.append({'class': section, 'hw_files': hw_files, 'cw_files': cw_files}) 
+    return render(request, 'view_student.html', {'student': student, 'teacher': teacher, 'student_files': student_files})
 
-"""
 
 @login_required
 def download_file_view(request, file_id):

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <title> View Student </title>
+</head>
+<body>
+
+    <h1>{{student.user.get_full_name}}<h1>
+    
+    {%for class in student_files%}
+        <h2>{{ class.class.name }}</h1>
+        <h4>Classwork</h4>
+        {% if class.cw_files%}
+            <ul>
+                {%for file in class.cw_files%}
+                    <li>
+                        <p>{{ file.file.name |cut:"student_files/"}}</p>
+                        <i class = "bi bi-file-earmark-code"></i>
+                        <br>
+                        <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
+                        <a href="{% url 'download_file' file.id %}" >
+                            Download
+                        </a> 
+                    </li>
+                {%endfor%}
+            </ul>
+        {%else%}
+            <p>No classwork uploaded yet.</p>
+        {%endif%}
+        
+        <h4>Homework</h4>
+        {% if class.hw_files%}
+            <ul>
+                {%for file in class.hw_files%}
+                    <li>
+                        
+                        <p>{{ file.file.name |cut:"student_files/"}}</p>
+                        <i class = "bi bi-file-earmark-code"></i>
+                        <br>
+                        <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
+                        <a href="{% url 'download_file' file.id %}" >
+                            Download
+                        </a> 
+                    </li>
+                {%endfor%}
+            </ul>
+        {%else%}
+            <p>No homework uploaded yet.</p>
+        {%endif%}
+    {%endfor%}
+
+    
+    <a href = "{% url 'teacher_dashboard' %}"> Go to dashboard </a> <br>
+    
+    <form action="{% url 'logout' %}" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>
