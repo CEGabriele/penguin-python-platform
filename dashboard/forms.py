@@ -1,5 +1,5 @@
 from django import forms
-from .models import Uploads, Assignment
+from .models import Uploads, Assignment, Class
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -31,3 +31,9 @@ class AssignmentForm(forms.ModelForm):
     class Meta:
         model = Assignment
         fields = ['title', 'description', 'for_class', 'due_date']
+    def __init__(self, *args, **kwargs):
+        teacher = kwargs.pop('teacher', None)
+        super().__init__(*args, **kwargs)
+        if teacher:
+            self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
+        self.fields['for_class'].label_from_instance = lambda obj: obj.name

@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect
 from django.http import FileResponse, Http404
 from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm
-from .models import Student, Uploads, Teacher, User, Class
+from .models import Student, Uploads, Teacher, User, Class, Assignment
 from django.contrib.auth.decorators import login_required
+from itertools import groupby
+from operator import attrgetter
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -141,8 +143,20 @@ def create_assignment(request):
             assignment = form.save()
         return redirect('teacher_dashboard')
     else:
-        form = AssignmentForm()
+        form = AssignmentForm(teacher = teacher)
 
-        form.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
+        
     return render(request, 'create_assignment.html', {'form': form})
+
+
+@login_required
+@student_required
+def student_assignments(request):
+    student = Student.objects.get(user = request.user)
+    classes = student.classes.all()
+    assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
+
+    class_assignments = {class_obj: list(grouped_assignments)
+                         for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
     
+    return render(request, 'student_assignments.html', {'class_assignments': class_assignments})

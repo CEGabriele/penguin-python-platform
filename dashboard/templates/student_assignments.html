@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{request.user.get_short_name}}'s Assignments</title>
+</head>
+<body>
+    <h1>{{request.user.get_short_name}}'s Assignments</h1>
+    {%if class_assignments%}
+        {% for class_obj, grouped_assignments in class_assignments.items%}
+            <h2>{{class_obj.name}}</h2>
+            <ul>
+                {% for assignment in grouped_assignments%}
+                    <li> {{assignment.title}}
+                        {% if assignment.due_date%}
+                            - due {{ assignment.due_date}}
+                        {%endif%}
+                    </li>
+                {%endfor%}
+            </ul>
+        {%endfor%}
+        
+    {%endif%}
+    
+

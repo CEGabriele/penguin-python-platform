@@ -26,7 +26,7 @@ class Class(models.Model):
 class Student (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
     date_of_birth = models.DateField
-    classes = models.ManyToManyField(Class, related_name = 'students', null = True)
+    classes = models.ManyToManyField(Class, related_name = 'students')
 
     def latest_file(self, which_type, which_class):
         return self.user.uploads_set.order_by("-uploaded_at").filter(file_type = which_type, for_class = which_class).first()
@@ -34,7 +34,7 @@ class Student (models.Model):
 
 class Assignment (models.Model):
     title = models.TextField()
-    for_class = models.ForeignKey(Class, on_delete = models.CASCADE)
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
     due_date = models.DateField()
     description = models.TextField()
     #how do we want teachers to share more information: file or doc? Do they need to share more information or is description enough?
