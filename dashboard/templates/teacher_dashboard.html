@@ -8,6 +8,9 @@
 <body>
 
     <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
+    
+    <a href = "{% url 'teacher_assignments'%}"> View your assignments</a>
+    
     {% if classes%}
         <ul>
             {%for class in classes%}

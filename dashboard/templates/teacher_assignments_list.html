@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{request.user.get_short_name}}'s Posted Assignments</title>
+</head>
+<body>
+    <h1>{{request.user.get_short_name}}'s Posted Assignments</h1>
+    {%if class_assignments%}
+        {% for class_obj, grouped_assignments in class_assignments.items%}
+            <h2>{{class_obj.name}}</h2>
+            <ul>
+                {% for assignment in grouped_assignments%}
+                    <li> {{assignment.title}}
+                        - due {{ assignment.due_date}}
+                        <br>
+                        <a href = "{% url 'assignment_details' assignment.id%}">View assignment details</a>
+                    </li>
+                {%endfor%}
+            </ul>
+        {%endfor%}
+        
+    {%endif%}
+
+    <a href="{% url 'teacher_dashboard'%}">Return to dashboard</a>
+</body>
+</html>

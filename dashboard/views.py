@@ -162,6 +162,20 @@ def student_assignments(request):
     submitted_assignments = set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True))
     return render(request, 'student_assignments.html', {'class_assignments': class_assignments, 'submitted_assignments': submitted_assignments})
 
+
+@login_required
+@teacher_required
+def teacher_assignments_list(request):
+    teacher = Teacher.objects.get(user = request.user)
+    classes = teacher.classes.all()
+    assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
+
+    class_assignments = {class_obj: list(grouped_assignments)
+                         for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
+    
+
+    return render(request, 'teacher_assignments_list.html', {'class_assignments': class_assignments})
+
 @login_required
 @student_required
 def student_assignment_view(request, assignment_id):
@@ -191,4 +205,22 @@ def student_assignment_view(request, assignment_id):
         'assignment': assignment,
         'uploaded_files': uploaded_files,
         'form': form
+    })
+
+@login_required
+@teacher_required
+def teacher_assignment_detail(request, assignment_id):
+    teacher = request.user.teacher
+    assignment = get_object_or_404(Assignment, id=assignment_id, for_class__teacher=teacher)
+    students = Student.objects.filter(classes=assignment.for_class).distinct()
+
+    student_submissions = []
+    
+    for student in students:
+        files = Uploads.objects.filter(person=student.user, for_assignment=assignment).order_by('-uploaded_at')
+        student_submissions.append((student, files))
+
+    return render(request, 'teacher_assignment_detail.html', {
+        'assignment': assignment,
+        'student_submissions': student_submissions,
     })
