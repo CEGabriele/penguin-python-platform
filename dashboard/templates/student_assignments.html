@@ -11,14 +11,23 @@
             <ul>
                 {% for assignment in grouped_assignments%}
                     <li> {{assignment.title}}
-                        {% if assignment.due_date%}
-                            - due {{ assignment.due_date}}
+                        - due {{ assignment.due_date}}
+                        {% if assignment.id in submitted_assignments%}
+                        <p> Submitted </p>
+                        {%else%}
+                        <p> Not Submitted</p>
                         {%endif%}
+                        <a href = "{% url 'assignment_details' assignment.id%}">View assignment details</a>
                     </li>
                 {%endfor%}
             </ul>
         {%endfor%}
         
     {%endif%}
+
+    <a href="{% url 'student_dashboard'%}">Return to dashboard</a>
+</body>
+</html>
+
     
 

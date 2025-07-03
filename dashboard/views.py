@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload
 from .models import Student, Uploads, Teacher, User, Class, Assignment
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -40,8 +40,7 @@ def student_dashboard(request):
             if hw_form.is_valid():
                 hw_form.save(user = user)
                 return redirect('student_dashboard')
-            else:
-                print("Form NOT valid:", hw_form.errors)
+        
         elif 'upload_cw' in request.POST:
             cw_form = ClassworkUpload(request.POST, request.FILES)
             if cw_form.is_valid():
@@ -159,4 +158,37 @@ def student_assignments(request):
     class_assignments = {class_obj: list(grouped_assignments)
                          for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
     
-    return render(request, 'student_assignments.html', {'class_assignments': class_assignments})
+    print(set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True)))
+    submitted_assignments = set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True))
+    return render(request, 'student_assignments.html', {'class_assignments': class_assignments, 'submitted_assignments': submitted_assignments})
+
+@login_required
+@student_required
+def student_assignment_view(request, assignment_id):
+    student = request.user.student
+    assignment = get_object_or_404(Assignment, id=assignment_id, for_class__in = student.classes.all())
+
+    
+    form = AssignmentUpload()
+
+    if request.method == 'POST':
+        form = AssignmentUpload(request.POST, request.FILES)
+        if form.is_valid():
+            upload = form.save(commit = False)
+            upload.for_assignment = assignment
+            upload.for_class = assignment.for_class
+            upload.person = request.user
+            upload.file_type = 'HW'
+            upload.save()
+            return redirect('assignment_details', assignment_id = assignment.id)
+
+    uploaded_files = Uploads.objects.filter(
+        person = request.user,
+        for_assignment = assignment
+    ).order_by('-uploaded_at')
+
+    return render(request, 'student_assignment_view.html', {
+        'assignment': assignment,
+        'uploaded_files': uploaded_files,
+        'form': form
+    })

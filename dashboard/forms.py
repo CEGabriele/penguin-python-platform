@@ -37,3 +37,8 @@ class AssignmentForm(forms.ModelForm):
         if teacher:
             self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
         self.fields['for_class'].label_from_instance = lambda obj: obj.name
+
+class AssignmentUpload(forms.ModelForm):
+    class Meta:
+        model = Uploads
+        fields = ['file']

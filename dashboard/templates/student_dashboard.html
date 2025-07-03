@@ -10,6 +10,7 @@
 
     <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
 
+    <a href="{% url 'student_assignments'%}">View all assignments</a>
     
     
     {% if classes %}
@@ -70,13 +71,6 @@
                 {{class.hw_form.as_p}}
                 <button type = "submit" name = "upload_hw">Upload</button>
             </form>
-
-
-            {% if class.hw_form.errors %}
-            <div class="error">
-                {{ form.errors }}
-            </div>
-            {% endif %}
         
         {%endfor%}
 
