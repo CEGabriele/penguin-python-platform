@@ -13,7 +13,7 @@
                     <li> {{assignment.title}}
                         - due {{ assignment.due_date}}
                         <br>
-                        <a href = "{% url 'assignment_details' assignment.id%}">View assignment details</a>
+                        <a href = "{% url 'teacher_assignment_details' assignment.id%}">View assignment details</a>
                     </li>
                 {%endfor%}
             </ul>

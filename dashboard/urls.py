@@ -13,5 +13,5 @@ urlpatterns = [
     path('my-assignments', student_assignments, name = 'student_assignments'),
     path('assignment-details/<int:assignment_id>/', student_assignment_view, name = 'assignment_details'),
     path('assigned-assignments', teacher_assignments_list, name = 'teacher_assignments'),
-    path('teacher-assignment-details', teacher_assignment_detail, name = "teacher_assignment_detail")
+    path('teacher-assignment-details/<int:assignment_id>/', teacher_assignment_detail, name = "teacher_assignment_details")
 ]
