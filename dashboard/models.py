@@ -18,7 +18,7 @@ class Teacher (models.Model):
 
 class Class(models.Model):
     name = models.CharField(max_length = 100)
-    day = models.TextField(max_length = 9)
+    day = models.CharField(max_length = 9)
     time = models.TimeField()
     code = models.CharField(unique = True, default = generate_code())
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
@@ -38,6 +38,7 @@ class Assignment (models.Model):
     due_date = models.DateField()
     description = models.TextField()
     #how do we want teachers to share more information: file or doc? Do they need to share more information or is description enough?
+    #how does this work with the addition of homework forms? 
 
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
@@ -48,5 +49,30 @@ class Uploads (models.Model):
     file_type = models.CharField(max_length = 2)
     for_assignment = models.ForeignKey(Assignment, on_delete = models.SET_NULL, null = True)
 
+#form creation
+class HomeworkForm (models.Model):
+    name = models.CharField(max_length = 100)
+    #might change to many to many 
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
+    description = models.TextField()
+    due_date = models.DateField()
+class HomeworkQuestion (models.Model):
+    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE)
+    prompt = models.TextField()
+    question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('long', 'Long Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
+class QuestionChoices (models.Model):
+    question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE)
+    text = models.TextField()
 
+#form answer storage
+class StudentResponses (models.Model):
+    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE)
+    student = models.ForeignKey(Student, on_delete = models.CASCADE)
+    submission_date = models.DateTimeField(auto_now_add = True)
+class StudentQuestionResponse (models.Model):
+    student_response = models.ForeignKey(StudentResponses, on_delete = models.CASCADE, related_name = 'answers')
+    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
+    answer_text = models.TextField(blank = True)
+    selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True, blank = True)
+    upload = models.ForeignKey(Uploads, blank = True, null = True, on_delete=models.CASCADE)
 
