@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const formContainer = document.getElementById('question-forms');
+            const addButton = document.getElementById('add-question');
+            const totalForms = document.getElementById('id_form-TOTAL_FORMS');
+            const template = document.getElementById('empty-form');
+
+            if (!template) {
+                console.log("form not found");
+            }
+        
+            
+            addButton.addEventListener('click', function () {
+                const formCount = parseInt(totalForms.value);
+                const html = template.innerHTML.replace(/__prefix__/g, formCount);
+
+                const newFormDiv = document.createElement('div');
+                newFormDiv.classList.add('question-form');
+                newFormDiv.innerHTML = html;
+
+                formContainer.appendChild(newFormDiv);
+                totalForms.value = formCount + 1;
+            });
+          
+            formContainer.addEventListener('click', function (e) {
+              if (e.target.classList.contains('remove-question')) {
+                const questionForm = e.target.closest('.question-form');
+                questionForm.remove();
+              }
+            });
+          });
+    </script>
+</head>
+<body>
+    <form method="post" action = "{%url 'create_homework_form'%}">
+        {% csrf_token %}
+        
+        {{ assignment_form.as_p }}
+
+        {{ formset.management_form }}
+
+        <h3>Questions</h3>
+        <div id="question-forms">
+            {% for form in formset %}
+                <div class = "question-form">    
+                    {{ form.as_p }}
+                    {{ form.DELETE }}
+                    
+                    <div data-question-type="{{ form.initial.question_type }}">
+                        {% if form.cleaned_data.question_type == 'multiple_choice' %}
+                            {% include 'choice_formset.html' with prefix='choices_'|add:form.prefix %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+            {% endfor %}
+        </div>
+
+        <button type="button" id="add-question">Add Question</button>
+    
+        <button type="submit">Create Assignment</button>
+    </form>
+<div id="empty-form" style = "display:none;">
+    <div class="question-form">
+      {{ empty_question_form.as_p|safe }}
+      <button type="button" class="remove-question">Remove</button>
+    </div>
+</div>
+</body>
+</html>

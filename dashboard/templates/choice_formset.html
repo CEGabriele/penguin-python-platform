@@ -1,0 +1,5 @@
+{{ choice_formset.management_form }}
+{% for choice_form in choice_formset %}
+  {{ choice_form.as_p }}
+  {{ choice_form.DELETE }} Remove
+{% endfor %}

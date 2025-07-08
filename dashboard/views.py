@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, Http404
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload
-from .models import Student, Uploads, Teacher, User, Class, Assignment
+from django.http import FileResponse, Http404, HttpResponse
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet
+from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -224,3 +224,36 @@ def teacher_assignment_detail(request, assignment_id):
         'assignment': assignment,
         'student_submissions': student_submissions,
     })
+
+@login_required
+@teacher_required
+def create_homework_form(request):
+
+    teacher = request.user.teacher
+    assignment_form = HomeworkFormForm(request.POST)
+    formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
+
+   
+
+    if request.method == 'POST':
+        print("Request received.")
+        print("Formset errors:", formset.errors)
+        print("Formset non-form errors:", formset.non_form_errors())
+        if assignment_form.is_valid() and formset.is_valid():
+            assignment = assignment_form.save()
+
+            for question_form in formset:
+                if question_form.cleaned_data and not question_form.cleaned_data.get('DELETE', False):
+                    question = question_form.save(commit = False)
+                    question.form = assignment
+                    question.save()
+
+                    if question.question_type == 'multiple_choice':
+                        choice_formset = HomeworkChoiceFormSet(request.POST, prefix = f'choices_{question_form.prefix}', instance = question)
+                        if choice_formset.is_valid():
+                            choice_formset.save()
+            return redirect('teacher_dashboard')
+
+    assignment_form.fields['for_class'].queryset = Class.objects.filter(teacher=teacher)
+    empty_question_form = HomeworkQuestionForm(prefix="form-__prefix__")
+    return render(request, 'create_homework_form.html', {'assignment_form' : assignment_form, 'formset': formset, 'empty_question_form': empty_question_form})

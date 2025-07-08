@@ -1,5 +1,6 @@
 from django import forms
-from .models import Uploads, Assignment, Class
+from .models import Uploads, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices
+from django.forms import modelformset_factory, inlineformset_factory
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -42,3 +43,15 @@ class AssignmentUpload(forms.ModelForm):
     class Meta:
         model = Uploads
         fields = ['file']
+
+class HomeworkFormForm(forms.ModelForm):
+    class Meta:
+        model = HomeworkForm
+        fields = ['name', 'for_class', 'description', 'due_date']
+class HomeworkQuestionForm(forms.ModelForm):
+    class Meta:
+        model = HomeworkQuestion
+        fields = ['prompt', 'question_type']
+
+HomeworkQuestionFormSet = modelformset_factory(HomeworkQuestion, form = HomeworkQuestionForm, extra = 0, can_delete = True)
+HomeworkChoiceFormSet = inlineformset_factory(HomeworkQuestion, QuestionChoices, fields = ['text'], extra = 2, can_delete = True)
