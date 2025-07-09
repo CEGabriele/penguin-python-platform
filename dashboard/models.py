@@ -65,20 +65,16 @@ class HomeworkForm (models.Model):
     description = models.TextField()
     due_date = models.DateField()
 class HomeworkQuestion (models.Model):
-    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE)
+    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE, related_name = 'questions')
     prompt = models.TextField()
-    question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('long', 'Long Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
+    question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
 class QuestionChoices (models.Model):
     question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE)
     text = models.TextField()
 
 #form answer storage
-class StudentResponses (models.Model):
-    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE)
-    student = models.ForeignKey(Student, on_delete = models.CASCADE)
-    submission_date = models.DateTimeField(auto_now_add = True)
 class StudentQuestionResponse (models.Model):
-    student_response = models.ForeignKey(StudentResponses, on_delete = models.CASCADE, related_name = 'answers')
+    student = models.ForeignKey(Student, on_delete = models.CASCADE, null = True)
     question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
     answer_text = models.TextField(blank = True)
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True, blank = True)

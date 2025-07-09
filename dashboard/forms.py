@@ -1,5 +1,5 @@
 from django import forms
-from .models import Uploads, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices
+from .models import Uploads, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
 
 class HomeworkUpload(forms.ModelForm):
@@ -52,7 +52,28 @@ class HomeworkQuestionForm(forms.ModelForm):
     class Meta:
         model = HomeworkQuestion
         fields = ['prompt', 'question_type']
-    
 
-HomeworkQuestionFormSet = modelformset_factory(HomeworkQuestion, form = HomeworkQuestionForm, extra = 0, can_delete = True)
-HomeworkChoiceFormSet = inlineformset_factory(HomeworkQuestion, QuestionChoices, fields = ['text'], extra = 2, can_delete = True)
+class StudentAnswerForm(forms.ModelForm):
+    class Meta:
+        model = StudentQuestionResponse
+        fields = ['question', 'selected_choice', 'answer_text', 'upload']
+        widgets = {'question' : forms.HiddenInput()}
+
+HomeworkQuestionFormSet = modelformset_factory(
+    HomeworkQuestion, 
+    form = HomeworkQuestionForm, 
+    extra = 0, can_delete = True
+)
+HomeworkChoiceFormSet = inlineformset_factory(
+    HomeworkQuestion, 
+    QuestionChoices, 
+    fields = ['text'], 
+    extra = 2, 
+    can_delete = True
+)
+
+StudentAnswerFormSet = modelformset_factory(
+    StudentQuestionResponse,
+    form = StudentAnswerForm,
+    extra = 0
+)

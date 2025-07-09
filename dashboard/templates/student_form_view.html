@@ -1,0 +1,41 @@
+<html>
+<head>
+</head>
+
+<body>
+
+    <h2>{{ my_form.title }}</h2>
+    <p>{{ my_form.description }}</p>
+    
+    <form method="post">
+      {% csrf_token %}
+      {{ formset.management_form }}
+    
+      {% for form in formset %}
+        <div class="question-block">
+            <p><strong>{{ form.instance.question.text }}</strong></p>
+        
+            {% if form.instance.question.question_type == "multiple_choice" %}
+                {% for choice in form.instance.question.choices.all %}
+                <label>
+                    <input type="radio" name="{{ form.prefix }}-selected_choice"
+                        value="{{ choice.id }}">
+                    {{ choice.text }}
+                </label><br>
+                {% endfor %}
+            {% elif form.instance.question.question_type == "short_answer" %}
+                {{ form.short_answer }}
+            {% elif form.instance.question.question_type == "file_upload" %}
+                {{ form.file_upload }}
+            {% endif %}
+        
+            {{ form.question }}
+        </div>
+      {% endfor %}
+    
+      <button type="submit">Submit Assignment</button>
+    </form>
+
+</body>
+
+</html>
