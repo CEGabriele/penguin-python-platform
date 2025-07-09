@@ -52,6 +52,7 @@ class HomeworkQuestionForm(forms.ModelForm):
     class Meta:
         model = HomeworkQuestion
         fields = ['prompt', 'question_type']
+    
 
 HomeworkQuestionFormSet = modelformset_factory(HomeworkQuestion, form = HomeworkQuestionForm, extra = 0, can_delete = True)
 HomeworkChoiceFormSet = inlineformset_factory(HomeworkQuestion, QuestionChoices, fields = ['text'], extra = 2, can_delete = True)

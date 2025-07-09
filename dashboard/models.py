@@ -16,12 +16,18 @@ def generate_code():
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
 
+    def __str__(self):
+        return self.user.get_full_name()
+
 class Class(models.Model):
     name = models.CharField(max_length = 100)
     day = models.CharField(max_length = 9)
     time = models.TimeField()
     code = models.CharField(unique = True, default = generate_code())
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
+
+    def __str__(self):
+        return self.name
 
 class Student (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
@@ -31,6 +37,8 @@ class Student (models.Model):
     def latest_file(self, which_type, which_class):
         return self.user.uploads_set.order_by("-uploaded_at").filter(file_type = which_type, for_class = which_class).first()
 
+    def __str__(self):
+        return self.user.get_full_name()
 
 class Assignment (models.Model):
     title = models.TextField()

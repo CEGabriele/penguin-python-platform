@@ -230,15 +230,13 @@ def teacher_assignment_detail(request, assignment_id):
 def create_homework_form(request):
 
     teacher = request.user.teacher
-    assignment_form = HomeworkFormForm(request.POST)
-    formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
+   
 
    
 
     if request.method == 'POST':
-        print("Request received.")
-        print("Formset errors:", formset.errors)
-        print("Formset non-form errors:", formset.non_form_errors())
+        assignment_form = HomeworkFormForm(request.POST)
+        formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
         if assignment_form.is_valid() and formset.is_valid():
             assignment = assignment_form.save()
 
@@ -253,7 +251,30 @@ def create_homework_form(request):
                         if choice_formset.is_valid():
                             choice_formset.save()
             return redirect('teacher_dashboard')
+    else:
+        assignment_form = HomeworkFormForm()
+        formset = HomeworkQuestionFormSet(queryset=HomeworkQuestion.objects.none(), prefix='form')
 
+    """
     assignment_form.fields['for_class'].queryset = Class.objects.filter(teacher=teacher)
     empty_question_form = HomeworkQuestionForm(prefix="form-__prefix__")
     return render(request, 'create_homework_form.html', {'assignment_form' : assignment_form, 'formset': formset, 'empty_question_form': empty_question_form})
+    """
+
+    choice_formsets = []
+    for i, question_form in enumerate(formset.forms):
+        prefix = f'choices_form-{i}'
+        choice_formset = HomeworkChoiceFormSet(prefix=prefix)
+        choice_formsets.append(choice_formset)
+
+    formset_with_choices = zip(formset.forms, choice_formsets)
+    empty_question_form = formset.empty_form
+
+    return render(request, 'create_homework_form.html', {
+        'assignment_form': assignment_form,
+        'formset': formset,
+        'formset_with_choices': formset_with_choices,
+        'empty_question_form': empty_question_form,
+    })
+
+

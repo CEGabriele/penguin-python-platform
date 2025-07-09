@@ -1,5 +1,11 @@
-{{ choice_formset.management_form }}
-{% for choice_form in choice_formset %}
-  {{ choice_form.as_p }}
-  {{ choice_form.DELETE }} Remove
-{% endfor %}
+<div class="choice-form-container" style="display: none;">
+  {{ choice_formset.management_form }}
+  {% for form in choice_formset.forms %}
+    <div class="choice-form">
+      {{ form.text.label_tag }} {{ form.text }}
+      {% if form.DELETE %}
+        {{ form.DELETE }} <label>Remove</label>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
