@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+<h1> Results for: {{form.name}}</h1>
+
+{% for item in question_data%}
+    <h2>Question {{forloop.counter}}: {{item.question.prompt}}</h2>
+    {%if item.responses%}
+        <ul>
+            {%for response in item.responses%}
+            <li>
+                <h3>{{response.student.user.get_full_name}}</h3>
+                {% if response.question.question_type == "multiple_choice" %}
+                    <p>Selected: {{response.selected_choice}}</p>
+                {% elif response.question.question_type == "short" %}
+                    <p>Response:</p>
+                    {{response.answer_text}}
+                {% elif response.question.question_type == "file" %}
+                    <p>{{ response.upload.name |cut:"student_files/"}}</p>
+                    <i class = "bi bi-file-earmark-code"></i>
+                    <br>
+                    
+                {% endif %}
+            </li>
+            {%endfor%}
+        </ul>
+
+    {%else%}    
+        No responses yet
+    {%endif%}
+{%endfor%}
+</body>
+</html>

@@ -303,6 +303,7 @@ def student_form_view(request, form_id):
             for form in formset:
                 form.instance.student = request.user.student
                 form.save()
+                redirect('student_dashboard')
 
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
@@ -311,3 +312,17 @@ def student_form_view(request, form_id):
             if form.instance.question.question_type == 'short_answer':
                 print(form.instance.question.question_type)
     return render(request, 'student_form_view.html', {'my_form':my_form, 'formset':formset})
+
+@login_required
+@teacher_required
+def responses_view(request, form_id):
+    form = get_object_or_404(HomeworkForm, id = form_id)
+    questions = form.questions.all()
+
+    question_data = []
+
+    for question in questions:
+        responses = StudentQuestionResponse.objects.filter(question = question)
+        question_data.append({'question':question, 'responses':responses})
+
+    return render(request, 'responses_view.html', {'form':form, 'question_data' : question_data})
