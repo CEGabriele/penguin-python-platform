@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerFormSet
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerFormSet, StudentAnswerForm
 from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
+from django.forms import modelformset_factory
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -277,23 +278,36 @@ def create_homework_form(request):
         'empty_question_form': empty_question_form,
     })
 
-
+@login_required
+@student_required
 def student_form_view(request, form_id):
     my_form = HomeworkForm.objects.get(id = form_id)
     questions = my_form.questions.all()
-
+    
+    
     initial_data = []
 
     for question in questions:
         initial_data.append({'question': question})
+
+    StudentAnswerFormSet = modelformset_factory(
+        StudentQuestionResponse,
+        form=StudentAnswerForm,
+        extra=len(initial_data)
+    )
     
     if request.method == 'POST':
-        formset = StudentAnswerFormSet(request.POST, queryset = StudentQuestionResponse.objects.none())
+        formset = StudentAnswerFormSet(request.POST, queryset = StudentQuestionResponse.objects.none(), initial = initial_data)
+        
         if formset.is_valid():
             for form in formset:
                 form.instance.student = request.user.student
                 form.save()
+
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
-    
+
+        for form in formset:
+            if form.instance.question.question_type == 'short_answer':
+                print(form.instance.question.question_type)
     return render(request, 'student_form_view.html', {'my_form':my_form, 'formset':formset})

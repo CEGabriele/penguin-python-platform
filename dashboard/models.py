@@ -57,7 +57,6 @@ class Uploads (models.Model):
     file_type = models.CharField(max_length = 2)
     for_assignment = models.ForeignKey(Assignment, on_delete = models.SET_NULL, null = True)
 
-#form creation
 class HomeworkForm (models.Model):
     name = models.CharField(max_length = 100)
     #might change to many to many 
@@ -69,14 +68,15 @@ class HomeworkQuestion (models.Model):
     prompt = models.TextField()
     question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
 class QuestionChoices (models.Model):
-    question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE)
+    question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE, related_name = 'choices')
     text = models.TextField()
+    def __str__(self):
+        return self.text
 
-#form answer storage
 class StudentQuestionResponse (models.Model):
     student = models.ForeignKey(Student, on_delete = models.CASCADE, null = True)
     question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
     answer_text = models.TextField(blank = True)
-    selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True, blank = True)
-    upload = models.ForeignKey(Uploads, blank = True, null = True, on_delete=models.CASCADE)
+    selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
+    upload = models.FileField(upload_to='student_uploads/', null=True, blank=True)
 

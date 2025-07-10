@@ -57,7 +57,21 @@ class StudentAnswerForm(forms.ModelForm):
     class Meta:
         model = StudentQuestionResponse
         fields = ['question', 'selected_choice', 'answer_text', 'upload']
-        widgets = {'question' : forms.HiddenInput()}
+        widgets = {'question' : forms.HiddenInput(), 'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),'upload': forms.FileInput(), 'selected_choice':forms.RadioSelect()}
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        question = self.initial.get('question') or self.instance.question
+        
+        if question:
+            self.instance.question = question 
+
+        if question and question.question_type == 'multiple_choice':
+            self.fields['selected_choice'].queryset = question.choices.all()
+        else:
+            self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
+
 
 HomeworkQuestionFormSet = modelformset_factory(
     HomeworkQuestion, 
@@ -74,6 +88,5 @@ HomeworkChoiceFormSet = inlineformset_factory(
 
 StudentAnswerFormSet = modelformset_factory(
     StudentQuestionResponse,
-    form = StudentAnswerForm,
-    extra = 0
+    form = StudentAnswerForm
 )
