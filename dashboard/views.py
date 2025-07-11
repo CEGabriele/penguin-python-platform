@@ -32,7 +32,7 @@ def student_dashboard(request):
     cw_files = user.uploads_set.filter(file_type = 'CW').order_by("-uploaded_at")
 
     hw_form = HomeworkUpload()
-    cw_form = HomeworkUpload()
+    cw_form = ClassworkUpload()
 
     if request.method == 'POST':
         if 'upload_hw' in request.POST:
@@ -155,13 +155,20 @@ def student_assignments(request):
     student = Student.objects.get(user = request.user)
     classes = student.classes.all()
     assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
+    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
 
     class_assignments = {class_obj: list(grouped_assignments)
                          for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
     
-    print(set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True)))
+    class_forms = {class_obj: list(grouped_assignments)
+                   for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
+
+    }
+
+    print(class_forms)
+
     submitted_assignments = set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True))
-    return render(request, 'student_assignments.html', {'class_assignments': class_assignments, 'submitted_assignments': submitted_assignments})
+    return render(request, 'student_assignments.html', {'class_assignments': class_assignments, 'submitted_assignments': submitted_assignments, 'class_forms':class_forms})
 
 
 @login_required
@@ -170,12 +177,17 @@ def teacher_assignments_list(request):
     teacher = Teacher.objects.get(user = request.user)
     classes = teacher.classes.all()
     assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
+    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
 
     class_assignments = {class_obj: list(grouped_assignments)
                          for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
     
+    
+    class_forms = {class_obj: list(grouped_assignments)
+                   for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
 
-    return render(request, 'teacher_assignments_list.html', {'class_assignments': class_assignments})
+    }
+    return render(request, 'teacher_assignments_list.html', {'class_assignments': class_assignments, 'class_forms':class_forms})
 
 @login_required
 @student_required
@@ -308,9 +320,6 @@ def student_form_view(request, form_id):
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
 
-        for form in formset:
-            if form.instance.question.question_type == 'short_answer':
-                print(form.instance.question.question_type)
     return render(request, 'student_form_view.html', {'my_form':my_form, 'formset':formset})
 
 @login_required
