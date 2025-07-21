@@ -167,8 +167,7 @@ def student_assignments(request):
 
     print(class_forms)
 
-    submitted_assignments = set(student.user.uploads_set.filter(for_assignment__isnull=False).values_list('for_assignment', flat=True))
-    return render(request, 'student_assignments.html', {'class_assignments': class_assignments, 'submitted_assignments': submitted_assignments, 'class_forms':class_forms})
+    return render(request, 'student_assignments.html', {'class_forms':class_forms})
 
 
 @login_required
@@ -185,9 +184,9 @@ def teacher_assignments_list(request):
     
     class_forms = {class_obj: list(grouped_assignments)
                    for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
-
     }
-    return render(request, 'teacher_assignments_list.html', {'class_assignments': class_assignments, 'class_forms':class_forms})
+
+    return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms})
 
 @login_required
 @student_required
@@ -243,9 +242,6 @@ def teacher_assignment_detail(request, assignment_id):
 def create_homework_form(request):
 
     teacher = request.user.teacher
-   
-
-   
 
     if request.method == 'POST':
         assignment_form = HomeworkFormForm(request.POST)
@@ -294,7 +290,7 @@ def create_homework_form(request):
 @student_required
 def student_form_view(request, form_id):
     my_form = HomeworkForm.objects.get(id = form_id)
-    questions = my_form.questions.all()
+    questions = list(my_form.questions.all())
     
     
     initial_data = []
@@ -309,13 +305,15 @@ def student_form_view(request, form_id):
     )
     
     if request.method == 'POST':
-        formset = StudentAnswerFormSet(request.POST, queryset = StudentQuestionResponse.objects.none(), initial = initial_data)
+        formset = StudentAnswerFormSet(request.POST, queryset = StudentQuestionResponse.objects.none())
         
         if formset.is_valid():
-            for form in formset:
-                form.instance.student = request.user.student
-                form.save()
-                redirect('student_dashboard')
+            for form, question in zip(formset.forms, questions):
+                response = form.save(commit=False)
+                response.student = request.user.student
+                response.question = question
+                response.save()
+            return redirect('student_dashboard')
 
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)

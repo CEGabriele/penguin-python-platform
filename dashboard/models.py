@@ -55,7 +55,6 @@ class Uploads (models.Model):
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
-    for_assignment = models.ForeignKey(Assignment, on_delete = models.SET_NULL, null = True)
 
 class HomeworkForm (models.Model):
     name = models.CharField(max_length = 100)

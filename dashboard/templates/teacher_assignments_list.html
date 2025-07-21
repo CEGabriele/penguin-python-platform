@@ -5,11 +5,9 @@
 </head>
 <body>
     <h1>{{request.user.get_short_name}}'s Posted Assignments</h1>
-    <a href = {%url 'create_assignment'%}>Create New Assignment</a>
-    <br>
-    <a href = {%url 'create_homework_form'%}>Create New Form</a>
+    <a href = {%url 'create_homework_form'%}>Create New Homework Form</a>
 
-    {%if class_assignments%}
+    {%if class_forms%}
         {% for class_obj, grouped_assignments in class_forms.items%}
             <h2>{{class_obj.name}}</h2>
             <ul>

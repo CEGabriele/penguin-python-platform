@@ -10,7 +10,7 @@ class HomeworkUpload(forms.ModelForm):
     def save(self, commit=True, user = None):
         instance = super().save(commit = False)
         instance.person = user
-        instance.type = "HW"
+        instance.file_type = "HW"
         if commit:
             instance.save()
         return instance

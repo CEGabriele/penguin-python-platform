@@ -27,7 +27,7 @@
                             <p>{{ file.file.name |cut:"student_files/"}}</p>
                             <i class = "bi bi-file-earmark-code"></i>
                             <br>
-                            <p> Uploaded {{student.last_cw_file.uploaded_at | date:"n/j/y"}}</p>
+                            <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
                             <a href="{% url 'download_file' file.id %}" >
                                 Download
                             </a> 
@@ -46,7 +46,8 @@
                             
                             <p>{{ file.file.name |cut:"student_files/"}}</p>
                             <i class = "bi bi-file-earmark-code"></i>
-                            <br><br>
+                            <br>
+                            <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
                             <a href="{% url 'download_file' file.id %}" >
                                 Download
                             </a> 
