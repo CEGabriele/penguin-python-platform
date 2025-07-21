@@ -20,9 +20,8 @@
                     <p>Response:</p>
                     {{response.answer_text}}
                 {% elif response.question.question_type == "file" %}
-                    <p>{{ response.upload.name |cut:"student_files/"}}</p>
+                    <p>{{ response.upload.name |cut:"student_uploads/"}}</p>
                     <i class = "bi bi-file-earmark-code"></i>
-                    <br>
                 {% endif %}
             </li>
             {%endfor%}
