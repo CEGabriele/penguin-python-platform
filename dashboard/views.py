@@ -335,3 +335,25 @@ def responses_view(request, form_id):
         question_data.append({'question':question, 'responses':responses})
 
     return render(request, 'responses_view.html', {'form':form, 'question_data' : question_data})
+
+@login_required
+@student_required
+def student_class_view(request, class_code):
+    class_obj = get_object_or_404(Class, code=class_code)
+    student = request.user.student
+    if class_obj not in student.classes.all():
+        return redirect('student_dashboard')
+    return render(request, 'student_class_view.html', {
+        'class': class_obj
+    })
+
+@login_required
+@teacher_required
+def teacher_class_view(request, class_code):
+    class_obj = get_object_or_404(Class, code=class_code)
+    teacher = request.user.teacher
+    if teacher != class_obj.teacher:
+        return redirect('teacher_dashboard')
+    return render(request, 'teacher_class_view.html', {
+        'class': class_obj
+    })
