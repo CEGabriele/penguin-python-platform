@@ -77,5 +77,5 @@ class StudentQuestionResponse (models.Model):
     question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
     answer_text = models.TextField(blank = True)
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
-    upload = models.FileField(upload_to='student_uploads/', null=True, blank=True)
+    upload = models.FileField(upload_to='student_files/', null=True, blank=True)
 
