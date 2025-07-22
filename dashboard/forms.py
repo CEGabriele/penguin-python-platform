@@ -10,7 +10,7 @@ class HomeworkUpload(forms.ModelForm):
     def save(self, commit=True, user = None):
         instance = super().save(commit = False)
         instance.person = user
-        instance.type = "HW"
+        instance.file_type = "HW"
         if commit:
             instance.save()
         return instance
@@ -57,12 +57,15 @@ class StudentAnswerForm(forms.ModelForm):
     class Meta:
         model = StudentQuestionResponse
         fields = ['question', 'selected_choice', 'answer_text', 'upload']
-        widgets = {'question' : forms.HiddenInput(), 'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),'upload': forms.FileInput(), 'selected_choice':forms.RadioSelect()}
+        widgets = {'question' : forms.HiddenInput(), 
+                   'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),
+                   'upload': forms.FileInput(), 
+                   'selected_choice':forms.RadioSelect()}
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        question = self.initial.get('question') or self.instance.question
+        question = self.initial.get('question')
         
         if question:
             self.instance.question = question 
