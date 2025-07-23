@@ -7,6 +7,8 @@ from itertools import groupby
 from operator import attrgetter
 from django.forms import modelformset_factory
 
+from dashboard.services.ai_hw_review import get_ai_review
+
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
         if not Student.objects.filter(user = request.user).exists():
@@ -34,6 +36,14 @@ def student_dashboard(request):
     hw_form = HomeworkUpload()
     cw_form = ClassworkUpload()
 
+
+    with open('/Users/claire/Desktop/test.py', 'r', encoding='utf-8') as f:
+        code = f.read()
+
+    feedback = get_ai_review(code)
+    print(feedback)
+    
+    
     if request.method == 'POST':
         if 'upload_hw' in request.POST:
 
