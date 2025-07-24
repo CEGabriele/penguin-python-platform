@@ -1,7 +1,7 @@
 from django.urls import path
 from .models import Student
 from . import views
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, create_assignment, student_assignments, student_assignment_view, teacher_assignments_list, teacher_assignment_detail, create_homework_form, student_form_view, responses_view, student_class_view, teacher_class_view
+from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, create_assignment, student_assignments, student_assignment_view, teacher_assignments_list, teacher_assignment_detail, create_homework_form, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback
 
 
 urlpatterns = [
@@ -18,5 +18,6 @@ urlpatterns = [
     path('student-form/<int:form_id>', student_form_view, name = 'student_form_view'),
     path('form-results/<int:form_id>/', responses_view, name = 'responses_view'),
     path('student-class-view/<str:class_code>/', student_class_view, name="student_class_view"),
-    path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view")
+    path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view"),
+    path("get-code-feedback/",get_code_feedback , name="get_code_feedback")
 ]

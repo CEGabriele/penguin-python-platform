@@ -1,9 +1,15 @@
 
 from openai import AzureOpenAI
 from django.conf import settings
+from dashboard.models import HomeworkQuestion
 
-def get_ai_review(code: str) -> str:
+def get_ai_review(code: str, question_id: int) -> str:
 
+    question = HomeworkQuestion.objects.get(id=question_id).prompt
+    ai_instructions = HomeworkQuestion.objects.get(id=question_id).extra_ai_instructions
+    
+    instructions = f"The student was excepted to respond to the following question in python: {question}.\n The teacher has provided the following additional information in how to access their work:\n{ai_instructions}\nThis is their code:\n{code}"
+    
     client = AzureOpenAI(
         api_version = settings.AZURE_OPENAI_API_VERSION,
         azure_endpoint= settings.AZURE_OPENAI_ENDPOINT,
@@ -18,7 +24,7 @@ def get_ai_review(code: str) -> str:
             },
             {
                 "role": "user",
-                "content": f"This is a student's code for the game rock, paper, scissors. Find any errors in their code:\n{code}"
+                "content": instructions
             }
         ],
             max_completion_tokens=1000,

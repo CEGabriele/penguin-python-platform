@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerFormSet, StudentAnswerForm
 from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
 from django.forms import modelformset_factory
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 from dashboard.services.ai_hw_review import get_ai_review
 
@@ -36,13 +38,13 @@ def student_dashboard(request):
     hw_form = HomeworkUpload()
     cw_form = ClassworkUpload()
 
-
+    """
     with open('/Users/claire/Desktop/test.py', 'r', encoding='utf-8') as f:
         code = f.read()
 
-    feedback = get_ai_review(code)
+    feedback = get_ai_review(code, "This is a student's code for the game rock, paper, scissors. Find any errors in their code")
     print(feedback)
-    
+    """
     
     if request.method == 'POST':
         if 'upload_hw' in request.POST:
@@ -274,12 +276,6 @@ def create_homework_form(request):
         assignment_form = HomeworkFormForm()
         formset = HomeworkQuestionFormSet(queryset=HomeworkQuestion.objects.none(), prefix='form')
 
-    """
-    assignment_form.fields['for_class'].queryset = Class.objects.filter(teacher=teacher)
-    empty_question_form = HomeworkQuestionForm(prefix="form-__prefix__")
-    return render(request, 'create_homework_form.html', {'assignment_form' : assignment_form, 'formset': formset, 'empty_question_form': empty_question_form})
-    """
-
     choice_formsets = []
     for i, question_form in enumerate(formset.forms):
         prefix = f'choices_form-{i}'
@@ -375,3 +371,22 @@ def teacher_class_view(request, class_code):
     return render(request, 'teacher_class_view.html', {
         'class': class_obj
     })
+@csrf_exempt
+def get_code_feedback(request):
+    if request.method == 'POST':
+        try:
+            body_unicode = request.body.decode('utf-8')
+            data = json.loads(body_unicode)
+
+            code = data.get("code")
+            question_id = data.get("question_id")
+
+            
+
+            if not code or not question_id:
+                return JsonResponse({"error": "Missing code or question_id"}, status=400)
+
+            feedback = get_ai_review(code, question_id)
+            return JsonResponse({"feedback": feedback})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
