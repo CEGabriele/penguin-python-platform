@@ -4,6 +4,10 @@
     <head>
         <title>{{ my_form.name }}</title>
         <script>
+            /**
+                * This script handles the functionality of checking code files uploaded by students.
+                * It reads the file, checks if it's a Python file, and sends it to the server for feedback.
+            */
             document.addEventListener("DOMContentLoaded", function() {
                 const buttons = document.querySelectorAll(".check-code-button");
                 buttons.forEach(button => {
@@ -13,8 +17,17 @@
                         const fileInput = parent.querySelector("input[type='file']");
                         const feedbackDiv = parent.querySelector(".ai-feedback");
                         let code = "";
+
+                       
                         if (fileInput && fileInput.files.length > 0) {
-                            code = await readFile(fileInput.files[0]);
+
+                            if (isPythonFile(fileInput.files[0]) ){
+                                feedbackDiv.innerHTML = "<p>Checking your code...</p>";
+                                code = await readFile(fileInput.files[0]);
+                            } else {
+                                feedbackDiv.innerHTML = "<p>Please upload a Python file.</p>";
+                                return;
+                            }
                         }
                         if (!code){
                             feedbackDiv.innerHTML = "<p>Please upload a file to check.</p>";
@@ -44,7 +57,11 @@
                     });
                 });
             });
-
+            /**
+            Reads a file and returns it as a string.
+            @param file: The file object to read.
+            @returns A promise that resolves with the file content as a string.
+            */
             function readFile(file){
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -52,6 +69,14 @@
                     reader.onerror = reject;
                     reader.readAsText(file);
                 });
+            }
+            /**
+                * Checks if the uploaded file is a Python file.
+                * @param file: The file object to check.
+                * @returns {boolean} True if the file is a Python file, false otherwise.
+            */
+            function isPythonFile(file){
+                return file.name.endsWith('.py') || file.name.endsWith('.ipynb');
             }
         </script>
     </head>
