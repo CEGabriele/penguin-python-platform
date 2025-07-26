@@ -10,7 +10,24 @@
 <body>
    <h1>{{class.name}} - {{class.day}}</h1>
    <h3>{{class.teacher}}</h3>
+   <p><b>Email: </b>{{class.teacher.user.email}}</p>
    <br>
+   <h3>Resources</h3>
+   <ul>
+      {%for resource in class.resources.all%}
+      <li>
+         {%if not resource.locked%}
+         <a href="{% url 'resource_view' resource.id %}">
+            <p>{{resource.title}}</p>
+         </a>
+
+         {%endif%}
+
+      </li>
+      {%empty%}
+      <li>Nothing to see here.</li>
+      {%endfor%}
+   </ul>
    <form action="{% url 'student_dashboard' %}" method="post" style="display:inline;">
       {% csrf_token %}
       <button type="submit">Return to Dashboard</button>

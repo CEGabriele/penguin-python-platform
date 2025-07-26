@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse
 from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerFormSet, StudentAnswerForm
-from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices, StudentQuestionResponse
+from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices, StudentQuestionResponse, Resource
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -362,6 +362,41 @@ def teacher_class_view(request, class_code):
     teacher = request.user.teacher
     if teacher != class_obj.teacher:
         return redirect('teacher_dashboard')
+    if request.method == 'POST' and 'toggle_lock' in request.POST:
+        resource = get_object_or_404(Resource, id=request.POST.get("resource_id"))
+        resource.locked = not resource.locked
+        resource.save()
+        return redirect('teacher_class_view', class_code=class_code)
+
     return render(request, 'teacher_class_view.html', {
         'class': class_obj
+    })
+
+@login_required
+def resource_view(request, resource_id):
+    resource = get_object_or_404(Resource, id=resource_id)
+    if request.user.student:
+        student = request.user.student
+        if resource.for_class in student.classes.all():
+            if not resource.locked:
+                return render(request, 'resource_view.html', {
+                    'resource': resource
+                })
+    return redirect("student_dashboard")
+
+
+
+@login_required
+@teacher_required
+def edit_resource(request, resource_id):
+    resource = get_object_or_404(Resource, id=resource_id)
+    teacher = request.user.teacher
+    if teacher != resource.for_class.teacher:
+        return redirect('teacher_dashboard')
+    if request.method == 'POST' and 'submit_edit' in request.POST:
+        print(resource.id)
+        return redirect('edit_resource.html', resource_id=resource_id)
+
+    return render(request, 'edit_resource.html', {
+        'resource': resource
     })

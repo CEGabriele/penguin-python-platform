@@ -9,11 +9,36 @@
 
 <body>
    <h1>{{class.name}} - {{class.day}}</h1>
+   <h3>Students</h3>
    <ul>
       {%for student in class.students.all%}
       <li>{{student.user.get_full_name}}</li>
       {%empty%}
       <li>No students</li>
+      {%endfor%}
+   </ul>
+   <h3>Content</h3>
+   <ul>
+      {%for resource in class.resources.all%}
+      <li>
+         <a href="{% url 'edit_resource' resource.id %}">
+            <p>{{resource.title}}</p>
+         </a>
+         <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="resource_id" value="{{ resource.id }}">
+            <button type="submit" name="toggle_lock">
+               {%if resource.locked%}
+               Unlock
+               {%else%}
+               Lock
+               {%endif%}
+            </button>
+         </form>
+
+      </li>
+      {%empty%}
+      <li>Nothing to see here.</li>
       {%endfor%}
    </ul>
    <h3>{{student}}</h3>
@@ -22,6 +47,8 @@
       {% csrf_token %}
       <button type="submit">Return to Dashboard</button>
    </form>
+
+
 
 </body>
 

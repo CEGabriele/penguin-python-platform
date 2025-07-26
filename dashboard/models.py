@@ -79,3 +79,9 @@ class StudentQuestionResponse (models.Model):
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
     upload = models.FileField(upload_to='student_files/', null=True, blank=True)
 
+class Resource (models.Model):
+    title = models.TextField()
+    id = models.BigAutoField(primary_key=True)
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True, related_name="resources")
+    locked = models.BooleanField(blank = False)
+    text_content = models.TextField()
