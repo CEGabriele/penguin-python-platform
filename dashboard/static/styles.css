@@ -2,4 +2,105 @@ body {
     font-family: "Poppins", sans-serif;
     background-color: #f7f7f7;
     margin: 4vh;
+    text-align: center;
+}
+
+.class-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.class-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+    text-align: center;
+}
+
+
+.student-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.student-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+    text-align: center;
+}
+
+.student-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+}
+
+.student-card h5 {
+    margin-top: 16px;
+    font-size: 1rem;
+    color: #555;
+}
+
+
+button{
+    background-color: #fff;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file-card {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease;
+    
+    
+    
+}
+
+.file-icon {
+    font-size: 2rem;
+    margin-right: 16px;
+
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-name {
+    font-weight: 600;
+    margin: 0;
+}
+
+.upload-date {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 4px 0;
+}
+
+.download-link {
+    display: inline-block;
+    padding: 6px 12px;
+    color: black;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
 }
