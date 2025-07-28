@@ -1,13 +1,13 @@
 body {
     font-family: "Poppins", sans-serif;
     background-color: #f7f7f7;
-    margin: 4vh;
     text-align: center;
+    margin: 4vh;
 }
 
 .class-grid{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 20px;
     padding: 20px 0;
 }
@@ -70,13 +70,12 @@ button{
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     transition: box-shadow 0.2s ease;
-    
-    
+    justify-content: center;
     
 }
 
 .file-icon {
-    font-size: 2rem;
+    font-size: 32px;
     margin-right: 16px;
 
 }
