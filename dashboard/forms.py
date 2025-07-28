@@ -23,7 +23,7 @@ class ClassworkUpload(forms.ModelForm):
     def save(self, commit=True, user = None):
         instance = super().save(commit = False)
         instance.person = user
-        instance.type = "CW"
+        instance.file_type = "CW"
         if commit:
             instance.save()
         return instance
