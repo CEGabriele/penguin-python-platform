@@ -1,7 +1,9 @@
+{% load static%}
 <!DOCTYPE html>
 <html>
 <head>
     <title>{{request.user.get_short_name}}'s Assignments</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
 <body>
     <h1>{{request.user.get_short_name}}'s Assignments</h1>

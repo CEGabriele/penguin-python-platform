@@ -1,8 +1,9 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
-<head>
     <head>
         <title>{{ my_form.name }}</title>
+        <link rel="stylesheet" href="{% static 'styles.css' %}">
         <script>
             /**
                 * This script handles the functionality of checking code files uploaded by students.
@@ -80,7 +81,6 @@
             }
         </script>
     </head>
-</head>
 
 <body>
 
