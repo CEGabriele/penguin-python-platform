@@ -1,3 +1,8 @@
+:root {
+    --accent-color: rgba(252, 164, 43);
+    --accent-color-light: rgba(253, 182, 85);
+}
+
 body {
     font-family: "Poppins", sans-serif;
     background-color: #f7f7f7;
@@ -51,14 +56,26 @@ body {
 
 
 button{
-    background-color: #fff;
-    color: black;
+    background-color: var(--accent-color);
+    color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+button:hover {
+    background-color: var(--accent-color-light);
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
 }
 
 .file-card {
@@ -98,7 +115,8 @@ button{
 .download-link {
     display: inline-block;
     margin-top: 4px;
-    background-color: #007bff;
+    background-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     color: white;
     padding: 5px 10px;
     font-size: 0.85rem;
@@ -107,5 +125,21 @@ button{
 }
 
 .download-link:hover {
-    background-color: #0056b3;
+    background-color: var(--accent-color-light);
 }
+
+.file-section, .upload-section {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+.upload-block input[type="file"]{
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem
+}
+

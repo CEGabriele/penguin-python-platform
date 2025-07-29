@@ -27,36 +27,12 @@
                 <a href="{% url 'student_class_view' class.class.code %}">
                     View Class Page
                 </a>
-                <h2>My Files</h2>
-                <h4>Classwork</h4>
-                {% if class.cw_files%}
-                <div class = "file-grid">
-                    {%for file in class.cw_files%}
-                    <div class = "file-card">
-                        <div class='file-icon'>
-                            <i class="bi bi-file-earmark-code"></i>
-                        </div>
-                        <div class = 'file-details'>
-                            <p class = "file-name">{{ file.file.name |cut:"student_files/"}}</p>
-                            <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                            <a class = 'download-link' href="{% url 'download_file' file.id %}">
-                                Download
-                            </a>
-                        </div>
-                    </div>
-
-
-                    
-                    {%endfor%}
-                </div>
-                {%else%}
-                <p>No classwork uploaded yet.</p>
-                {%endif%}
-
-                <h4>Homework</h4>
-                {% if class.hw_files%}
-                <div class="file-grid">
-                    {%for file in class.hw_files%}
+                <div class = "file-section">
+                    <h2>My Files</h2>
+                    <h4>Classwork</h4>
+                    {% if class.cw_files%}
+                    <div class = "file-grid">
+                        {%for file in class.cw_files%}
                         <div class = "file-card">
                             <div class='file-icon'>
                                 <i class="bi bi-file-earmark-code"></i>
@@ -69,26 +45,57 @@
                                 </a>
                             </div>
                         </div>
-                    {%endfor%}
+                        
+                        {%endfor%}
+                    </div>
+                    {%else%}
+                    <p>No classwork uploaded yet.</p>
+                    {%endif%}
+
+                    <h4>Homework</h4>
+                    {% if class.hw_files%}
+                    <div class="file-grid">
+                        {%for file in class.hw_files%}
+                            <div class = "file-card">
+                                <div class='file-icon'>
+                                    <i class="bi bi-file-earmark-code"></i>
+                                </div>
+                                <div class = 'file-details'>
+                                    <p class = "file-name">{{ file.file.name |cut:"student_files/"}}</p>
+                                    <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
+                                    <a class = 'download-link' href="{% url 'download_file' file.id %}">
+                                        Download
+                                    </a>
+                                </div>
+                            </div>
+                        {%endfor%}
+                    </div>
+                    {%else%}
+                    <p>No homework uploaded yet.</p>
+                    {%endif%}
                 </div>
-                {%else%}
-                <p>No homework uploaded yet.</p>
-                {%endif%}
 
+                <div class = "upload-section">
 
-                <h2>Upload Files</h2>
-                <h4>Upload Classwork Files</h4>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token%}
-                    {{class.cw_form.as_p}}
-                    <button type="submit" name="upload_cw">Upload</button>
-                </form>
-                <h4>Upload Homework Files</h4>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token%}
-                    {{class.hw_form.as_p}}
-                    <button type="submit" name="upload_hw">Upload</button>
-                </form>
+                    <h2>Upload Files</h2>
+                    
+                    <div class = "upload-block">
+                        <h4>Upload Classwork Files</h4>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token%}
+                            {{class.cw_form.as_p}}
+                            <button type="submit" name="upload_cw">Upload</button>
+                        </form>
+                    </div>
+                    <div class="upload-block">
+                        <h4>Upload Homework Files</h4>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token%}
+                            {{class.hw_form.as_p}}
+                            <button type="submit" name="upload_hw">Upload</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         {%endfor%}
     </div>
