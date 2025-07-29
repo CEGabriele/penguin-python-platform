@@ -54,12 +54,13 @@ class HomeworkQuestionForm(forms.ModelForm):
         fields = ['prompt', 'question_type']
 
 class StudentAnswerForm(forms.ModelForm):
+    upload = forms.FileField(required=False, widget=forms.ClearableFileInput())
+    
     class Meta:
         model = StudentQuestionResponse
-        fields = ['question', 'selected_choice', 'answer_text', 'upload']
+        fields = ['question', 'selected_choice', 'answer_text']
         widgets = {'question' : forms.HiddenInput(), 
                    'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),
-                   'upload': forms.FileInput(), 
                    'selected_choice':forms.RadioSelect()}
     
     def __init__(self, *args, **kwargs):
@@ -72,8 +73,10 @@ class StudentAnswerForm(forms.ModelForm):
 
         if question and question.question_type == 'multiple_choice':
             self.fields['selected_choice'].queryset = question.choices.all()
+            self.fields['selected_choice'].required = True
         else:
             self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
+            self.fields['selected_choice'].required = False
 
 
 HomeworkQuestionFormSet = modelformset_factory(

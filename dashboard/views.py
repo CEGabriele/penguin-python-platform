@@ -302,20 +302,27 @@ def student_form_view(request, form_id):
 
         formset = StudentAnswerFormSet(request.POST, request.FILES, queryset = StudentQuestionResponse.objects.none())
         
-
-        for form, question in zip(formset.forms, questions):
-            form.instance.student = request.user.student
-            form.instance.question = question
-
-            if question.question_type == 'multiple_choice':
-                form.fields['selected_choice'].queryset = question.choices.all()
-            else:
-                form.fields['selected_choice'].required = False
-                form.fields['selected_choice'].queryset = question.choices.none()
-
         if formset.is_valid():
-            for form in formset:
-                form.save()
+            for form, question in zip(formset.forms, questions):
+                form.instance.student = request.user.student
+                form.instance.question = question
+
+                if question.question_type == 'multiple_choice':
+                    form.fields['selected_choice'].queryset = question.choices.all()
+                else:
+                    form.fields['selected_choice'].required = False
+                    form.fields['selected_choice'].queryset = question.choices.none()
+                uploaded_file = form.cleaned_data.get('upload')
+                
+                if uploaded_file:
+                    upload = Uploads.objects.create(
+                    file=uploaded_file,
+                    person=request.user,
+                    file_type = 'HW',
+                    for_class=my_form.for_class,
+                )
+                    form.instance.upload = upload
+                form.instance.save()
             return redirect('student_dashboard')
         else:
             for i, form in enumerate(formset.forms):
