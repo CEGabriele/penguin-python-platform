@@ -38,13 +38,6 @@ def student_dashboard(request):
     hw_form = HomeworkUpload()
     cw_form = ClassworkUpload()
 
-    """
-    with open('/Users/claire/Desktop/test.py', 'r', encoding='utf-8') as f:
-        code = f.read()
-
-    feedback = get_ai_review(code, "This is a student's code for the game rock, paper, scissors. Find any errors in their code")
-    print(feedback)
-    """
     
     if request.method == 'POST':
         if 'upload_hw' in request.POST:
@@ -176,8 +169,6 @@ def student_assignments(request):
                    for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
 
     }
-
-    print(class_forms)
 
     return render(request, 'student_assignments.html', {'class_forms':class_forms})
 
