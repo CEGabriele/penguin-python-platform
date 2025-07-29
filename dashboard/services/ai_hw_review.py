@@ -27,10 +27,12 @@ def get_ai_review(code: str, question_id: int) -> str:
                 "content": instructions
             }
         ],
-            max_completion_tokens=1000,
+            max_completion_tokens=2000,
             model = settings.AZURE_OPENAI_DEPLOYMENT_NAME
 
         
     )
+    print("Full Response:", response)
+    print("AI feedback", response.choices[0].message.content)
 
     return response.choices[0].message.content

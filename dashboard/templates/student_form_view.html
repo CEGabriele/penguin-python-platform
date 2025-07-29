@@ -43,18 +43,23 @@
                             },
                             body: JSON.stringify({ code: code, question_id: id })
                         })
-                        .then(response => response.json())
-                        .then(data => {
+                        .then(async response => {
+                            let data;
+                            try {
+                                data = await response.json();
+                            } catch (err) {
+                                feedbackDiv.innerHTML = "<p>Invalid server response (not JSON).</p>";
+                                console.error("JSON parse error:", err);
+                                return;
+                            }
+                        
                             if (data.feedback) {
                                 feedbackDiv.innerText = data.feedback;
                             } else {
                                 feedbackDiv.innerText = "Error: " + (data.error || "Something went wrong.");
+                                console.error("Server error payload:", data);
                             }
                         })
-                        .catch(error => {
-                            console.error("Error:", error);
-                            feedbackDiv.innerHTML = "<p>An error occurred while checking the code.</p>";
-                        });
 
                     });
                 });

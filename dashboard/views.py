@@ -8,6 +8,7 @@ from operator import attrgetter
 from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
 import json
+import traceback
 
 from dashboard.services.ai_hw_review import get_ai_review
 
@@ -371,6 +372,7 @@ def teacher_class_view(request, class_code):
     })
 @csrf_exempt
 def get_code_feedback(request):
+    
     if request.method == 'POST':
         try:
             body_unicode = request.body.decode('utf-8')
@@ -379,12 +381,15 @@ def get_code_feedback(request):
             code = data.get("code")
             question_id = data.get("question_id")
 
-            
-
             if not code or not question_id:
                 return JsonResponse({"error": "Missing code or question_id"}, status=400)
 
             feedback = get_ai_review(code, question_id)
+            
+            if not feedback:
+                return JsonResponse({"error": "AI returned no feedback."}, status = 400)
+            print("AI results", feedback)
             return JsonResponse({"feedback": feedback})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            tb = traceback.format_exc()
+            return JsonResponse({"error": str(e), "traceback": tb}, status=400)
