@@ -97,9 +97,15 @@ button{
 
 .download-link {
     display: inline-block;
-    padding: 6px 12px;
-    color: black;
-    border-radius: 6px;
+    margin-top: 4px;
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    border-radius: 4px;
     text-decoration: none;
-    font-size: 0.9rem;
+}
+
+.download-link:hover {
+    background-color: #0056b3;
 }
