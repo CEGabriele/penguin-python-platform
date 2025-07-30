@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkQuestionForm, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerFormSet, StudentAnswerForm
-from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, QuestionChoices, StudentQuestionResponse
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm
+from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -107,6 +107,32 @@ def teacher_dashboard(request):
         'teacher': teacher,
         'classes': class_info
     })
+
+@login_required
+@teacher_required
+def admin_dashboard(request):
+    student_form = StudentCreationForm()
+    teacher_form = TeacherCreationForm()
+    if request.user.teacher.is_admin:
+        
+        if request.method == 'POST':
+            if 'create_student' in request.POST:
+                student_form = StudentCreationForm(request.POST)
+                if student_form.is_valid():
+                    student_form.save()
+                    return redirect('admin_dashboard')
+            elif 'create_teacher' in request.POST:
+                teacher_form = TeacherCreationForm(request.POST)
+                if teacher_form.is_valid():
+                    teacher_form.save()
+                    return redirect('admin_dashboard')
+        
+        
+        
+        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form} )
+    else:
+        return redirect('login')
+
 
 @login_required
 @teacher_required

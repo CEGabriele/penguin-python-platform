@@ -15,6 +15,7 @@ def generate_code():
 
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
+    is_admin = models.BooleanField(default = False, help_text = "Check this box if this teacher is an admin. This will give them the ability to create new classes, students, and teachers")
 
     def __str__(self):
         return self.user.get_full_name()
@@ -25,7 +26,7 @@ class Class(models.Model):
     time = models.TimeField()
     code = models.CharField(unique = True, default = generate_code())
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
-
+    location = models.CharField(default = "Lexington")
     def __str__(self):
         return self.name
 

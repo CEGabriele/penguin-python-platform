@@ -1,5 +1,5 @@
 from django import forms
-from .models import Uploads, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
+from .models import User, Uploads, Student, Teacher, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
 
 class HomeworkUpload(forms.ModelForm):
@@ -77,6 +77,39 @@ class StudentAnswerForm(forms.ModelForm):
         else:
             self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
             self.fields['selected_choice'].required = False
+
+class StudentCreationForm(forms.Form):
+    username = forms.CharField(max_length=150, label='Username')
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    password = forms.CharField(widget=forms.PasswordInput, label='Password')
+    def save(self , commit=True):
+        user = User.objects.create_user(
+            username = self.cleaned_data['username'],
+            first_name = self.cleaned_data['first_name'],
+            last_name = self.cleaned_data['last_name'],
+            password = self.cleaned_data['password']
+        )
+        user.save()
+        Student.objects.create(user=user)
+        return user
+
+class TeacherCreationForm(forms.Form):
+    username = forms.CharField(max_length=150, label='Username')
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    password = forms.CharField(widget=forms.PasswordInput, label='Password')
+    is_admin = forms.BooleanField(required=False, label='Is Admin')
+    def save(self , commit=True):
+        user = User.objects.create_user(
+            username = self.cleaned_data['username'],
+            first_name = self.cleaned_data['first_name'],
+            last_name = self.cleaned_data['last_name'],
+            password = self.cleaned_data['password']
+        )
+        user.save()
+        Teacher.objects.create(user=user, is_admin=self.cleaned_data.get('is_admin', False))
+        return user
 
 
 HomeworkQuestionFormSet = modelformset_factory(
