@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm
 from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -113,6 +113,7 @@ def teacher_dashboard(request):
 def admin_dashboard(request):
     student_form = StudentCreationForm()
     teacher_form = TeacherCreationForm()
+    class_form = ClassCreationForm()
     if request.user.teacher.is_admin:
         
         if request.method == 'POST':
@@ -129,7 +130,7 @@ def admin_dashboard(request):
         
         
         
-        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form} )
+        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form} )
     else:
         return redirect('login')
 

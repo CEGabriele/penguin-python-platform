@@ -98,21 +98,41 @@ class TeacherCreationForm(forms.Form):
     username = forms.CharField(max_length=150, label='Username')
     first_name = forms.CharField(max_length=30, label='First Name')
     last_name = forms.CharField(max_length=30, label='Last Name')
-    password = forms.CharField(widget=forms.PasswordInput, label='Password')
     email = forms.EmailField(max_length=254, label='Email')
+    password = forms.CharField(widget=forms.PasswordInput, label='Password')
     is_admin = forms.BooleanField(required=False, label='Is Admin')
     def save(self , commit=True):
         user = User.objects.create_user(
             username = self.cleaned_data['username'],
             first_name = self.cleaned_data['first_name'],
             last_name = self.cleaned_data['last_name'],
+            email = self.cleaned_data['email'],
             password = self.cleaned_data['password'],
-            email = self.cleaned_data['email']
+            
         )
         user.save()
         Teacher.objects.create(user=user, is_admin=self.cleaned_data.get('is_admin', False))
         return user
 
+class ClassCreationForm(forms.ModelForm):
+    students = forms.ModelMultipleChoiceField(
+        queryset=Student.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label='Students'
+    )
+
+    class Meta:
+        model = Class
+        fields = ['name', 'day', 'time', 'teacher', 'location']
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            
+            students = self.cleaned_data.get('students')
+            students.update(classes=instance)
+        return instance
 
 HomeworkQuestionFormSet = modelformset_factory(
     HomeworkQuestion, 

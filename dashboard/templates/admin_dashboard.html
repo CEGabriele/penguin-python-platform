@@ -13,7 +13,7 @@
         <button type="submit">Logout</button>
     </form>
 
-    
+
     <h2>Create Student</h2>
     <form method="post">
     {% csrf_token %}
@@ -29,6 +29,14 @@
     {{ teacher_form.as_p }}
     <button type="submit" name="create_teacher">Create Teacher</button>
     </form>
+    
+    <hr>
 
+    <h2>Create a New Class</h2>
+    <form method="post">
+    {% csrf_token %}
+    {{ class_form.as_p }}
+    <button type="submit">Create Class</button>
+    </form>
 </body>
 </html>
