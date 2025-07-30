@@ -10,8 +10,7 @@ class Parent (models.Model):
     password = models.CharField()
 """
 
-def generate_code():
-    return uuid.uuid4().hex[:6].upper()
+
 
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
@@ -24,11 +23,20 @@ class Class(models.Model):
     name = models.CharField(max_length = 100)
     day = models.CharField(max_length = 9)
     time = models.TimeField()
-    code = models.CharField(unique = True, default = generate_code())
+    code = models.CharField(unique = True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
     location = models.CharField(default = "Lexington")
+    
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_code()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return self.name
+    
+    def generate_code():
+        return uuid.uuid4().hex[:6].upper()
 
 class Student (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
