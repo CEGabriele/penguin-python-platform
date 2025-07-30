@@ -1,6 +1,7 @@
 from django import forms
 from .models import User, Uploads, Student, Teacher, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
+from django_select2.forms import ModelSelect2MultipleWidget
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -117,8 +118,9 @@ class TeacherCreationForm(forms.Form):
 class ClassCreationForm(forms.ModelForm):
     students = forms.ModelMultipleChoiceField(
         queryset=Student.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        label='Students'
+        widget=ModelSelect2MultipleWidget(
+            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
+        ),
     )
 
     class Meta:
@@ -129,9 +131,7 @@ class ClassCreationForm(forms.ModelForm):
         instance = super().save(commit=False)
         if commit:
             instance.save()
-            
-            students = self.cleaned_data.get('students')
-            students.update(classes=instance)
+            self.save_m2m()
         return instance
 
 HomeworkQuestionFormSet = modelformset_factory(

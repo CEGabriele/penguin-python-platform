@@ -9,7 +9,6 @@ from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
 import json
 import traceback
-
 from dashboard.services.ai_hw_review import get_ai_review
 
 def student_required(view_function):
@@ -128,7 +127,11 @@ def admin_dashboard(request):
                     teacher_form.save()
                     return redirect('admin_dashboard')
         
-        
+            if 'create_class' in request.POST:
+                class_form = ClassCreationForm(request.POST)
+                if class_form.is_valid():
+                    class_form.save()
+                    return redirect('admin_dashboard')
         
         return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form} )
     else:
@@ -420,3 +423,4 @@ def get_code_feedback(request):
         except Exception as e:
             tb = traceback.format_exc()
             return JsonResponse({"error": str(e), "traceback": tb}, status=400)
+    

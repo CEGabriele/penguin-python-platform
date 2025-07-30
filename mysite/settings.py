@@ -14,6 +14,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,7 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashboard',
-    'django_icons'
+    'django_icons',
+    'django_select2',
 ]
 
 DJANGO_ICONS = {
