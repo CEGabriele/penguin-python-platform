@@ -131,7 +131,10 @@ class ClassCreationForm(forms.ModelForm):
         instance = super().save(commit=False)
         if commit:
             instance.save()
-            self.save_m2m()
+            students = self.cleaned_data.get('students')
+            if students:
+                for student in students:
+                    student.classes.add(instance)
         return instance
 
 HomeworkQuestionFormSet = modelformset_factory(

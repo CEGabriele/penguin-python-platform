@@ -35,7 +35,7 @@ class Class(models.Model):
     def __str__(self):
         return self.name
     
-    def generate_code():
+    def generate_code(self):
         return uuid.uuid4().hex[:6].upper()
 
 class Student (models.Model):
