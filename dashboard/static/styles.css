@@ -190,3 +190,27 @@ button:hover {
 .select2-container {
     width: 75% !important;
 }
+  
+  
+.content {
+    display: none;
+}
+
+.collapsible:after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: white;
+    float: right;
+    margin-left: 5px;
+  }
+  
+  .active:after {
+    content: "\2796"; /* Unicode character for "minus" sign (-) */
+    color: white
+  }
+.collapsible{
+    background-color: gray;
+}
+.collapsible:hover {
+    background-color: lightgray;
+}
