@@ -215,12 +215,8 @@ def create_assignment(request):
 def student_assignments(request):
     student = Student.objects.get(user = request.user)
     classes = student.classes.all()
-    assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
     forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
 
-    class_assignments = {class_obj: list(grouped_assignments)
-                         for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
-    
     class_forms = {class_obj: list(grouped_assignments)
                    for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
 
@@ -234,13 +230,9 @@ def student_assignments(request):
 def teacher_assignments_list(request):
     teacher = Teacher.objects.get(user = request.user)
     classes = teacher.classes.all()
-    assignments = Assignment.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
     forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
 
-    class_assignments = {class_obj: list(grouped_assignments)
-                         for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))}
-    
-    
+
     class_forms = {class_obj: list(grouped_assignments)
                    for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
     }
