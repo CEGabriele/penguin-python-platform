@@ -303,7 +303,7 @@ def create_homework_form(request):
     teacher = request.user.teacher
 
     if request.method == 'POST':
-        assignment_form = HomeworkFormForm(request.POST)
+        assignment_form = HomeworkFormForm(request.POST, teacher=teacher)
         formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
         if assignment_form.is_valid() and formset.is_valid():
             assignment = assignment_form.save()
@@ -320,7 +320,7 @@ def create_homework_form(request):
                             choice_formset.save()
             return redirect('teacher_dashboard')
     else:
-        assignment_form = HomeworkFormForm()
+        assignment_form = HomeworkFormForm(request.POST, teacher = teacher)
         formset = HomeworkQuestionFormSet(queryset=HomeworkQuestion.objects.none(), prefix='form')
 
     choice_formsets = []

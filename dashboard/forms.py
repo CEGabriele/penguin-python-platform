@@ -38,6 +38,7 @@ class AssignmentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if teacher:
             self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
+            print(self.fields['for_class'].queryset)
         self.fields['for_class'].label_from_instance = lambda obj: obj.name
 
 class AssignmentUpload(forms.ModelForm):
@@ -49,6 +50,13 @@ class HomeworkFormForm(forms.ModelForm):
     class Meta:
         model = HomeworkForm
         fields = ['name', 'for_class', 'description', 'due_date']
+    def __init__(self, *args, **kwargs):
+        teacher = kwargs.pop('teacher', None)
+        super().__init__(*args, **kwargs)
+        if teacher:
+            self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
+            print(self.fields['for_class'].queryset)
+        self.fields['for_class'].label_from_instance = lambda obj: obj.name
 class HomeworkQuestionForm(forms.ModelForm):
     class Meta:
         model = HomeworkQuestion
