@@ -157,7 +157,7 @@ def admin_class_view(request, class_id):
             
             return redirect('admin_class_view', class_id = class_obj.id)
 
-        return render(request, 'admin_class_view.html', {'class': class_obj, 'student_form': student_form})
+        return render(request, 'admin_class_view.html', {'class_obj': class_obj, 'student_form': student_form})
     else:
         return redirect('teacher_dashboard')
     

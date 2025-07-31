@@ -7,9 +7,9 @@
     {{student_form.media}}
 </head>
 <body>
-    <h2>Manage Students for {{ class_obj.class_name }}</h2>
-
-
+    <h1>Class: {{ class_obj.name }}</h1>
+    <p> Teacher: {{ class_obj.teacher.user.get_full_name }}</p>
+    <h2>Manage Students</h2>
     <form method="post">
         {% csrf_token %}
         {{ student_form.as_p }}
