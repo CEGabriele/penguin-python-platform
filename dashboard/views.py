@@ -113,6 +113,8 @@ def admin_dashboard(request):
     student_form = StudentCreationForm()
     teacher_form = TeacherCreationForm()
     class_form = ClassCreationForm()
+
+    classes = Class.objects.all().order_by('location', 'day', 'time')
     if request.user.teacher.is_admin:
         
         if request.method == 'POST':
@@ -133,7 +135,7 @@ def admin_dashboard(request):
                     class_form.save()
                     return redirect('admin_dashboard')
         
-        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form} )
+        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes} )
     else:
         return redirect('login')
 

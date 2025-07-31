@@ -8,6 +8,7 @@ body {
     background-color: #f7f7f7;
     text-align: center;
     margin: 4vh;
+    align-items: center;
 }
 
 .class-grid{
@@ -204,13 +205,7 @@ button:hover {
     margin-left: 5px;
   }
   
-  .active:after {
+.active:after {
     content: "\2796"; /* Unicode character for "minus" sign (-) */
     color: white
-  }
-.collapsible{
-    background-color: gray;
-}
-.collapsible:hover {
-    background-color: lightgray;
 }
