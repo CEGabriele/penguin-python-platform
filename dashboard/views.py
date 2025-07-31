@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import traceback
 from dashboard.services.ai_hw_review import get_ai_review
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Count, Q
 from collections import defaultdict
 
 def student_required(view_function):
@@ -247,7 +247,7 @@ def student_assignments(request):
 def teacher_assignments_list(request):
     teacher = Teacher.objects.get(user = request.user)
     classes = teacher.classes.all()
-    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
+    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date').annotate(num_submissions = Count('questions__studentquestionresponse', distinct=True))
 
 
     class_forms = {class_obj: list(grouped_assignments)
@@ -407,14 +407,20 @@ def student_form_view(request, form_id):
 def responses_view(request, form_id):
     form = get_object_or_404(HomeworkForm, id = form_id)
     questions = form.questions.all()
-
+    submission_count = (
+        StudentQuestionResponse.objects
+        .filter(question__form=form)
+        .values('student')
+        .distinct()
+        .count()
+    )
     question_data = []
 
     for question in questions:
         responses = StudentQuestionResponse.objects.filter(question = question)
         question_data.append({'question':question, 'responses':responses})
 
-    return render(request, 'responses_view.html', {'form':form, 'question_data' : question_data})
+    return render(request, 'responses_view.html', {'form':form, 'question_data' : question_data, 'submission_count':submission_count})
 
 @login_required
 @student_required

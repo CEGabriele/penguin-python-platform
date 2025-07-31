@@ -19,6 +19,7 @@
                             <div class = "assignment-card">    
                                 <h3>{{assignment.name}}</h3>
                                 <p>Due {{ assignment.due_date}}</p>
+                                <p>Submissions: {{assignment.num_submissions}}</p>
                                 <a href = "{% url 'responses_view' assignment.id%}">View assignment details</a>
                             </div>
                         {%endfor%}
