@@ -73,7 +73,7 @@
         <button type = "button" class = "collapsible">{{ group.grouper }}</button> <!-- the location name -->
             <div class="content">
                 {% for class in group.list %}
-                    <p>{{ class.name }} ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}<p>
+                    <p><a href = "{% url 'admin_class_view' class.id%}">{{ class.name }}</a> ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}<p>
                 {% endfor %}
             </div>
         

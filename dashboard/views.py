@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm
+from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm
 from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -138,6 +138,29 @@ def admin_dashboard(request):
         return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes} )
     else:
         return redirect('login')
+
+@login_required
+@teacher_required
+def admin_class_view(request, class_id):
+    if request.user.teacher.is_admin:
+        class_obj = get_object_or_404(Class, id=class_id)
+        student_form = ClassStudentUpdateForm(request.POST or None, instance = class_obj)
+
+        if request.method and student_form.is_valid():
+            students = student_form.cleaned_data['students']
+
+            for student in class_obj.students.all():
+                student.classes.remove(class_obj)
+
+            for student in students:
+                student.classes.add(class_obj)
+            
+            return redirect('admin_class_view', class_id = class_obj.id)
+
+        return render(request, 'admin_class_view.html', {'class': class_obj, 'student_form': student_form})
+    else:
+        return redirect('teacher_dashboard')
+    
 
 
 @login_required
@@ -425,4 +448,3 @@ def get_code_feedback(request):
         except Exception as e:
             tb = traceback.format_exc()
             return JsonResponse({"error": str(e), "traceback": tb}, status=400)
-    

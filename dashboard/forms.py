@@ -136,6 +136,21 @@ class ClassCreationForm(forms.ModelForm):
                 for student in students:
                     student.classes.add(instance)
         return instance
+    
+class ClassStudentUpdateForm(forms.ModelForm):
+    students = forms.ModelMultipleChoiceField(
+        queryset=Student.objects.all(),
+        widget=ModelSelect2MultipleWidget(
+            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
+        ),
+    )
+    class Meta:
+        model = Class
+        fields = ['students']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['students'].initial = self.instance.students.all()
 
 HomeworkQuestionFormSet = modelformset_factory(
     HomeworkQuestion, 

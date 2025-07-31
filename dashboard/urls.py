@@ -1,7 +1,7 @@
 from django.urls import path
 from .models import Student
 from . import views
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, create_assignment, student_assignments, student_assignment_view, teacher_assignments_list, teacher_assignment_detail, create_homework_form, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard
+from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, create_assignment, student_assignments, student_assignment_view, teacher_assignments_list, teacher_assignment_detail, create_homework_form, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view
 
 
 urlpatterns = [
@@ -21,4 +21,5 @@ urlpatterns = [
     path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view"),
     path("get-code-feedback/",get_code_feedback , name="get_code_feedback"),
     path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
+    path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
 ]

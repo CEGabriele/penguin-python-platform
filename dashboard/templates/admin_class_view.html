@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    {{student_form.media}}
+</head>
+<body>
+    <h2>Manage Students for {{ class_obj.class_name }}</h2>
+
+
+    <form method="post">
+        {% csrf_token %}
+        {{ student_form.as_p }}
+        <button type="submit">Update Students</button>
+    </form>
+
+    <br>
+    <a href="{% url 'admin_dashboard' %}"> Back to Dashboard</a>
+
+</body>
+</html>
