@@ -10,6 +10,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import traceback
 from dashboard.services.ai_hw_review import get_ai_review
+from django.db.models import OuterRef, Exists
+from collections import defaultdict
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -215,12 +217,27 @@ def create_assignment(request):
 def student_assignments(request):
     student = Student.objects.get(user = request.user)
     classes = student.classes.all()
-    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date')
 
-    class_forms = {class_obj: list(grouped_assignments)
-                   for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
+    responses = StudentQuestionResponse.objects.filter(
+        student = student,
+        question__form = OuterRef('pk')
+    )
 
-    }
+    forms = (
+        HomeworkForm.objects
+        .filter(for_class__in=classes)
+        .annotate(is_completed=Exists(responses))
+        .order_by('for_class__name', 'due_date')
+    )
+
+    class_forms = defaultdict(lambda: {'completed': [], 'incomplete': []})
+    for form in forms:
+        class_obj = form.for_class
+        if form.is_completed:
+            class_forms[class_obj]['completed'].append(form)
+        else:
+            class_forms[class_obj]['incomplete'].append(form)
+    class_forms = dict(class_forms)
 
     return render(request, 'student_assignments.html', {'class_forms':class_forms})
 
@@ -337,6 +354,9 @@ def student_form_view(request, form_id):
     my_form = HomeworkForm.objects.get(id = form_id)
     questions = list(my_form.questions.all())
     
+    completed = StudentQuestionResponse.objects.filter(student = request.user.student, question__form = my_form).exists()
+    if completed:
+        return redirect ('student_assignments')
     
     initial_data = [{'question': question} for question in questions]
 

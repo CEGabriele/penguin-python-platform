@@ -10,17 +10,32 @@
     <h1>{{request.user.get_short_name}}'s Assignments</h1>
     <div class="class-grid">
     {%if class_forms%}
-        {% for class_obj, grouped_assignments in class_forms.items%}
+        {% for class_obj, grouped_assignments in class_forms.items %}
             <div class = "class-card">
                 <h2>{{class_obj.name}}</h2>
-               
-                    {% for assignment in grouped_assignments%}
-                        <div class = "assignment-card">    
+                <h3>Incomplete Assignments</h3>
+                {%if grouped_assignments.incomplete%}
+                    {% for assignment in grouped_assignments.incomplete%}
+                        <div class = "assignment-card">
                             <h3>{{assignment.name}}</h3>
                             <p>Due {{ assignment.due_date}}</p>
                             <a href = "{% url 'student_form_view' assignment.id%}">View form details</a>
                         </div>
                     {%endfor%}
+                {%else%}
+                    <p>No incomplete assignments</p>
+                {%endif%}
+                <h3>Complete Assignments</h3>
+                {%if grouped_assignments.completed%}
+                    {% for assignment in grouped_assignments.completed%}
+                        <div class = "assignment-card">
+                            <h3>{{assignment.name}}</h3>
+                        </div>
+                    {%endfor%}
+                {%else%}
+                    <p>No complete assignments</p>
+                {%endif%}
+
                 
             </div>
         {%endfor%}
