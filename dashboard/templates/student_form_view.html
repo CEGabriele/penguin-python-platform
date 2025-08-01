@@ -85,6 +85,38 @@
             function isPythonFile(file){
                 return file.name.endsWith('.py') || file.name.endsWith('.ipynb');
             }
+
+            /**
+                * This script handles the functionality of inserting a tab character in textareas when the Tab key is pressed.
+                * It prevents the default behavior of moving focus to the next element.
+            */
+            document.addEventListener("DOMContentLoaded", function(){
+                document.querySelectorAll("textarea").forEach(textarea => {
+                    textarea.addEventListener("keydown", function(event) {
+                        if (event.key === "Tab") {
+                            event.preventDefault();
+                            const start = this.selectionStart;
+                            const end = this.selectionEnd;
+                            this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+                            this.selectionStart = this.selectionEnd = start + 1;
+                        }
+                        
+                    });
+                });
+            });
+            
+            /**
+                * This script prevents the default form submission behavior when the Enter key is pressed in input fields,
+                * except for textareas, to avoid accidental form submission.
+            */
+            document.addEventListener("DOMContentLoaded", function(){
+                document.querySelector("form").addEventListener("keydown", function (event) {
+                    const tag = event.target.tagName.toLowerCase();
+                    if (event.key === "Enter" && tag !== "textarea") {
+                    event.preventDefault();
+                    }
+                });
+            });
         </script>
     </head>
 

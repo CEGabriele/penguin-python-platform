@@ -70,7 +70,7 @@ class StudentAnswerForm(forms.ModelForm):
         model = StudentQuestionResponse
         fields = ['question', 'selected_choice', 'answer_text']
         widgets = {'question' : forms.HiddenInput(), 
-                   'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),
+                   'answer_text': forms.Textarea(attrs={'placeholder': 'Type your answer...'}),
                    'selected_choice':forms.RadioSelect()}
     
     def __init__(self, *args, **kwargs):
