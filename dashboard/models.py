@@ -14,7 +14,7 @@ class Parent (models.Model):
 
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
-    is_admin = models.BooleanField(default = False, help_text = "Check this box if this teacher is an admin. This will give them the ability to create new classes, students, and teachers")
+    is_admin = models.BooleanField(default = False)
 
     def __str__(self):
         return self.user.get_full_name()
@@ -75,13 +75,13 @@ class HomeworkQuestion (models.Model):
     form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE, related_name = 'questions')
     prompt = models.TextField()
     question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
-    uses_ai = models.BooleanField(default = False, help_text = "If this question uses AI to review the answer, check this box. If it does not, leave it unchecked.")
-    extra_ai_instructions = models.TextField(blank = True, help_text = "If this question uses AI to review the answer, you can provide additional instructions for the AI here. The question text will also be provided to the model. If it does not, leave this blank.")
+    uses_ai = models.BooleanField(default = False)
+    extra_ai_instructions = models.TextField(blank = True)
 
 class QuestionChoices (models.Model):
     question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE, related_name = 'choices')
     text = models.TextField()
-    is_correct = models.BooleanField(default = False, help_text = "Check this box if this choice is the correct answer to the question. If it is not, leave it unchecked.")
+    is_correct = models.BooleanField(default = False)
     def __str__(self):
         return self.text
     def setCorrect(self):
