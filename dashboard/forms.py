@@ -58,7 +58,10 @@ class HomeworkFormForm(forms.ModelForm):
 class HomeworkQuestionForm(forms.ModelForm):
     class Meta:
         model = HomeworkQuestion
-        fields = ['prompt', 'question_type']
+        fields = ['prompt', 'question_type', 'uses_ai']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['uses_ai'].label = "Enable student AI review"
 
 class StudentAnswerForm(forms.ModelForm):
     upload = forms.FileField(required=False, widget=forms.ClearableFileInput())
