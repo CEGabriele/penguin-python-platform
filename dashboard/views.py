@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
 from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -115,6 +115,8 @@ def admin_dashboard(request):
     student_form = StudentCreationForm()
     teacher_form = TeacherCreationForm()
     class_form = ClassCreationForm()
+    student_password_form = StudentPasswordResetForm()
+    teacher_password_form = TeacherPasswordResetForm()
 
     classes = Class.objects.all().order_by('location', 'day', 'time')
     if request.user.teacher.is_admin:
@@ -131,13 +133,34 @@ def admin_dashboard(request):
                     teacher_form.save()
                     return redirect('admin_dashboard')
         
-            if 'create_class' in request.POST:
+            elif 'create_class' in request.POST:
                 class_form = ClassCreationForm(request.POST)
                 if class_form.is_valid():
                     class_form.save()
                     return redirect('admin_dashboard')
-        
-        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes} )
+            
+            elif 'reset_student_password' in request.POST:
+                student_password_form = StudentPasswordResetForm(request.POST)
+                if student_password_form.is_valid():
+                    student = student_password_form.cleaned_data['student']
+                    new_password = student_password_form.cleaned_data['new_password']
+                    user = student.user
+                    user.set_password(new_password)
+                    user.save()
+                    return redirect('admin_dashboard')
+            elif 'reset_teacher_password' in request.POST:
+                teacher_password_form = TeacherPasswordResetForm(request.POST)
+                if teacher_password_form.is_valid():
+                    teacher = teacher_password_form.cleaned_data['teacher']
+                    new_password = teacher_password_form.cleaned_data['new_password']
+                    user = teacher.user
+                    user.set_password(new_password)
+                    user.save()
+                    return redirect('admin_dashboard')
+                else:
+                    print("Invalid teacher password form:", teacher_password_form.errors)
+        return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes, 
+                                                        'student_password_form': student_password_form, 'teacher_password_form': teacher_password_form} )
     else:
         return redirect('login')
 

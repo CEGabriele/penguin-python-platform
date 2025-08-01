@@ -1,7 +1,8 @@
 from django import forms
 from .models import User, Uploads, Student, Teacher, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
-from django_select2.forms import ModelSelect2MultipleWidget
+from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
+from .widgets import TeacherSelect2Widget, StudentSelect2Widget
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -162,3 +163,20 @@ StudentAnswerFormSet = modelformset_factory(
     StudentQuestionResponse,
     form = StudentAnswerForm
 )
+
+class StudentPasswordResetForm(forms.Form):
+    student = forms.ModelChoiceField(
+        queryset=Student.objects.all(),
+        label="Student",
+        widget=StudentSelect2Widget
+    )
+    new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
+
+
+class TeacherPasswordResetForm(forms.Form):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.all(),
+        label="Teacher",
+        widget=TeacherSelect2Widget
+    )
+    new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
