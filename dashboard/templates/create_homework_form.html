@@ -36,17 +36,21 @@
             });
 
             formContainer.addEventListener('change', function(e){
-                console.log('Change event:', e.target.name, e.target.value)
                 if (e.target.name.includes ('question_type')){
                     const wrapper = e.target.closest('.question-form');
                     const choiceBlock = wrapper.querySelector('.choice-form-container');
+                    const aiBlock = wrapper.querySelector('.ai-assistance-container');
                     
-                    console.log('wrapper:', wrapper);
-                    console.log('choiceBlock:', choiceBlock);
                     if (e.target.value == 'multiple_choice'){
                         choiceBlock.style.setProperty('display', 'block', 'important');
                     } else {
                         choiceBlock.style.display = 'none';
+                    }
+
+                    if (e.target.value == 'file') {
+                        aiBlock.style.setProperty('display', 'block', 'important');
+                    } else {
+                        aiBlock.style.display = 'none';
                     }
                 }
             });
@@ -74,13 +78,13 @@
                     <input type="text" name="choices_form-${qIndex}-${total}-text" id="id_choices_form-${qIndex}-${total}-text" />
                     <label for="id_choices_form-${qIndex}-${total}-is_correct">Is Correct:</label>
                     <input type="checkbox" name="choices_form-${qIndex}-${total}-is_correct" id="id_choices_form-${qIndex}-${total}-is_correct" />
-                  `;
+                    `;
                   choicesList.appendChild(newChoice);
               
                   totalFormsInput.value = total + 1;
                 }
-              });
-          });
+            });
+        });
     </script>
 </head>
 <body>
@@ -95,7 +99,36 @@
         <div id="question-forms">
             {% for form in formset %}
                 <div class = "question-form">    
-                    {{ form.as_p }}
+                    <p>{{ form.prompt.label_tag }} {{ form.prompt }}</p>
+                    <p>{{ form.question_type.label_tag }} {{ form.question_type }}</p>
+
+                    <div class="ai-assistance-container" style="display: none;">
+                        <p>{{ form.uese_ai.label_tag }} {{ form.uses_ai }}</p>
+                    </div>
+
+                    <div class="choice-form-container" style="display: none;">
+                        <input type="hidden" name="choices_form-__prefix__-TOTAL_FORMS" value="2">
+                        <input type="hidden" name="choices_form-__prefix__-INITIAL_FORMS" value="0">
+                        <input type="hidden" name="choices_form-__prefix__-MIN_NUM_FORMS" value="0">
+                        <input type="hidden" name="choices_form-__prefix__-MAX_NUM_FORMS" value="1000">
+
+                        <div class="choices-list">
+                            <p>
+                                <label for="id_choices_form-__prefix__-0-text">Choice 1:</label>
+                                <input type="text" name="choices_form-__prefix__-0-text" id="id_choices_form-__prefix__-0-text">
+                                <label for="id_choices_form-__prefix__-0-is_correct">Is Correct:</label>
+                                <input type="checkbox" name="choices_form-__prefix__-0-is_correct" id="id_choices_form-__prefix__-0-is_correct">
+                            </p>
+                            <p>
+                                <label for="id_choices_form-__prefix__-1-text">Choice 2:</label>
+                                <input type="text" name="choices_form-__prefix__-1-text" id="id_choices_form-__prefix__-1-text">
+                                <label for="id_choices_form-__prefix__-1-is_correct">Is Correct:</label>
+                                <input type="checkbox" name="choices_form-__prefix__-1-is_correct" id="id_choices_form-__prefix__-1-is_correct">
+                            </p>
+                        </div>
+
+                        <button type=button class="add-choice">Add Option</button>
+                    </div>
                     <button type="button" class="remove-question">Remove Question</button>
                 </div>
                 
@@ -109,29 +142,31 @@
 <div id="empty-form" style = "display:none;">    
     
     <div class="question-form">
-        {{ empty_question_form.as_p }}
+        <p>{{ empty_question_form.prompt.label_tag }} {{ empty_question_form.prompt }}</p>
+        <p>{{ empty_question_form.question_type.label_tag }} {{ empty_question_form.question_type }}</p>
 
-    
+        <div class="ai-assistance-container" style="display: none;">
+            <p>{{ empty_question_form.uses_ai.label_tag }} {{ empty_question_form.uses_ai }}</p>
+        </div>
+
         <div class="choice-form-container" style="display: none;">
             <input type="hidden" name="choices_form-__prefix__-TOTAL_FORMS" value="2">
             <input type="hidden" name="choices_form-__prefix__-INITIAL_FORMS" value="0">
             <input type="hidden" name="choices_form-__prefix__-MIN_NUM_FORMS" value="0">
             <input type="hidden" name="choices_form-__prefix__-MAX_NUM_FORMS" value="1000">
 
-            
-            <div class = "choices-list">
+            <div class="choices-list">
                 <p>
-                <label for="id_choices_form-__prefix__-0-text">Choice 1:</label>
-                <input type="text" name="choices_form-__prefix__-0-text" id="id_choices_form-__prefix__-0-text">
-                <label for="id_choices_form-__prefix__-0-is_correct">Is Correct:</label>
-                <input type="checkbox" name="choices_form-__prefix__-0-is_correct" id="id_choices_form-__prefix__-0-is_correct">
+                    <label for="id_choices_form-__prefix__-0-text">Choice 1:</label>
+                    <input type="text" name="choices_form-__prefix__-0-text" id="id_choices_form-__prefix__-0-text">
+                    <label for="id_choices_form-__prefix__-0-is_correct">Is Correct:</label>
+                    <input type="checkbox" name="choices_form-__prefix__-0-is_correct" id="id_choices_form-__prefix__-0-is_correct">
                 </p>
-
                 <p>
-                <label for="id_choices_form-__prefix__-1-text">Choice 2:</label>
-                <input type="text" name="choices_form-__prefix__-1-text" id="id_choices_form-__prefix__-1-text">
-                <label for="id_choices_form-__prefix__-1-is_correct">Is Correct:</label>
-                <input type="checkbox" name="choices_form-__prefix__-1-is_correct" id="id_choices_form-__prefix__-1-is_correct">
+                    <label for="id_choices_form-__prefix__-1-text">Choice 2:</label>
+                    <input type="text" name="choices_form-__prefix__-1-text" id="id_choices_form-__prefix__-1-text">
+                    <label for="id_choices_form-__prefix__-1-is_correct">Is Correct:</label>
+                    <input type="checkbox" name="choices_form-__prefix__-1-is_correct" id="id_choices_form-__prefix__-1-is_correct">
                 </p>
             </div>
 
