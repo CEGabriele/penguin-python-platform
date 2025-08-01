@@ -49,14 +49,6 @@ class Student (models.Model):
     def __str__(self):
         return self.user.get_full_name()
 
-class Assignment (models.Model):
-    title = models.TextField()
-    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
-    due_date = models.DateField()
-    description = models.TextField()
-    #how do we want teachers to share more information: file or doc? Do they need to share more information or is description enough?
-    #how does this work with the addition of homework forms? 
-
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, AssignmentForm, AssignmentUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm
-from .models import Student, Uploads, Teacher, User, Class, Assignment, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm
+from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -196,21 +196,6 @@ def download_file_view(request, file_id):
         raise Http404("File not found or access denied")
 
 
-@login_required
-@teacher_required
-def create_assignment(request):
-    teacher = Teacher.objects.get(user  = request.user)
-    if request.method == 'POST':
-        form = AssignmentForm(request.POST)
-        if form.is_valid():
-            assignment = form.save()
-        return redirect('teacher_dashboard')
-    else:
-        form = AssignmentForm(teacher = teacher)
-
-        
-    return render(request, 'create_assignment.html', {'form': form})
-
 
 @login_required
 @student_required
@@ -256,54 +241,7 @@ def teacher_assignments_list(request):
 
     return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms})
 
-@login_required
-@student_required
-def student_assignment_view(request, assignment_id):
-    student = request.user.student
-    assignment = get_object_or_404(Assignment, id=assignment_id, for_class__in = student.classes.all())
 
-    
-    form = AssignmentUpload()
-
-    if request.method == 'POST':
-        form = AssignmentUpload(request.POST, request.FILES)
-        if form.is_valid():
-            upload = form.save(commit = False)
-            upload.for_assignment = assignment
-            upload.for_class = assignment.for_class
-            upload.person = request.user
-            upload.file_type = 'HW'
-            upload.save()
-            return redirect('assignment_details', assignment_id = assignment.id)
-
-    uploaded_files = Uploads.objects.filter(
-        person = request.user,
-        for_assignment = assignment
-    ).order_by('-uploaded_at')
-
-    return render(request, 'student_assignment_view.html', {
-        'assignment': assignment,
-        'uploaded_files': uploaded_files,
-        'form': form
-    })
-
-@login_required
-@teacher_required
-def teacher_assignment_detail(request, assignment_id):
-    teacher = request.user.teacher
-    assignment = get_object_or_404(Assignment, id=assignment_id, for_class__teacher=teacher)
-    students = Student.objects.filter(classes=assignment.for_class).distinct()
-
-    student_submissions = []
-    
-    for student in students:
-        files = Uploads.objects.filter(person=student.user, for_assignment=assignment).order_by('-uploaded_at')
-        student_submissions.append((student, files))
-
-    return render(request, 'teacher_assignment_detail.html', {
-        'assignment': assignment,
-        'student_submissions': student_submissions,
-    })
 
 @login_required
 @teacher_required

@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Uploads, Student, Teacher, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
+from .models import User, Uploads, Student, Teacher, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
 from django_select2.forms import ModelSelect2MultipleWidget
 
@@ -28,22 +28,6 @@ class ClassworkUpload(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
-class AssignmentForm(forms.ModelForm):
-    class Meta:
-        model = Assignment
-        fields = ['title', 'description', 'for_class', 'due_date']
-    def __init__(self, *args, **kwargs):
-        teacher = kwargs.pop('teacher', None)
-        super().__init__(*args, **kwargs)
-        if teacher:
-            self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
-        self.fields['for_class'].label_from_instance = lambda obj: obj.name
-
-class AssignmentUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file']
 
 class HomeworkFormForm(forms.ModelForm):
     class Meta:
