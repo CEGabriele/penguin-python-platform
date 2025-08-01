@@ -72,6 +72,8 @@
                   newChoice.innerHTML = `
                     <label for="id_choices_form-${qIndex}-${total}-text">Choice ${total + 1}:</label>
                     <input type="text" name="choices_form-${qIndex}-${total}-text" id="id_choices_form-${qIndex}-${total}-text" />
+                    <label for="id_choices_form-${qIndex}-${total}-is_correct">Is Correct:</label>
+                    <input type="checkbox" name="choices_form-${qIndex}-${total}-is_correct" id="id_choices_form-${qIndex}-${total}-is_correct" />
                   `;
                   choicesList.appendChild(newChoice);
               
@@ -121,11 +123,15 @@
                 <p>
                 <label for="id_choices_form-__prefix__-0-text">Choice 1:</label>
                 <input type="text" name="choices_form-__prefix__-0-text" id="id_choices_form-__prefix__-0-text">
+                <label for="id_choices_form-__prefix__-0-is_correct">Is Correct:</label>
+                <input type="checkbox" name="choices_form-__prefix__-0-is_correct" id="id_choices_form-__prefix__-0-is_correct">
                 </p>
 
                 <p>
                 <label for="id_choices_form-__prefix__-1-text">Choice 2:</label>
                 <input type="text" name="choices_form-__prefix__-1-text" id="id_choices_form-__prefix__-1-text">
+                <label for="id_choices_form-__prefix__-1-is_correct">Is Correct:</label>
+                <input type="checkbox" name="choices_form-__prefix__-1-is_correct" id="id_choices_form-__prefix__-1-is_correct">
                 </p>
             </div>
 

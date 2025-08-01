@@ -169,7 +169,7 @@ HomeworkQuestionFormSet = modelformset_factory(
 HomeworkChoiceFormSet = inlineformset_factory(
     HomeworkQuestion, 
     QuestionChoices, 
-    fields = ['text'], 
+    fields = ['text', 'is_correct'], 
     extra = 2, 
     can_delete = True
 )
