@@ -89,16 +89,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hw_dashboard',
-        'USER': 'postgres',
+        'NAME': 'homework_dashboard_db',
+        'USER': os.getenv("DB_PASSWORD"),
         'PASSWORD': os.getenv("DB_PASSWORD"),
         'HOST': 'localhost',
         'PORT': '5432',
