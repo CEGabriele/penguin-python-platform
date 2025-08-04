@@ -18,9 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 urlpatterns = [
-    path('', lambda request: HttpResponse("Hello from Django!")),
+    path('', lambda request: redirect('/accounts/login/')),
     path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),
     path('accounts/login/', auth_views.LoginView.as_view(), name = 'login'),
