@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse
 
 urlpatterns = [
+    path('', lambda request: HttpResponse("Hello from Django!")),
     path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),
     path('accounts/login/', auth_views.LoginView.as_view(), name = 'login'),
