@@ -3,6 +3,7 @@ from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, As
 from django.forms import modelformset_factory, inlineformset_factory
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .widgets import TeacherSelect2Widget, StudentSelect2Widget
+from datetime import date
 
 class HomeworkUpload(forms.ModelForm):
     class Meta:
@@ -177,3 +178,8 @@ class TeacherPasswordResetForm(forms.Form):
         widget=TeacherSelect2Widget
     )
     new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
+
+class AssignHomeworkDueDateForm(forms.Form):
+    due_date = forms.DateField(initial=date.today, widget=forms.DateInput(attrs={'type': 'date'}))
+    class_id = forms.IntegerField(widget=forms.HiddenInput())
+    template_id = forms.IntegerField(widget=forms.HiddenInput())

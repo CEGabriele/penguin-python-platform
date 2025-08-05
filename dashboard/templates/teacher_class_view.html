@@ -2,23 +2,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <title>{{class.name}} - {{class.day}}</title>
+   <title>{{class.name}} Feed</title>
    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
    <link rel="stylesheet" href="{% static 'styles.css' %}">
    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
+   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 </head>
 
 <body>
-   <h1>{{class.name}} - {{class.day}}</h1>
+   <h1>Class Feed: {{class.name}}</h1>
+   <p>{{class.date}} {{class.time}}</p>
+
+   <h2>Available Homework Templates</h2>
    <ul>
-      {%for student in class.students.all%}
-      <li>{{student.user.get_full_name}}</li>
-      {%empty%}
-      <li>No students</li>
-      {%endfor%}
-   </ul>
-   <h3>{{student}}</h3>
-   <br>
+      {% for template in homework_templates %}
+         <li>
+            <h4>{{template.name}}</h4>
+            <p>{{template.description}}</p>
+
+            <div id = "assign-section-{{template.id}}">
+               <button hx-get="{% url 'get_homework_due_date_form' class.id template.id %}" hx-target="#assign-section-{{template.id}}" hx-swap = "outerHTML"> 
+                  Assign to Class
+               </button>
+            <div>
+
+         </li>
+      {% empty %}
+         <li>No homework templates available.</li>
+      {% endfor %}
+   
+
    <form action="{% url 'teacher_dashboard' %}" method="post" style="display:inline;">
       {% csrf_token %}
       <button type="submit">Return to Dashboard</button>

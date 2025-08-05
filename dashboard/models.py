@@ -98,3 +98,14 @@ class StudentQuestionResponse (models.Model):
     answer_text = models.TextField(blank = True)
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
     upload = models.ForeignKey("dashboard.Uploads", on_delete=models.SET_NULL, null=True, blank=True)
+
+class Material(models.Model):
+    curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE, related_name = "materials")
+    title = models.CharField()
+    description = models.TextField(blank = True)
+    file = models.FileField(upload_to = 'curriculum_materials', null = True)
+    link = models.URLField(blank = True)
+
+class PostedMaterial(models.Model):
+    material = models.ForeignKey(Material, on_delete = models.CASCADE)
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, related_name = "posted_materials")

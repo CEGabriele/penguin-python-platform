@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
-from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm
+from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -407,13 +407,20 @@ def student_class_view(request, class_code):
 @login_required
 @teacher_required
 def teacher_class_view(request, class_code):
-    class_obj = get_object_or_404(Class, code=class_code)
-    teacher = request.user.teacher
-    if teacher != class_obj.teacher:
-        return redirect('teacher_dashboard')
+    class_obj = get_object_or_404(Class, code=class_code, teacher = request.user.teacher)
+    curriculum = class_obj.curriculum
+    print(curriculum)
+    homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
+    curriculum_materials = Material.objects.filter(curriculum = curriculum)
+    assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
+
     return render(request, 'teacher_class_view.html', {
-        'class': class_obj
+        'class': class_obj,
+        'homework_templates': homework_templates,
+        'curriculum_materials': curriculum_materials,
+        'assigned_homeworks': assigned_homeworks
     })
+
 @csrf_exempt
 def get_code_feedback(request):
     
@@ -437,3 +444,32 @@ def get_code_feedback(request):
         except Exception as e:
             tb = traceback.format_exc()
             return JsonResponse({"error": str(e), "traceback": tb}, status=400)
+        
+def get_due_date_form(request, class_id, template_id):
+    form = AssignHomeworkDueDateForm(initial={'class_id': class_id, 'template_id': template_id})
+    return render (request, 'due_date_form.html', {'form': form})
+
+def assign_homework_assignment(request):
+    if request.method == 'POST':
+        form = AssignHomeworkDueDateForm(request.POST)
+        if form.is_valid():
+            class_id = form.cleaned_data['class_id']
+            template_id = form.cleaned_data['template_id']
+            due_date = form.cleaned_data['due_date']
+
+            class_obj = get_object_or_404(Class, id=class_id, teacher = request.user.teacher)
+            template = get_object_or_404(HomeworkTemplate, id=template_id, curriculum = class_obj.curriculum)
+
+            if not class_obj or not template:
+                return HttpResponseBadRequest("Invalid class or template.")
+
+            AssignedHomework.objects.create(
+                for_class=class_obj,
+                template=template,
+                due_date=due_date
+            )
+
+            return HttpResponse("Assigned")
+        else:
+            return render(request, 'partials/due_date_form.html', {'form': form})
+    return HttpResponseBadRequest("Invalid request.")

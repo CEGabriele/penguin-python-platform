@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, student_assignments, teacher_assignments_list, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view, create_homework_template
+from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, student_assignments, teacher_assignments_list, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view, create_homework_template, assign_homework_assignment, get_due_date_form
 
 
 urlpatterns = [
@@ -17,4 +17,6 @@ urlpatterns = [
     path("get-code-feedback/",get_code_feedback , name="get_code_feedback"),
     path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
     path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
+    path('set-due-date/<int:class_id>/<int:template_id>/', get_due_date_form, name="get_homework_due_date_form"),
+    path('assign_homework_assignment', assign_homework_assignment, name="assign_homework_assignment"),
 ]

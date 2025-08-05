@@ -1,0 +1,20 @@
+<head>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</head>
+<body>
+    <div id="assign-section-{{ form.initial.template_id }}">
+        <form 
+          hx-post="{% url 'assign_homework_assignment' %}" 
+          hx-target="#assign-section-{{ form.initial.template_id }}" 
+          hx-swap="outerHTML" 
+          method="post"
+        >
+          {% csrf_token %}
+          <label>Due Date:</label>
+          {{ form.due_date }}
+          {{ form.class_id }}
+          {{ form.template_id }}
+          <button type="submit">Assign</button>
+        </form>
+      </div>
+</body>
