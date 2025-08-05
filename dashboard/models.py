@@ -18,6 +18,12 @@ class Teacher (models.Model):
 
     def __str__(self):
         return self.user.get_full_name()
+    
+class Curriculum(models.Model):
+    name = models.CharField(max_length = 100)
+
+    def __str__(self):
+        return self.name
 
 class Class(models.Model):
     name = models.CharField(max_length = 100)
@@ -26,6 +32,7 @@ class Class(models.Model):
     code = models.CharField(unique = True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
     location = models.CharField(default = "Lexington")
+    curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE, null = True, blank = True)
     
     def save(self, *args, **kwargs):
         if not self.code:
@@ -48,6 +55,7 @@ class Student (models.Model):
 
     def __str__(self):
         return self.user.get_full_name()
+    
 
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
@@ -56,15 +64,17 @@ class Uploads (models.Model):
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
-
-class HomeworkForm (models.Model):
-    name = models.CharField(max_length = 100)
-    #might change to many to many 
-    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
+class HomeworkTemplate(models.Model):
+    name = models.CharField(max_length=100)
+    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
     description = models.TextField()
+
+class AssignedHomework (models.Model):
+    template = models.ForeignKey(HomeworkTemplate, on_delete=models.CASCADE)
+    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
     due_date = models.DateField()
 class HomeworkQuestion (models.Model):
-    form = models.ForeignKey(HomeworkForm, on_delete = models.CASCADE, related_name = 'questions')
+    template = models.ForeignKey(HomeworkTemplate, on_delete = models.CASCADE, related_name = 'questions', null = True)
     prompt = models.TextField()
     question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
     uses_ai = models.BooleanField(default = False)
@@ -83,6 +93,8 @@ class QuestionChoices (models.Model):
 class StudentQuestionResponse (models.Model):
     student = models.ForeignKey(Student, on_delete = models.CASCADE, null = True)
     question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
+    assigned_homework = models.ForeignKey(AssignedHomework, on_delete = models.CASCADE, null = True)
+    
     answer_text = models.TextField(blank = True)
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
     upload = models.ForeignKey("dashboard.Uploads", on_delete=models.SET_NULL, null=True, blank=True)

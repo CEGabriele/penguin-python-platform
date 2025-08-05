@@ -9,7 +9,8 @@
     <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
 </head>
 <body>
-<h1> Results for: {{form.name}}</h1>
+<h1> Results for: {{assigned.template.name}}</h1>
+<p>Class: {{assigned.for_class.name}}</p>
 <p>Submissions: {{submission_count}}</p>
 
 {% for item in question_data%}
@@ -23,7 +24,7 @@
                         <p>Selected: {{response.selected_choice}}</p>
                     {% elif response.question.question_type == "short" %}
                         <p>Response:</p>
-                        {{response.answer_text}}
+                        <pre>{{response.answer_text}}</pre>
                     {% elif response.question.question_type == "file" %}
                         <div class = "file-card">
                             <div class='file-icon'>

@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>{{request.user.get_short_name}}'s Posted Assignments</h1>
-    <a href = {%url 'create_homework_form'%}>Create New Homework Form</a>
+    <a href = {%url 'create_homework_template'%}>Create New Homework Form</a>
     <div class="class-grid">
         {%if class_forms%}
             {% for class_obj, grouped_assignments in class_forms.items%}
@@ -17,7 +17,7 @@
                    
                         {% for assignment in grouped_assignments%}
                             <div class = "assignment-card">    
-                                <h3>{{assignment.name}}</h3>
+                                <h3>{{assignment.template.name}}</h3>
                                 <p>Due {{ assignment.due_date}}</p>
                                 <p>Submissions: {{assignment.num_submissions}}</p>
                                 <a href = "{% url 'responses_view' assignment.id%}">View assignment details</a>

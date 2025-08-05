@@ -17,7 +17,7 @@
                 {%if grouped_assignments.incomplete%}
                     {% for assignment in grouped_assignments.incomplete%}
                         <div class = "assignment-card">
-                            <h3>{{assignment.name}}</h3>
+                            <h3>{{assignment.template.name}}</h3>
                             <p>Due {{ assignment.due_date}}</p>
                             <a href = "{% url 'student_form_view' assignment.id%}">View form details</a>
                         </div>
@@ -29,7 +29,7 @@
                 {%if grouped_assignments.completed%}
                     {% for assignment in grouped_assignments.completed%}
                         <div class = "assignment-card">
-                            <h3>{{assignment.name}}</h3>
+                            <h3>{{assignment.template.name}}</h3>
                         </div>
                     {%endfor%}
                 {%else%}

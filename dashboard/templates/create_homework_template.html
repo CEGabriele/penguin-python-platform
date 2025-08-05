@@ -88,10 +88,10 @@
     </script>
 </head>
 <body>
-    <form method="post" action = "{%url 'create_homework_form'%}">
+    <form method="post" action = "{%url 'create_homework_template'%}">
         {% csrf_token %}
         
-        {{ assignment_form.as_p }}
+        {{ template_form.as_p }}
 
         {{ formset.management_form }}
 

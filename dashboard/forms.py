@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Uploads, Student, Teacher, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
+from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, AssignedHomework, HomeworkQuestion, Curriculum, QuestionChoices, StudentQuestionResponse
 from django.forms import modelformset_factory, inlineformset_factory
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .widgets import TeacherSelect2Widget, StudentSelect2Widget
@@ -30,16 +30,13 @@ class ClassworkUpload(forms.ModelForm):
             instance.save()
         return instance
 
-class HomeworkFormForm(forms.ModelForm):
+class HomeworkTemplateForm(forms.ModelForm):
     class Meta:
-        model = HomeworkForm
-        fields = ['name', 'for_class', 'description', 'due_date']
+        model = HomeworkTemplate
+        fields = ['name', 'description', 'curriculum']
     def __init__(self, *args, **kwargs):
-        teacher = kwargs.pop('teacher', None)
         super().__init__(*args, **kwargs)
-        if teacher:
-            self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
-        self.fields['for_class'].label_from_instance = lambda obj: obj.name
+        self.fields['curriculum'].label_from_instance = lambda obj: obj.name
 class HomeworkQuestionForm(forms.ModelForm):
     class Meta:
         model = HomeworkQuestion

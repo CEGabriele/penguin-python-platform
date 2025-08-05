@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>{{ my_form.name }}</title>
+        <title>{{ assigned..name }}</title>
         <link rel="stylesheet" href="{% static 'styles.css' %}">
         <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
         <script>
@@ -122,9 +122,9 @@
 
 <body>
 
-    <h2>{{ my_form.name }}</h2>
-    <p>{{ my_form.description }}</p>
-    <p>Due {{ my_form.due_date }}</p>
+    <h2>{{assigned.template.name }}</h2>
+    <p>{{ assigned.template.description }}</p>
+    <p>Due {{ assigned.due_date }}</p>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ formset.management_form }}

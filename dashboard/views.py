@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkFormForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
-from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, HomeworkForm, StudentQuestionResponse
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
+from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -226,28 +226,27 @@ def student_assignments(request):
     student = Student.objects.get(user = request.user)
     classes = student.classes.all()
 
-    responses = StudentQuestionResponse.objects.filter(
-        student = student,
-        question__form = OuterRef('pk')
-    )
+    assignments = AssignedHomework.objects.filter(for_class__in=classes).select_related('template', 'for_class')
 
-    forms = (
-        HomeworkForm.objects
-        .filter(for_class__in=classes)
-        .annotate(is_completed=Exists(responses))
-        .order_by('for_class__name', 'due_date')
+    completed_assignments = set(
+        StudentQuestionResponse.objects
+        .filter(student=student)
+        .values_list('assigned_homework_id', flat=True)
+        .distinct()
     )
 
     class_forms = defaultdict(lambda: {'completed': [], 'incomplete': []})
-    for form in forms:
-        class_obj = form.for_class
-        if form.is_completed:
-            class_forms[class_obj]['completed'].append(form)
-        else:
-            class_forms[class_obj]['incomplete'].append(form)
-    class_forms = dict(class_forms)
 
-    return render(request, 'student_assignments.html', {'class_forms':class_forms})
+    for assigned in assignments:
+        class_obj = assigned.for_class
+        if assigned.id in completed_assignments:
+            class_forms[class_obj]['completed'].append(assigned)
+        else:
+            class_forms[class_obj]['incomplete'].append(assigned)
+
+    return render(request, 'student_assignments.html', {
+        'class_forms': dict(class_forms)
+    })
 
 
 @login_required
@@ -255,11 +254,16 @@ def student_assignments(request):
 def teacher_assignments_list(request):
     teacher = Teacher.objects.get(user = request.user)
     classes = teacher.classes.all()
-    forms = HomeworkForm.objects.filter(for_class__in = classes).order_by('for_class__name', 'due_date').annotate(num_submissions = Count('questions__studentquestionresponse', distinct=True))
-
+    assignments = (
+        AssignedHomework.objects
+        .filter(for_class__in = classes)
+        .select_related('template', 'for_class')
+        .annotate(num_submissions = Count('studentquestionresponse__student', distinct=True))
+        .order_by('for_class__name', 'due_date')
+    )
 
     class_forms = {class_obj: list(grouped_assignments)
-                   for class_obj, grouped_assignments in groupby(forms, key = attrgetter('for_class'))
+                   for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))
     }
 
     return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms})
@@ -268,20 +272,18 @@ def teacher_assignments_list(request):
 
 @login_required
 @teacher_required
-def create_homework_form(request):
-
-    teacher = request.user.teacher
+def create_homework_template(request):
 
     if request.method == 'POST':
-        assignment_form = HomeworkFormForm(request.POST, teacher=teacher)
+        template_form = HomeworkTemplateForm(request.POST)
         formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
-        if assignment_form.is_valid() and formset.is_valid():
-            assignment = assignment_form.save()
+        if template_form.is_valid() and formset.is_valid():
+            template = template_form.save()
 
             for question_form in formset:
                 if question_form.cleaned_data and not question_form.cleaned_data.get('DELETE', False):
                     question = question_form.save(commit = False)
-                    question.form = assignment
+                    question.template = template
                     question.save()
 
                     if question.question_type == 'multiple_choice':
@@ -290,7 +292,7 @@ def create_homework_form(request):
                             choice_formset.save()
             return redirect('teacher_dashboard')
     else:
-        assignment_form = HomeworkFormForm(teacher = teacher)
+        template_form = HomeworkTemplateForm()
         formset = HomeworkQuestionFormSet(queryset=HomeworkQuestion.objects.none(), prefix='form')
 
     choice_formsets = []
@@ -302,8 +304,8 @@ def create_homework_form(request):
     formset_with_choices = zip(formset.forms, choice_formsets)
     empty_question_form = formset.empty_form
 
-    return render(request, 'create_homework_form.html', {
-        'assignment_form': assignment_form,
+    return render(request, 'create_homework_template.html', {
+        'template_form': template_form,
         'formset': formset,
         'formset_with_choices': formset_with_choices,
         'empty_question_form': empty_question_form,
@@ -311,11 +313,12 @@ def create_homework_form(request):
 
 @login_required
 @student_required
-def student_form_view(request, form_id):
-    my_form = HomeworkForm.objects.get(id = form_id)
+def student_form_view(request, assigned_hw_id):
+    assigned = get_object_or_404(AssignedHomework, id=assigned_hw_id)
+    my_form = assigned.template
     questions = list(my_form.questions.all())
     
-    completed = StudentQuestionResponse.objects.filter(student = request.user.student, question__form = my_form).exists()
+    completed = StudentQuestionResponse.objects.filter(student = request.user.student, assigned_homework = assigned).exists()
     if completed:
         return redirect ('student_assignments')
     
@@ -338,7 +341,7 @@ def student_form_view(request, form_id):
             for form, question in zip(formset.forms, questions):
                 form.instance.student = request.user.student
                 form.instance.question = question
-                
+                form.instance.assigned_homework = assigned
                 
                 uploaded_file = form.cleaned_data.get('upload')
                 
@@ -347,7 +350,7 @@ def student_form_view(request, form_id):
                     file=uploaded_file,
                     person=request.user,
                     file_type = 'HW',
-                    for_class=my_form.for_class,
+                    for_class=assigned.for_class,
                 )
                     form.instance.upload = upload
                 form.instance.save()
@@ -361,16 +364,17 @@ def student_form_view(request, form_id):
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
 
-    return render(request, 'student_form_view.html', {'my_form':my_form, 'formset':formset})
+    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset})
 
 @login_required
 @teacher_required
-def responses_view(request, form_id):
-    form = get_object_or_404(HomeworkForm, id = form_id)
-    questions = form.questions.all()
+def responses_view(request, assigned_hw_id):
+    assigned = get_object_or_404(AssignedHomework, id = assigned_hw_id)
+    template = assigned.template
+    questions = template.questions.all()
     submission_count = (
         StudentQuestionResponse.objects
-        .filter(question__form=form)
+        .filter(assigned_homework=assigned)
         .values('student')
         .distinct()
         .count()
@@ -378,10 +382,16 @@ def responses_view(request, form_id):
     question_data = []
 
     for question in questions:
-        responses = StudentQuestionResponse.objects.filter(question = question)
-        question_data.append({'question':question, 'responses':responses})
+        responses = StudentQuestionResponse.objects.filter(
+            question = question, 
+            assigned_homework = assigned
+        )
+        question_data.append({
+            'question':question, 
+            'responses':responses
+        })
 
-    return render(request, 'responses_view.html', {'form':form, 'question_data' : question_data, 'submission_count':submission_count})
+    return render(request, 'responses_view.html', {'assigned':assigned, 'question_data' : question_data, 'submission_count':submission_count})
 
 @login_required
 @student_required
