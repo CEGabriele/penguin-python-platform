@@ -10,11 +10,12 @@
 </head>
 
 <body>
-   <h1>Class View: {{class.name}}</h1>
+   <h1>{{class.name}}</h1>
    <p>{{class.day}} - {{class.time}}</p>
 
    
    <div class = "class-feed">
+      <h1>Class Materials</h1>
       <h2>Available Homework Templates</h2>
       {% for template in homework_templates %}
          <div class = "feed-card">
@@ -56,7 +57,26 @@
         {% endfor %}
 
    </div>
-
+   
+   <div class = 'class-info'>
+      <h1>Class Info</h1>
+      <h2>Students</h2>
+      <div class="student-grid">
+         {% for student in students%}
+             <div class = "student-card">
+                  <a href="{% url 'view_student' student.user.username%}"> {{student.user.get_full_name|default:student.user.username}}</a>
+             </div>
+         {%endfor%}
+     </div>
+    <h2>Assigned Assignments</h2>
+     {% for assignment in assigned_homeworks%}
+         <div class = "assignment-card">    
+            <h3>{{assignment.template.name}}</h3>
+            <p>Due {{ assignment.due_date}}</p>
+            <a href = "{% url 'responses_view' assignment.id%}">View assignment details</a>
+         </div>
+      {%endfor%}
+   </div>
 
    <form action="{% url 'teacher_dashboard' %}" method="post" style="display:inline;">
       {% csrf_token %}

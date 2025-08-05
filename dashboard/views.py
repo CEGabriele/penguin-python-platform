@@ -413,11 +413,14 @@ def teacher_class_view(request, class_code):
     curriculum_materials = Material.objects.filter(curriculum = curriculum)
     assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
 
+    students = class_obj.students.all()
+
     return render(request, 'teacher_class_view.html', {
         'class': class_obj,
         'homework_templates': homework_templates,
         'curriculum_materials': curriculum_materials,
-        'assigned_homeworks': assigned_homeworks
+        'assigned_homeworks': assigned_homeworks,
+        'students': students
     })
 
 @csrf_exempt
