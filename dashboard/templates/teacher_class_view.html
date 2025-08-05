@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <title>{{class.name}} Feed</title>
+   <title>{{class.name}} Page</title>
    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
    <link rel="stylesheet" href="{% static 'styles.css' %}">
    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
@@ -10,13 +10,14 @@
 </head>
 
 <body>
-   <h1>Class Feed: {{class.name}}</h1>
-   <p>{{class.date}} {{class.time}}</p>
+   <h1>Class View: {{class.name}}</h1>
+   <p>{{class.day}} - {{class.time}}</p>
 
-   <h2>Available Homework Templates</h2>
-   <ul>
+   
+   <div class = "class-feed">
+      <h2>Available Homework Templates</h2>
       {% for template in homework_templates %}
-         <li>
+         <div class = "feed-card">
             <h4>{{template.name}}</h4>
             <p>{{template.description}}</p>
 
@@ -24,13 +25,38 @@
                <button hx-get="{% url 'get_homework_due_date_form' class.id template.id %}" hx-target="#assign-section-{{template.id}}" hx-swap = "outerHTML"> 
                   Assign to Class
                </button>
-            <div>
-
-         </li>
+            </div>
+         </div>
       {% empty %}
          <li>No homework templates available.</li>
       {% endfor %}
-   
+
+
+      <h2>Student Materials</h2>
+        {% for material in curriculum_materials %}
+         <div class="feed-card">
+            <strong>{{ material.title }}</strong>
+            {% if material.file %}
+              (<a href="{{ material.file.url }}" target="_blank">Download</a>)
+            {% endif %}
+            {% if material.link %}
+              (<a href="{{ material.link }}" target="_blank">Link</a>)
+            {% endif %}
+            <p>{{ material.description }}</p>
+
+            <div id="post-material-{{ material.id }}">
+               <button 
+                 hx-post="{% url 'post_material_htmx' class.id material.id %}" 
+                 hx-target="#post-material-{{ material.id }}" 
+                 hx-swap="outerHTML"> Post to Class</button>
+             </div>
+         </div>
+        {% empty %}
+          No curriculum materials yet.
+        {% endfor %}
+
+   </div>
+
 
    <form action="{% url 'teacher_dashboard' %}" method="post" style="display:inline;">
       {% csrf_token %}

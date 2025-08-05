@@ -409,7 +409,6 @@ def student_class_view(request, class_code):
 def teacher_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code, teacher = request.user.teacher)
     curriculum = class_obj.curriculum
-    print(curriculum)
     homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
     curriculum_materials = Material.objects.filter(curriculum = curriculum)
     assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
@@ -473,3 +472,15 @@ def assign_homework_assignment(request):
         else:
             return render(request, 'partials/due_date_form.html', {'form': form})
     return HttpResponseBadRequest("Invalid request.")
+
+def post_material(request, class_id, material_id):
+    if request.method == "POST":
+        class_obj = Class.objects.get(id=class_id, teacher=request.user.teacher)
+        material = Material.objects.get(id=material_id, curriculum=class_obj.curriculum)
+        if not class_obj or not material:
+            return HttpResponseBadRequest("Invalid class or material.")
+
+        if not PostedMaterial.objects.filter(class_obj=class_obj, material=material).exists():
+            PostedMaterial.objects.create(class_obj=class_obj, material=material)
+            
+        return HttpResponse("Material posted.")

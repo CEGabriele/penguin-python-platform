@@ -64,10 +64,12 @@ class Uploads (models.Model):
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
+
 class HomeworkTemplate(models.Model):
     name = models.CharField(max_length=100)
     curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
     description = models.TextField()
+    class_week = models.IntegerField(default = 0)
 
 class AssignedHomework (models.Model):
     template = models.ForeignKey(HomeworkTemplate, on_delete=models.CASCADE)
@@ -105,6 +107,7 @@ class Material(models.Model):
     description = models.TextField(blank = True)
     file = models.FileField(upload_to = 'curriculum_materials', null = True)
     link = models.URLField(blank = True)
+    class_week = models.IntegerField(default = 0)
 
 class PostedMaterial(models.Model):
     material = models.ForeignKey(Material, on_delete = models.CASCADE)
