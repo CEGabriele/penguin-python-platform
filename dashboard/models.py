@@ -105,8 +105,8 @@ class Material(models.Model):
     curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE, related_name = "materials")
     title = models.CharField()
     description = models.TextField(blank = True)
-    file = models.FileField(upload_to = 'curriculum_materials', null = True)
-    link = models.URLField(blank = True)
+    file = models.FileField(upload_to = 'curriculum_materials', null = True, blank = True)
+    link = models.URLField(blank = True, null = True)
     class_week = models.IntegerField(default = 0)
 
 class PostedMaterial(models.Model):

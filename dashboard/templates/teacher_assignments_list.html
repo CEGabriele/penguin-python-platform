@@ -8,8 +8,6 @@
 </head>
 <body>
     <h1>{{request.user.get_short_name}}'s Posted Assignments</h1>
-    <a href = {%url 'create_homework_template'%}>Create New Homework Form</a>
-    <div class="class-grid">
         {%if class_forms%}
             {% for class_obj, grouped_assignments in class_forms.items%}
                 <div class = "class-card">

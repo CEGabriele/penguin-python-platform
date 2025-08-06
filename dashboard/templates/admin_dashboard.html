@@ -71,8 +71,13 @@
         </form>
     </div>
 
+    <h2>Create Curriculum Materials</h2>
+    <a href = {%url 'create_homework_template'%}>Create New Homework Form</a>
+    <br>
+    <a href = {%url 'create_material'%}>Create New Student Material</a>
+
     <h2>View All Classes</h2>
-    <ul>
+    <div>
     {% regroup classes by location as class_list %}
     {% for group in class_list %}
         <button type = "button" class = "collapsible">{{ group.grouper }}</button> <!-- the location name -->
@@ -81,11 +86,8 @@
                     <p><a href = "{% url 'admin_class_view' class.id%}">{{ class.name }}</a> ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}<p>
                 {% endfor %}
             </div>
-        
-        
     {% endfor %}
-    </ul>
-
+    </div>
     <h2>Reset Passwords</h2>
     <button type = "button" class="collapsible">Reset Student Password</button>
     <div class="content"> 

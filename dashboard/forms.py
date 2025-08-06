@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, AssignedHomework, HomeworkQuestion, Curriculum, QuestionChoices, StudentQuestionResponse
+from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, AssignedHomework, HomeworkQuestion, Curriculum, QuestionChoices, StudentQuestionResponse, Material
 from django.forms import modelformset_factory, inlineformset_factory
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .widgets import TeacherSelect2Widget, StudentSelect2Widget
@@ -183,3 +183,8 @@ class AssignHomeworkDueDateForm(forms.Form):
     due_date = forms.DateField(initial=date.today, widget=forms.DateInput(attrs={'type': 'date'}))
     class_id = forms.IntegerField(widget=forms.HiddenInput())
     template_id = forms.IntegerField(widget=forms.HiddenInput())
+
+class MaterialForm(forms.ModelForm):
+    class Meta:
+        model = Material
+        fields = ['curriculum', 'title', 'description', 'file', 'link']

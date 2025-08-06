@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm, MaterialForm
 from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -476,6 +476,7 @@ def assign_homework_assignment(request):
             return render(request, 'partials/due_date_form.html', {'form': form})
     return HttpResponseBadRequest("Invalid request.")
 
+@csrf_exempt
 def post_material(request, class_id, material_id):
     if request.method == "POST":
         class_obj = Class.objects.get(id=class_id, teacher=request.user.teacher)
@@ -483,7 +484,18 @@ def post_material(request, class_id, material_id):
         if not class_obj or not material:
             return HttpResponseBadRequest("Invalid class or material.")
 
-        if not PostedMaterial.objects.filter(class_obj=class_obj, material=material).exists():
-            PostedMaterial.objects.create(class_obj=class_obj, material=material)
+        if not PostedMaterial.objects.filter(for_class=class_obj, material=material).exists():
+            PostedMaterial.objects.create(for_class=class_obj, material=material)
             
         return HttpResponse("Material posted.")
+
+def create_material(request):
+    if request.method == 'POST':
+        form = MaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            material = form.save()
+            return redirect('admin_dashboard')
+    else:
+        form = MaterialForm()
+
+    return render(request, 'create_material.html', {'form': form})
