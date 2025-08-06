@@ -72,7 +72,6 @@ class HomeworkQuestion (models.Model):
     prompt = models.TextField()
     question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'File Upload'), ('multiple_choice', 'Multiple Choice')])
     uses_ai = models.BooleanField(default = False)
-    extra_ai_instructions = models.TextField(blank = True)
 
 class QuestionChoices (models.Model):
     question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE, related_name = 'choices')
