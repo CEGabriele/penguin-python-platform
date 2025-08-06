@@ -19,7 +19,7 @@
                         <div class = "assignment-card">
                             <h3>{{assignment.template.name}}</h3>
                             <p>Due {{ assignment.due_date}}</p>
-                            <a href = "{% url 'student_form_view' assignment.id%}">View form details</a>
+                            <a href = "{% url 'student_form_view' assignment.id%}" class = "button">View form details</a>
                         </div>
                     {%endfor%}
                 {%else%}
@@ -43,7 +43,7 @@
     {%endif%}
     </div>
 
-    <a href="{% url 'student_dashboard'%}">Return to dashboard</a>
+    <a href="{% url 'student_dashboard'%}" class = "button">Return to dashboard</a>
 </body>
 </html>
 

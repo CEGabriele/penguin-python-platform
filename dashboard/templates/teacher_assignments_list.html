@@ -18,7 +18,7 @@
                                 <h3>{{assignment.template.name}}</h3>
                                 <p>Due {{ assignment.due_date}}</p>
                                 <p>Submissions: {{assignment.num_submissions}}</p>
-                                <a href = "{% url 'responses_view' assignment.id%}">View assignment details</a>
+                                <a href = "{% url 'responses_view' assignment.id%}" class = "button">View assignment details</a>
                             </div>
                         {%endfor%}
                     
@@ -28,6 +28,6 @@
         {%endif%}
         </div>
 
-    <a href="{% url 'teacher_dashboard'%}">Return to dashboard</a>
+    <a href="{% url 'teacher_dashboard'%}" class = "button">Return to dashboard</a>
 </body>
 </html>

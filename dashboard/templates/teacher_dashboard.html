@@ -12,14 +12,14 @@
 
     <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
 
-    <a href="{% url 'teacher_assignments'%}"> View your assignments</a>
+    <a href="{% url 'teacher_assignments'%}" class ="button"> View your assignments</a>
     {% if teacher.is_admin%}
-        <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+        <a href="{% url 'admin_dashboard' %}" class="button">Admin Dashboard</a>
     {% endif %}
 
     <form action="{% url 'logout' %}" method="post" style="display:inline;">
         {% csrf_token %}
-        <button type="submit">Logout</button>
+        <button type="submit" class="logout-button">Logout</button>
     </form>
 
     {% if classes%}
@@ -29,14 +29,14 @@
         {%for class in classes%}
             <div class="class-card">
                 <h2>{{class.class.name}} </h2>
-                <a href="{% url 'teacher_class_view' class.class.code %}">
+                <a  class="button" href="{% url 'teacher_class_view' class.class.code %}">
                     View Class Page
                 </a>
                 <div class="student-grid">
                     {% for student in class.students%}
                         <div class = "student-card">
                                 <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
-                                <a href="{% url 'view_student' student.student.user.username%}"> View Student</a>
+                                <a href="{% url 'view_student' student.student.user.username%}" class="button"> View Student</a>
                             <h5>Classwork</h5>
                             {%if student.last_cw_file%}
                                 <div class = "file-card">

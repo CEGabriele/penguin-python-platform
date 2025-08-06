@@ -89,11 +89,14 @@
 </head>
 <body>
     <form method="post" action = "{%url 'create_homework_template'%}">
+        <h1>Add New Homework Form</h1>
+        
         {% csrf_token %}
         
         {{ template_form.as_p }}
 
         {{ formset.management_form }}
+
 
         <h3>Questions</h3>
         <div id="question-forms">

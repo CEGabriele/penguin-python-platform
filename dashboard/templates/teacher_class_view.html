@@ -38,10 +38,10 @@
          <div class="feed-card">
             <strong>{{ material.title }}</strong>
             {% if material.file %}
-              (<a href="{{ material.file.url }}" target="_blank">Download</a>)
+              (<a href="{{ material.file.url }}" target="_blank" class="download-link">Download</a>)
             {% endif %}
             {% if material.link %}
-              (<a href="{{ material.link }}" target="_blank">Link</a>)
+              (<a href="{{ material.link }}" target="_blank" class = "button">Link</a>)
             {% endif %}
             <p>{{ material.description }}</p>
 
@@ -64,7 +64,7 @@
       <div class="student-grid">
          {% for student in students%}
              <div class = "student-card">
-                  <a href="{% url 'view_student' student.user.username%}"> {{student.user.get_full_name|default:student.user.username}}</a>
+                  <a href="{% url 'view_student' student.user.username%}" class = "button"> {{student.user.get_full_name|default:student.user.username}}</a>
              </div>
          {%endfor%}
      </div>
@@ -73,7 +73,7 @@
          <div class = "assignment-card">    
             <h3>{{assignment.template.name}}</h3>
             <p>Due {{ assignment.due_date}}</p>
-            <a href = "{% url 'responses_view' assignment.id%}">View assignment details</a>
+            <a href = "{% url 'responses_view' assignment.id%}" class = "button">View assignment details</a>
          </div>
       {%endfor%}
    </div>

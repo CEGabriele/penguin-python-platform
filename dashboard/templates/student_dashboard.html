@@ -12,7 +12,7 @@
 
     <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
 
-    <a href="{% url 'student_assignments'%}">View all assignments</a>
+    <a href="{% url 'student_assignments'%}" class = "button">View all assignments</a>
     <form action="{% url 'logout' %}" method="post" style="display:inline;">
         {% csrf_token %}
         <button type="submit">Logout</button>
@@ -24,7 +24,7 @@
         {%for class in classes%}
             <div class="class-card">
                 <h1>{{ class.class.name }}</h1>
-                <a href="{% url 'student_class_view' class.class.code %}">
+                <a href="{% url 'student_class_view' class.class.code %}" class = "button">
                     View Class Page
                 </a>
                 <div class = "file-section">

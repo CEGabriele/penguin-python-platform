@@ -34,87 +34,99 @@
 
 </head>
 <body>
-    <a href = "{% url 'teacher_dashboard' %}"> Go to dashboard </a> <br>
+    <a href = "{% url 'teacher_dashboard' %}" class="button"> Teacher Dashboard </a> <br>
     
     <form action="{% url 'logout' %}" method="post" style="display:inline;">
         {% csrf_token %}
         <button type="submit">Logout</button>
     </form>
     <br>
-    <button type ="button" class="collapsible">Create New Students</button>
-    <div class="content">
-        <h2>Create Student</h2>
-        <form method="post">
+    <div class = "collapsible-card">
+        <button type ="button" class="collapsible">Create New Students</button>
+        <div class="content">
+            <h2>Create Student</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ student_form.as_p }}
+                <button type="submit" name="create_student">Create Student</button>
+            </form>
+        </div>
+    </div>
+    <div class = "collapsible-card">
+        <button type ="button" class="collapsible">Create New Teachers </button>
+        <div class="content">
+            <h2>Create Teacher</h2>
+            <form method="post">
             {% csrf_token %}
-            {{ student_form.as_p }}
-            <button type="submit" name="create_student">Create Student</button>
-        </form>
+            {{ teacher_form.as_p }}
+            <button type="submit" name="create_teacher">Create Teacher</button>
+            </form>
+        </div>
     </div>
-    <br>
-    <button type ="button" class="collapsible">Create New Teachers </button>
-    <div class="content">
-        <h2>Create Teacher</h2>
-        <form method="post">
-        {% csrf_token %}
-        {{ teacher_form.as_p }}
-        <button type="submit" name="create_teacher">Create Teacher</button>
-        </form>
+    <div class = "collapsible-card">
+        <button type ="button" class="collapsible">Create New Class Level </button>
+        <div class="content">
+            <h2>Create Level</h2>
+            <form method="post">
+            {% csrf_token %}
+            {{ curriculum_form.as_p }}
+            <button type="submit" name="create_curriculum">Create Level</button>
+            </form>
+        </div>
     </div>
-    <br>
-    <button type ="button" class="collapsible">Create New Class Level </button>
-    <div class="content">
-        <h2>Create Level</h2>
-        <form method="post">
-        {% csrf_token %}
-        {{ curriculum_form.as_p }}
-        <button type="submit" name="create_curriculum">Create Level</button>
-        </form>
-    </div>
-    <br>
-    <button type ="button" class="collapsible">Create New Classes </button>
-    <div class="content">
-        <h2>Create a New Class</h2>
-        <form method="post">
-        {% csrf_token %}
-        {{ class_form.as_p }}
-        <button type="submit" name = "create_class">Create Class</button>
-        </form>
+    <div class = "collapsible-card">
+        <button type ="button" class="collapsible">Create New Classes </button>
+        <div class="content">
+            <h2>Create a New Class</h2>
+            <form method="post">
+            {% csrf_token %}
+            {{ class_form.as_p }}
+            <button type="submit" name = "create_class">Create Class</button>
+            </form>
+        </div>
     </div>
 
     <h2>Create Curriculum Materials</h2>
-    <a href = {%url 'create_homework_template'%}>Create New Homework Form</a>
+    <a href = {%url 'create_homework_template'%} class="button">Create New Homework Form</a>
     <br>
-    <a href = {%url 'create_material'%}>Create New Student Material</a>
+    <a href = {%url 'create_material'%} class="button">Create New Student Material</a>
 
     <h2>View All Classes</h2>
     <div>
     {% regroup classes by location as class_list %}
     {% for group in class_list %}
-        <button type = "button" class = "collapsible">{{ group.grouper }}</button> <!-- the location name -->
-            <div class="content">
-                {% for class in group.list %}
-                    <p><a href = "{% url 'admin_class_view' class.id%}">{{ class.name }}</a> ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}<p>
-                {% endfor %}
-            </div>
+        <div class="collapsible-card">
+            <button type = "button" class = "collapsible">{{ group.grouper }}</button> <!-- the location name -->
+                <div class="content">
+                    {% for class in group.list %}
+                        <p><a href = "{% url 'admin_class_view' class.id%}" class="button">{{ class.name }}</a> ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}<p>
+                    {% endfor %}
+                </div>
+        </div>
     {% endfor %}
     </div>
     <h2>Reset Passwords</h2>
-    <button type = "button" class="collapsible">Reset Student Password</button>
-    <div class="content"> 
-        <form method="post">
-            {% csrf_token %}
-            {{ student_password_form.as_p}}
-            <button type="submit" name="reset_student_password">Reset Password</button>
-        </form>
+    <div class="collapsible-card">
+        <button type = "button" class="collapsible">Reset Student Password</button>
+        <div class="content"> 
+            <h2>Student Password Reset</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ student_password_form.as_p}}
+                <button type="submit" name="reset_student_password">Reset Password</button>
+            </form>
+        </div>
     </div>
-    <br>
-    <button type = "button" class="collapsible">Reset Teacher Password</button>
-    <div class="content"> 
-        <form method="post">
-            {% csrf_token %}
-            {{ teacher_password_form.as_p}}
-            <button type="submit" name="reset_teacher_password">Reset Password</button>
-        </form>
+    <div class="collapsible-card">
+        <button type = "button" class="collapsible">Reset Teacher Password</button>
+        <div class="content"> 
+            <h2>Teacher Password Reset</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ teacher_password_form.as_p}}
+                <button type="submit" name="reset_teacher_password">Reset Password</button>
+            </form>
+        </div>
     </div>
 
 </body>

@@ -56,19 +56,21 @@ body {
 }
 
 
-button{
+.button, button{
     background-color: var(--accent-color);
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 7px 12px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+    display: inline-block;
+
 }
 
-button:hover {
+button:hover , .button:hover {
     background-color: var(--accent-color-light);
 }
 
@@ -197,6 +199,10 @@ button:hover {
     display: none;
 }
 
+.collapsible{
+    margin-bottom: 10px;
+}
+
 .collapsible:after {
     content: '\02795'; /* Unicode character for "plus" sign (+) */
     font-size: 13px;
@@ -218,3 +224,18 @@ button:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+.collapsible-card {
+    margin-bottom: 24px;
+    padding: 0 20px;
+}
+
+.content {
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+a {
+    text-decoration: none;
+}
