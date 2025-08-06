@@ -128,7 +128,7 @@ class ClassCreationForm(forms.ModelForm):
 
     class Meta:
         model = Class
-        fields = ['name', 'day', 'time', 'teacher', 'location']
+        fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
 
     def save(self, commit=True):
         instance = super().save(commit=False)
