@@ -2,16 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
-"""
-class Parent (models.Model):
-    name = models.CharField(max_length = 100)
-    email = models.EmailField()
-    phone = models.CharField(max_length = 10)
-    password = models.CharField()
-"""
-
-
-
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
     is_admin = models.BooleanField(default = False)
@@ -70,11 +60,13 @@ class HomeworkTemplate(models.Model):
     curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
     description = models.TextField()
     class_week = models.IntegerField(default = 0)
+    new_material = models.TextField(blank = True, null = True)
 
 class AssignedHomework (models.Model):
     template = models.ForeignKey(HomeworkTemplate, on_delete=models.CASCADE)
     for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
     due_date = models.DateField()
+    
 class HomeworkQuestion (models.Model):
     template = models.ForeignKey(HomeworkTemplate, on_delete = models.CASCADE, related_name = 'questions', null = True)
     prompt = models.TextField()
@@ -112,3 +104,8 @@ class Material(models.Model):
 class PostedMaterial(models.Model):
     material = models.ForeignKey(Material, on_delete = models.CASCADE)
     for_class = models.ForeignKey(Class, on_delete = models.CASCADE, related_name = "posted_materials")
+
+class CompletedCurriculum(models.Model):
+    student = models.ForeignKey(Student, on_delete = models.CASCADE)
+    curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE)
+    completed_weeks = models.IntegerField(default = 0)
