@@ -107,6 +107,17 @@ class TeacherCreationForm(forms.Form):
         Teacher.objects.create(user=user, is_admin=self.cleaned_data.get('is_admin', False))
         return user
 
+class CurriculumCreationForm(forms.ModelForm):
+    class Meta:
+        model = Curriculum
+        fields = ['name']
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance
+
 class ClassCreationForm(forms.ModelForm):
     students = forms.ModelMultipleChoiceField(
         queryset=Student.objects.all(),

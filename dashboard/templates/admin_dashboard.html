@@ -61,6 +61,16 @@
         </form>
     </div>
     <br>
+    <button type ="button" class="collapsible">Create New Class Level </button>
+    <div class="content">
+        <h2>Create Level</h2>
+        <form method="post">
+        {% csrf_token %}
+        {{ curriculum_form.as_p }}
+        <button type="submit" name="create_curriculum">Create Level</button>
+        </form>
+    </div>
+    <br>
     <button type ="button" class="collapsible">Create New Classes </button>
     <div class="content">
         <h2>Create a New Class</h2>

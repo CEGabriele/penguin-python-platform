@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm, MaterialForm
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm, MaterialForm
 from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
@@ -115,6 +115,7 @@ def admin_dashboard(request):
     student_form = StudentCreationForm()
     teacher_form = TeacherCreationForm()
     class_form = ClassCreationForm()
+    curriculum_form = CurriculumCreationForm()
     student_password_form = StudentPasswordResetForm()
     teacher_password_form = TeacherPasswordResetForm()
 
@@ -159,8 +160,14 @@ def admin_dashboard(request):
                     return redirect('admin_dashboard')
                 else:
                     print("Invalid teacher password form:", teacher_password_form.errors)
+            elif 'create_curriculum' in request.POST:
+                curriculum_form = CurriculumCreationForm(request.POST)
+                if curriculum_form.is_valid():
+                    curriculum_form.save()
+                    return redirect('admin_dashboard')
+        
         return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes, 
-                                                        'student_password_form': student_password_form, 'teacher_password_form': teacher_password_form} )
+                                                        'student_password_form': student_password_form, 'teacher_password_form': teacher_password_form, 'curriculum_form': curriculum_form} )
     else:
         return redirect('login')
 
