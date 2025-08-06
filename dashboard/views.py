@@ -405,11 +405,32 @@ def responses_view(request, assigned_hw_id):
 def student_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code)
     student = request.user.student
+    
     if class_obj not in student.classes.all():
         return redirect('student_dashboard')
-    return render(request, 'student_class_view.html', {
-        'class': class_obj
-    })
+    
+    assigned_homework = AssignedHomework.objects.filter(for_class = class_obj).select_related('template')
+    posted_material = PostedMaterial.objects.filter(for_class = class_obj).select_related('material')
+
+    weekly_assignments = defaultdict(lambda: {'assignments': [], 'materials': []})
+
+    for hw in assigned_homework:
+        week = hw.template.class_week
+        weekly_assignments[week]['assignments'].append(hw)
+    for pm in posted_material:
+        week = pm.material.class_week
+        weekly_assignments[week]['materials'].append(pm.material)
+    
+    general_materials = weekly_assignments.pop(0, None)
+    sorted_weeks = dict(sorted(weekly_assignments.items()))
+
+    context = {
+        'class': class_obj,
+        'general_materials': general_materials,
+        'sorted_weeks': sorted_weeks,
+    }
+
+    return render(request, 'student_class_view.html', context)
 
 @login_required
 @teacher_required
