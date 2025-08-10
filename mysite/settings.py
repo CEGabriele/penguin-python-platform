@@ -34,9 +34,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '<removed>'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['SERVER_IP']
 
 
 # Application definition
@@ -93,7 +93,7 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'hw_dashboard',
+        'NAME': 'homework_dashboard_db',
         'USER': os.getenv("DB_USERNAME"),
         'PASSWORD': os.getenv("DB_PASSWORD"),
         'HOST': 'localhost',
