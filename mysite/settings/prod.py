@@ -25,7 +25,7 @@ CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split("
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Recommended: Whitenoise (if not using Nginx for static)
-INSTALLED_APPS = ["whitenoise.runserver_nostatic", "dashboard"] + INSTALLED_APPS
+INSTALLED_APPS = ["whitenoise.runserver_nostatic"] + INSTALLED_APPS
 MIDDLEWARE = MIDDLEWARE.copy()
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
@@ -36,11 +36,12 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DATABASES["default"].update({
+    "ENGINE": "django.db.backends.postgresql",
     "NAME": os.getenv("DB_NAME"),
     "USER": os.getenv("DB_USERNAME"),
     "PASSWORD": os.getenv("DB_PASSWORD"),
     "HOST": os.getenv("DB_HOST"),
-    "PORT": os.getenv("DB_PORT")
+    "PORT": os.getenv("DB_PORT"),
 })
 
 LOGGING = {

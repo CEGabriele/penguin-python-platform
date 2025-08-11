@@ -3,9 +3,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASES["default"].update({
+    "ENGINE": "django.db.backends.postgresql",
     "NAME": os.getenv("DEV_DB_NAME"),
     "USER": os.getenv("DEV_DB_USERNAME"),
     "PASSWORD": os.getenv("DB_PASSWORD"),
+    "HOST": os.getenv("DB_HOST"),
+    "PORT": os.getenv("DB_PORT"),
 })
 
 DEBUG = True
