@@ -22,7 +22,7 @@ class Class(models.Model):
     code = models.CharField(unique = True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
     location = models.CharField(default = "Lexington")
-    
+    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, blank = True, null = True, related_name = "classes")
     def save(self, *args, **kwargs):
         if not self.code:
             self.code = self.generate_code()
