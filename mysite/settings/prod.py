@@ -28,3 +28,10 @@ MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+DATABASES["default"].update({
+    "NAME": os.getenv("PROD_DB_NAME"),
+    "USER": os.getenv("PROD_DB_USER"),
+    "PASSWORD": os.getenv("PROD_DB_PASSWORD"),
+})
