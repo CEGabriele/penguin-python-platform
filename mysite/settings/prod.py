@@ -25,7 +25,7 @@ CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split("
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Recommended: Whitenoise (if not using Nginx for static)
-INSTALLED_APPS = ["whitenoise.runserver_nostatic"] + INSTALLED_APPS
+INSTALLED_APPS = ["whitenoise.runserver_nostatic", "dashboard"] + INSTALLED_APPS
 MIDDLEWARE = MIDDLEWARE.copy()
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
