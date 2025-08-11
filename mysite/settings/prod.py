@@ -35,14 +35,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-DATABASES["default"].update({
-    "ENGINE": "django.db.backends.postgresql",
-    "NAME": os.getenv("DB_NAME"),
-    "USER": os.getenv("DB_USERNAME"),
-    "PASSWORD": os.getenv("DB_PASSWORD"),
-    "HOST": os.getenv("DB_HOST"),
-    "PORT": os.getenv("DB_PORT"),
-})
+
 
 LOGGING = {
     'version': 1,
