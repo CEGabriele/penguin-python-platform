@@ -4,6 +4,7 @@ env/
 #python cache
 __pycache__/
 *.py[cod]
+*.pyc
 
 db.sqlite3
 __pycache__/
