@@ -1,0 +1,201 @@
+from django import forms
+from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, AssignedHomework, HomeworkQuestion, Curriculum, QuestionChoices, StudentQuestionResponse, Material
+from django.forms import modelformset_factory, inlineformset_factory
+from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
+from .widgets import TeacherSelect2Widget, StudentSelect2Widget
+from datetime import date
+
+class HomeworkUpload(forms.ModelForm):
+    class Meta:
+        model = Uploads
+        fields = ['file', 'for_class']
+        widgets = {'for_class': forms.HiddenInput(),}
+    def save(self, commit=True, user = None):
+        instance = super().save(commit = False)
+        instance.person = user
+        instance.file_type = "HW"
+        if commit:
+            instance.save()
+        return instance
+
+class ClassworkUpload(forms.ModelForm):
+    class Meta:
+        model = Uploads
+        fields = ['file', 'for_class']
+        widgets = {'for_class': forms.HiddenInput(),}
+    def save(self, commit=True, user = None):
+        instance = super().save(commit = False)
+        instance.person = user
+        instance.file_type = "CW"
+        if commit:
+            instance.save()
+        return instance
+
+class HomeworkTemplateForm(forms.ModelForm):
+    class Meta:
+        model = HomeworkTemplate
+        fields = ['name', 'description', 'curriculum']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['curriculum'].label_from_instance = lambda obj: obj.name
+class HomeworkQuestionForm(forms.ModelForm):
+    class Meta:
+        model = HomeworkQuestion
+        fields = ['prompt', 'question_type', 'uses_ai']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['uses_ai'].label = "Enable student AI review"
+
+class StudentAnswerForm(forms.ModelForm):
+    upload = forms.FileField(required=False, widget=forms.ClearableFileInput())
+    
+    class Meta:
+        model = StudentQuestionResponse
+        fields = ['question', 'selected_choice', 'answer_text']
+        widgets = {'question' : forms.HiddenInput(), 
+                   'answer_text': forms.Textarea(attrs={'placeholder': 'Type your answer...'}),
+                   'selected_choice':forms.RadioSelect()}
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        question = self.initial.get('question')
+        
+        if question:
+            self.instance.question = question 
+
+        if question and question.question_type == 'multiple_choice':
+            self.fields['selected_choice'].queryset = question.choices.all()
+            self.fields['selected_choice'].required = True
+        else:
+            self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
+            self.fields['selected_choice'].required = False
+
+class StudentCreationForm(forms.Form):
+    username = forms.CharField(max_length=150, label='Username')
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    password = forms.CharField(widget=forms.PasswordInput, label='Password')
+    def save(self , commit=True):
+        user = User.objects.create_user(
+            username = self.cleaned_data['username'],
+            first_name = self.cleaned_data['first_name'],
+            last_name = self.cleaned_data['last_name'],
+            password = self.cleaned_data['password']
+        )
+        user.save()
+        Student.objects.create(user=user)
+        return user
+
+class TeacherCreationForm(forms.Form):
+    username = forms.CharField(max_length=150, label='Username')
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    email = forms.EmailField(max_length=254, label='Email')
+    password = forms.CharField(widget=forms.PasswordInput, label='Password')
+    is_admin = forms.BooleanField(required=False, label='Is Admin')
+    def save(self , commit=True):
+        user = User.objects.create_user(
+            username = self.cleaned_data['username'],
+            first_name = self.cleaned_data['first_name'],
+            last_name = self.cleaned_data['last_name'],
+            email = self.cleaned_data['email'],
+            password = self.cleaned_data['password'],
+            
+        )
+        user.save()
+        Teacher.objects.create(user=user, is_admin=self.cleaned_data.get('is_admin', False))
+        return user
+
+class CurriculumCreationForm(forms.ModelForm):
+    class Meta:
+        model = Curriculum
+        fields = ['name']
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance
+
+class ClassCreationForm(forms.ModelForm):
+    students = forms.ModelMultipleChoiceField(
+        queryset=Student.objects.all(),
+        widget=ModelSelect2MultipleWidget(
+            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
+        ),
+    )
+
+    class Meta:
+        model = Class
+        fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            students = self.cleaned_data.get('students')
+            if students:
+                for student in students:
+                    student.classes.add(instance)
+        return instance
+    
+class ClassStudentUpdateForm(forms.ModelForm):
+    students = forms.ModelMultipleChoiceField(
+        queryset=Student.objects.all(),
+        widget=ModelSelect2MultipleWidget(
+            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
+        ),
+    )
+    class Meta:
+        model = Class
+        fields = ['students']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['students'].initial = self.instance.students.all()
+
+HomeworkQuestionFormSet = modelformset_factory(
+    HomeworkQuestion, 
+    form = HomeworkQuestionForm, 
+    extra = 0
+)
+HomeworkChoiceFormSet = inlineformset_factory(
+    HomeworkQuestion, 
+    QuestionChoices, 
+    fields = ['text', 'is_correct'], 
+    extra = 2, 
+    can_delete = True
+)
+
+StudentAnswerFormSet = modelformset_factory(
+    StudentQuestionResponse,
+    form = StudentAnswerForm
+)
+
+class StudentPasswordResetForm(forms.Form):
+    student = forms.ModelChoiceField(
+        queryset=Student.objects.all(),
+        label="Student",
+        widget=StudentSelect2Widget
+    )
+    new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
+
+
+class TeacherPasswordResetForm(forms.Form):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.all(),
+        label="Teacher",
+        widget=TeacherSelect2Widget
+    )
+    new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
+
+class AssignHomeworkDueDateForm(forms.Form):
+    due_date = forms.DateField(initial=date.today, widget=forms.DateInput(attrs={'type': 'date'}))
+    class_id = forms.IntegerField(widget=forms.HiddenInput())
+    template_id = forms.IntegerField(widget=forms.HiddenInput())
+
+class MaterialForm(forms.ModelForm):
+    class Meta:
+        model = Material
+        fields = ['curriculum', 'title', 'description', 'file', 'link']
