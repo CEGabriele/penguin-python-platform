@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.conf import settings
 
 urlpatterns = [
     path('', lambda request: redirect('/accounts/login/')),
@@ -28,3 +29,9 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name = 'logout'),
     path('select2_urls', include('django_select2.urls'))
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
