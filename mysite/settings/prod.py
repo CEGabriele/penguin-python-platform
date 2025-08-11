@@ -31,9 +31,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DATABASES["default"].update({
-    "NAME": os.getenv("PROD_DB_NAME"),
-    "USER": os.getenv("PROD_DB_USER"),
-    "PASSWORD": os.getenv("PROD_DB_PASSWORD"),
-    "HOST": os.getenv("PROD_DB_HOST"),
-    "PORT": os.getenv("PROD_DB_PORT")
+    "NAME": os.getenv("DB_NAME"),
+    "USER": os.getenv("DB_USER"),
+    "PASSWORD": os.getenv("DB_PASSWORD"),
+    "HOST": os.getenv("DB_HOST"),
+    "PORT": os.getenv("DB_PORT")
 })
