@@ -1,10 +1,13 @@
 from .base import *
 import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv(), override=True)
+
 
 DEBUG = False
 
-# Make sure to set this in your deployment env (Lightsail)
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")  # e.g. "example.com,www.example.com"
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 # Security hardening
 SECURE_SSL_REDIRECT = True
