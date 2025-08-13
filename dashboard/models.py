@@ -107,3 +107,11 @@ class CompletedCurriculum(models.Model):
     student = models.ForeignKey(Student, on_delete = models.CASCADE)
     curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE)
     completed_weeks = models.IntegerField(default = 0)
+
+class AIFeedback(models.Model):
+    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE, related_name='feedback')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
+    response = models.TextField()
+
+    def __str__(self):
+        return f"Feedback for {self.student.user.get_full_name()} on question {self.question.prompt}"

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
 from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm, MaterialForm
-from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial
+from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial, AIFeedback
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -371,7 +371,7 @@ def student_form_view(request, assigned_hw_id):
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
 
-    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset})
+    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset, 'student_id':request.user.student.id})
 
 @login_required
 @teacher_required
@@ -461,11 +461,18 @@ def get_code_feedback(request):
 
             code = data.get("code")
             question_id = data.get("question_id")
+            student_id = data.get("student_id")
 
             if not code or not question_id:
                 return JsonResponse({"error": "Missing code or question_id"}, status=400)
 
             feedback = get_ai_review(code, question_id)
+
+            AIFeedback.objects.create(
+                question = get_object_or_404(HomeworkQuestion, id=question_id),
+                student = get_object_or_404(Student, id = student_id),
+                response=feedback,
+            )
             
             if not feedback:
                 return JsonResponse({"error": "AI returned no feedback."}, status = 400)

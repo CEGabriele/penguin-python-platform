@@ -14,7 +14,8 @@
                 const buttons = document.querySelectorAll(".check-code-button");
                 buttons.forEach(button => {
                     button.addEventListener("click", async function() {
-                        id = parseInt(this.getAttribute("data-question-id"));
+                        const question_id = parseInt(this.getAttribute("data-question-id"));
+                        const student_id = {{ student_id }}
                         const parent = button.closest(".question-block");
                         const fileInput = parent.querySelector("input[type='file']");
                         const feedbackDiv = parent.querySelector(".ai-feedback");
@@ -41,7 +42,7 @@
                                 "Content-Type": "application/json",
                                 "X-CSRFToken": "{{ csrf_token }}"
                             },
-                            body: JSON.stringify({ code: code, question_id: id })
+                            body: JSON.stringify({ code: code, question_id: question_id, student_id: student_id })
                         })
                         .then(async response => {
                             let data;
