@@ -10,6 +10,18 @@
 </head>
 
 <body>
+   <nav class="navbar">
+      <div class="navbar-links">
+          <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
+          <a href="{% url 'student_assignments' %}">Assignments</a>
+          <form action="{% url 'logout' %}" method="post" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="logout-button">Logout</button>
+          </form>
+      </div>
+  </nav>
+
+
    <h1>{{class.name}} - {{class.day}}</h1>
    <h3>{{class.teacher}}</h3>
    <br>
@@ -74,10 +86,6 @@
       
    {% endfor %}
 
-   <form action="{% url 'student_dashboard' %}" method="post" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit">Return to Dashboard</button>
-   </form>
 
 </body>
 

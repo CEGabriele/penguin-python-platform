@@ -70,7 +70,7 @@ body {
 
 }
 
-button:hover , .button:hover {
+button:hover , .button:hover, .navbar-links a {
     background-color: var(--accent-color-light);
 }
 
@@ -237,5 +237,50 @@ button:hover , .button:hover {
 }
 
 a {
+    text-decoration: none;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.navbar-links {
+    display: flex;
+    list-style: none;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    
+}
+
+.navbar-links a{
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: inline-block;
+    
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    background-color: var(--accent-color);
+    color: white;
+    font: inherit;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
     text-decoration: none;
 }

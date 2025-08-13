@@ -10,14 +10,17 @@
 
 <body>
 
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
+            <a href="{% url 'student_assignments' %}">Assignments</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
     <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
-
-    <a href="{% url 'student_assignments'%}" class = "button">View all assignments</a>
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
-
 
     {% if classes %}
     <div class="class-grid">

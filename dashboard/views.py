@@ -121,7 +121,7 @@ def admin_dashboard(request):
 
     classes = Class.objects.all().order_by('location', 'day', 'time')
     if request.user.teacher.is_admin:
-        
+        teacher = Teacher.objects.get(user = request.user)
         if request.method == 'POST':
             if 'create_student' in request.POST:
                 student_form = StudentCreationForm(request.POST)
@@ -167,7 +167,7 @@ def admin_dashboard(request):
                     return redirect('admin_dashboard')
         
         return render(request, 'admin_dashboard.html', {'student_form':student_form, 'teacher_form':teacher_form, 'class_form':class_form, 'classes':classes, 
-                                                        'student_password_form': student_password_form, 'teacher_password_form': teacher_password_form, 'curriculum_form': curriculum_form} )
+                                                        'student_password_form': student_password_form, 'teacher_password_form': teacher_password_form, 'curriculum_form': curriculum_form, 'teacher': teacher} )
     else:
         return redirect('login')
 
@@ -175,6 +175,7 @@ def admin_dashboard(request):
 @teacher_required
 def admin_class_view(request, class_id):
     if request.user.teacher.is_admin:
+        teacher = Teacher.objects.get(user = request.user)
         class_obj = get_object_or_404(Class, id=class_id)
         student_form = ClassStudentUpdateForm(request.POST or None, instance = class_obj)
 
@@ -189,7 +190,7 @@ def admin_class_view(request, class_id):
             
             return redirect('admin_class_view', class_id = class_obj.id)
 
-        return render(request, 'admin_class_view.html', {'class_obj': class_obj, 'student_form': student_form})
+        return render(request, 'admin_class_view.html', {'class_obj': class_obj, 'student_form': student_form, 'teacher': teacher})
     else:
         return redirect('teacher_dashboard')
     
@@ -210,7 +211,7 @@ def view_student(request, username):
         cw_files = student.user.uploads_set.filter(file_type = 'CW').filter(for_class = section).order_by("-uploaded_at")
 
         student_files.append({'class': section, 'hw_files': hw_files, 'cw_files': cw_files}) 
-    return render(request, 'view_student.html', {'student': student, 'teacher': teacher, 'student_files': student_files})
+    return render(request, 'view_student.html', {'student': student, 'teacher': teacher, 'student_files': student_files, 'teacher': teacher})
 
 
 @login_required
@@ -273,7 +274,7 @@ def teacher_assignments_list(request):
                    for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))
     }
 
-    return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms})
+    return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms, 'teacher': teacher})
 
 
 
@@ -310,12 +311,14 @@ def create_homework_template(request):
 
     formset_with_choices = zip(formset.forms, choice_formsets)
     empty_question_form = formset.empty_form
+    teacher = Teacher.objects.get(user = request.user)
 
     return render(request, 'create_homework_template.html', {
         'template_form': template_form,
         'formset': formset,
         'formset_with_choices': formset_with_choices,
         'empty_question_form': empty_question_form,
+        'teacher': teacher
     })
 
 @login_required
@@ -379,6 +382,7 @@ def responses_view(request, assigned_hw_id):
     assigned = get_object_or_404(AssignedHomework, id = assigned_hw_id)
     template = assigned.template
     questions = template.questions.all()
+    teacher = Teacher.objects.get(user = request.user)
     submission_count = (
         StudentQuestionResponse.objects
         .filter(assigned_homework=assigned)
@@ -398,7 +402,7 @@ def responses_view(request, assigned_hw_id):
             'responses':responses
         })
 
-    return render(request, 'responses_view.html', {'assigned':assigned, 'question_data' : question_data, 'submission_count':submission_count})
+    return render(request, 'responses_view.html', {'assigned':assigned, 'question_data' : question_data, 'submission_count':submission_count, 'teacher':teacher})
 
 @login_required
 @student_required
@@ -440,6 +444,7 @@ def teacher_class_view(request, class_code):
     homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
     curriculum_materials = Material.objects.filter(curriculum = curriculum)
     assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
+    teacher = Teacher.objects.get(user = request.user)
 
     students = class_obj.students.all()
 
@@ -448,7 +453,8 @@ def teacher_class_view(request, class_code):
         'homework_templates': homework_templates,
         'curriculum_materials': curriculum_materials,
         'assigned_homeworks': assigned_homeworks,
-        'students': students
+        'students': students,
+        'teacher': teacher,
     })
 
 @csrf_exempt
@@ -508,7 +514,7 @@ def assign_homework_assignment(request):
 
             return HttpResponse("Assigned")
         else:
-            return render(request, 'partials/due_date_form.html', {'form': form})
+            return render(request, 'partials/due_date_form.html', {'form': form, 'teacher' : request.user.teacher})
     return HttpResponseBadRequest("Invalid request.")
 
 @csrf_exempt
@@ -533,4 +539,4 @@ def create_material(request):
     else:
         form = MaterialForm()
 
-    return render(request, 'create_material.html', {'form': form})
+    return render(request, 'create_material.html', {'form': form, 'teacher': request.user.teacher})

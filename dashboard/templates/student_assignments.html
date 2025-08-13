@@ -7,6 +7,17 @@
     <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
+            <a href="{% url 'student_assignments' %}">Assignments</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
     <h1>{{request.user.get_short_name}}'s Assignments</h1>
     <div class="class-grid">
     {%if class_forms%}
@@ -43,7 +54,6 @@
     {%endif%}
     </div>
 
-    <a href="{% url 'student_dashboard'%}" class = "button">Return to dashboard</a>
 </body>
 </html>
 

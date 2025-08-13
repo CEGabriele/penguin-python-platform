@@ -88,6 +88,20 @@
     </script>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+            <a href="{% url 'teacher_assignments' %}">Assignments</a>
+            {% if teacher.is_admin %}
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
     <form method="post" action = "{%url 'create_homework_template'%}">
         <h1>Add New Homework Form</h1>
         

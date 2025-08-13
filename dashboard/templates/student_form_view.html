@@ -122,6 +122,16 @@
     </head>
 
 <body>
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
+            <a href="{% url 'student_assignments' %}">Assignments</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
     <h2>{{assigned.template.name }}</h2>
     <p>{{ assigned.template.description }}</p>
@@ -155,10 +165,6 @@
       <button type="submit">Submit Assignment</button>
     </form>
 
-    <br>
-    <a href="{% url 'student_assignments'%}" class = "button">Return to all assignments</a>
-    <br>
-    <a href="{% url 'student_dashboard'%}" class = "button">Return to dashboard</a>
 
 </body>
 

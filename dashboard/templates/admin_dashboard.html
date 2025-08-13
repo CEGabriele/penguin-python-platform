@@ -34,12 +34,19 @@
 
 </head>
 <body>
-    <a href = "{% url 'teacher_dashboard' %}" class="button"> Teacher Dashboard </a> <br>
-    
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+            <a href="{% url 'teacher_assignments' %}">Assignments</a>
+            {% if teacher.is_admin %}
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
     <br>
     <div class = "collapsible-card">
         <button type ="button" class="collapsible">Create New Students</button>

@@ -9,18 +9,20 @@
 </head>
 
 <body>
-
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+            <a href="{% url 'teacher_assignments' %}">Assignments</a>
+            {% if teacher.is_admin %}
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+            {% endif %}
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
     <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
-
-    <a href="{% url 'teacher_assignments'%}" class ="button"> View your assignments</a>
-    {% if teacher.is_admin%}
-        <a href="{% url 'admin_dashboard' %}" class="button">Admin Dashboard</a>
-    {% endif %}
-
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="logout-button">Logout</button>
-    </form>
 
     {% if classes%}
 
