@@ -30,6 +30,7 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name = 'logout'),
     path('select2_urls', include('django_select2.urls')),
     path("healthz/", healthz, name="healthz"),
+    path("healthz", healthz, name="healthz-no-slash"),
 ]
 
 if settings.DEBUG:
