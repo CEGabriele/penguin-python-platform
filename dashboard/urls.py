@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, student_assignments, teacher_assignments_list, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view, create_homework_template, assign_homework_assignment, get_due_date_form, post_material, create_material
+from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, student_assignments, teacher_assignments_list, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view, create_homework_template, assign_homework_assignment, get_due_date_form, post_material, create_material, download_material_view
 
 
 urlpatterns = [
     path('download/<int:file_id>/', download_file_view, name = 'download_file'),
+    path('download-material/<int:file_id>/', download_material_view, name = 'download_material'),
     path('student-dashboard/', student_dashboard, name = 'student_dashboard'),
     path('teacher-dashboard/', teacher_dashboard, name = 'teacher_dashboard'),
     path('view-student/<str:username>/', view_student, name = 'view_student'),
@@ -21,6 +22,5 @@ urlpatterns = [
     path('assign_homework_assignment', assign_homework_assignment, name="assign_homework_assignment"),
     path('post_material/<int:class_id>/<int:material_id>/', post_material, name='post_material_htmx'),
     path('create_material', create_material, name='create_material'),
-
 
 ]

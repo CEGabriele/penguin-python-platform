@@ -234,7 +234,17 @@ def download_file_view(request, file_id):
     except Uploads.DoesNotExist:
         raise Http404("File not found")
 
-
+@login_required
+def download_material_view(request, material_id):
+    try:
+        material = Material.objects.get(id = material_id)
+        return FileResponse(
+                material.file.open('rb'),
+                as_attachment=True,
+                filename=material.file.name.split('/')[-1]
+        )
+    except Material.DoesNotExist:
+        raise Http404("Material not found")
 
 @login_required
 @student_required
