@@ -4,6 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv(), override=True)
 from .base import *
+from pathlib import Path
 
 DEBUG = False
 
@@ -33,6 +34,13 @@ MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+
+PRIVATE_MEDIA_ROOT = Path("/home/ubuntu/homework_dashboard/private_media")
+
+from django.core.files.storage import FileSystemStorage
+class PrivateMediaStorage(FileSystemStorage):
+    def __init__(self, *args, **kwargs):
+        super().__init__(location=str(PRIVATE_MEDIA_ROOT), base_url=None, *args, **kwargs)
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 

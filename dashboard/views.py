@@ -218,13 +218,21 @@ def view_student(request, username):
 def download_file_view(request, file_id):
     try:
         file = Uploads.objects.get(id = file_id)
-        return FileResponse(
-            file.file.open('rb'),
-            as_attachment=True,
-            filename = file.file.name.split('/')[-1]
-        )
+
+        allowed = (
+            request.user.is_superuser 
+            or file.student == request.user.student 
+            or file.for_class.teacher == request.user.teacher)
+        if allowed: 
+            return FileResponse(
+                file.file.open('rb'),
+                as_attachment=True,
+                filename = file.file.name.split('/')[-1]
+            )
+        else:
+            raise Http404("Access denied")
     except Uploads.DoesNotExist:
-        raise Http404("File not found or access denied")
+        raise Http404("File not found")
 
 
 

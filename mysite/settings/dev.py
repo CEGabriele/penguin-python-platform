@@ -1,5 +1,6 @@
 from .base import *
 from dotenv import load_dotenv
+from pathlib import Path
 load_dotenv()
 
 DATABASES["default"].update({
@@ -38,3 +39,10 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
+
+from django.core.files.storage import FileSystemStorage
+class PrivateMediaStorage(FileSystemStorage):
+    def __init__(self, *args, **kwargs):
+        super().__init__(location=str(PRIVATE_MEDIA_ROOT), base_url=None, *args, **kwargs)

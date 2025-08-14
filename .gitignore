@@ -12,3 +12,4 @@ __pycache__/
 .venv/
 
 media/
+/private_media\/n
