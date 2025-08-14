@@ -12,6 +12,7 @@ import traceback
 from dashboard.services.ai_hw_review import get_ai_review
 from django.db.models import OuterRef, Exists, Count, Q
 from collections import defaultdict
+from django.db import connection
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -558,3 +559,19 @@ def create_material(request):
         form = MaterialForm()
 
     return render(request, 'create_material.html', {'form': form, 'teacher': request.user.teacher})
+
+def healthz(request):
+    """
+    Simple health check endpoint.
+    Returns {"ok": True} if app and DB respond.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            cursor.fetchone()
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    status = 200 if db_ok else 500
+    return JsonResponse({"ok": db_ok}, status=status)
