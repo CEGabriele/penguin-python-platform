@@ -198,4 +198,4 @@ class AssignHomeworkDueDateForm(forms.Form):
 class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
-        fields = ['curriculum', 'title', 'description', 'class_week' 'file', 'link']
+        fields = ['curriculum', 'title', 'description', 'class_week', 'file', 'link']
