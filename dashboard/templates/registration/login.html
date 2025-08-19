@@ -39,12 +39,10 @@
         </div>
         <div>
             {{ form.password.label_tag }} 
-            <div class = "input-group">
-                {{ form.password }}
-                <span class = "input-group-text", id="togglePassword">
-                    <i class = "bi bi-eye"></i>
-                </span>
-            </div>
+            {{ form.password }}
+            <span id="togglePassword">
+                <i class = "bi bi-eye"></i>
+            </span>
         </div>
         <button type = "submit">Login</button>
     </form>
