@@ -39,17 +39,16 @@
             {% endif %}
          </div>
       {% endfor %}
-   
-      {% if general_materials.assignments%}
-         <h4>Homework</h4>
-         {% for assignment in general_materials.assignments %}
-            <div class = "assignment-card">
-               <h3>{{assignment.template.name}}</h3>
-               <p>Due {{ assignment.due_date}}</p>
-               <a href = "{% url 'student_form_view' assignment.id%}" class = "button">View form details</a>
-            </div>
-         {% endfor %}
-      {% endif %}
+   {% endif %}
+   {% if general_materials.assignments%}
+      <h4>Assignments</h4>
+      {% for assignment in general_materials.assignments %}
+         <div class = "assignment-card">
+            <h3>{{assignment.template.name}}</h3>
+            <p>Due {{ assignment.due_date}}</p>
+            <a href = "{% url 'student_form_view' assignment.id%}" class = "button">View form details</a>
+         </div>
+      {% endfor %}
    {% endif %}
 
    {% for week, data in sorted_weeks.items %}
