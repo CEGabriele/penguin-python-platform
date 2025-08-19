@@ -86,7 +86,7 @@
       
    {% endfor %}
 
-   {% if not sorted_week or not general_materials.materials and not general_materials.assignments %}
+   {% if not sorted_week and not general_materials.materials and not general_materials.assignments %}
       <p>No materials or assignments available for this class.</p>
    {% endif %}
 
