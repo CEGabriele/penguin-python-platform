@@ -124,11 +124,16 @@ class ClassCreationForm(forms.ModelForm):
         widget=ModelSelect2MultipleWidget(
             search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
         ),
+        
     )
 
     class Meta:
         model = Class
         fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
+
+        widgets = {
+            "time": forms.TimeInput(attrs={"type": "time"}),
+        }
 
     def save(self, commit=True):
         instance = super().save(commit=False)

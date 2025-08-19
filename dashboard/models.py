@@ -21,12 +21,33 @@ class Curriculum(models.Model):
         return self.name
 
 class Class(models.Model):
+    DAY_CHOICES = [
+        ('Monday', 'Monday'),
+        ('Tuesday', 'Tuesday'),
+        ('Wednesday', 'Wednesday'),
+        ('Thursday', 'Thursday'),
+        ('Friday', 'Friday'),
+        ('Saturday', 'Saturday'),
+        ('Sunday', 'Sunday'),
+    ]
+
+    LOCATION_CHOICES = [
+
+        ('Lexington', 'Lexington'),
+        ('Acton', 'Acton'),
+        ('Newton', 'Newton'),
+        ('Brookline', 'Brookline'),
+        ('Cobble Hill', 'Cobble Hill'),
+        ('Park Slope', 'Park Slope'),
+        ('Online', 'Online'),
+    ]
+            
     name = models.CharField(max_length = 100)
-    day = models.CharField(max_length = 9)
+    day = models.CharField(choices=DAY_CHOICES)
     time = models.TimeField()
     code = models.CharField(unique = True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
-    location = models.CharField(default = "Lexington")
+    location = models.CharField(choices=LOCATION_CHOICES)
     curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE, blank = True, null = True, related_name = "classes")
     def save(self, *args, **kwargs):
         if not self.code:
