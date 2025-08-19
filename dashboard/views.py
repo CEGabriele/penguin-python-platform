@@ -434,7 +434,6 @@ def student_class_view(request, class_code):
     
     assigned_homework = AssignedHomework.objects.filter(for_class = class_obj).select_related('template')
     posted_material = PostedMaterial.objects.filter(for_class = class_obj).select_related('material')
-    print(assigned_homework, posted_material)
     weekly_assignments = defaultdict(lambda: {'assignments': [], 'materials': []})
 
     for hw in assigned_homework:
@@ -443,10 +442,8 @@ def student_class_view(request, class_code):
     for pm in posted_material:
         week = pm.material.class_week
         weekly_assignments[week]['materials'].append(pm.material)
-    print(weekly_assignments)
     general_materials = weekly_assignments.pop(0, None)
     sorted_weeks = dict(sorted(weekly_assignments.items()))
-    print(general_materials, sorted_weeks)
     context = {
         'class': class_obj,
         'general_materials': general_materials,
