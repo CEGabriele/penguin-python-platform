@@ -34,7 +34,7 @@ class ClassworkUpload(forms.ModelForm):
 class HomeworkTemplateForm(forms.ModelForm):
     class Meta:
         model = HomeworkTemplate
-        fields = ['name', 'description', 'curriculum']
+        fields = ['name', 'description', 'curriculum', 'class_week', 'new_material']
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['curriculum'].label_from_instance = lambda obj: obj.name
@@ -198,4 +198,4 @@ class AssignHomeworkDueDateForm(forms.Form):
 class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
-        fields = ['curriculum', 'title', 'description', 'file', 'link']
+        fields = ['curriculum', 'title', 'description', 'class_week' 'file', 'link']
