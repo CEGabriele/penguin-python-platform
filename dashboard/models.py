@@ -4,8 +4,8 @@ import uuid, os
 from .storages import PrivateMediaStorage
 
 def unique_student_upload_path(instance, filename):
-    ext = os.path.splitext(filename)[1]
-    return f"student_files/{uuid.uuid4().hex}{ext}"
+    # If you want to KEEP original filenames:
+    return f"student_uploads/{filename}"
 
 class Teacher (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
@@ -75,7 +75,7 @@ class Student (models.Model):
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)
-    file = models.FileField(storage=PrivateMediaStorage(), upload_to=unique_student_upload_path)
+    file = models.FileField(storage=PrivateMediaStorage(), upload_to="student_files/")
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
