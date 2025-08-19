@@ -52,7 +52,7 @@
       {% endif %}
    {% endif %}
 
-   {% for week, data in sorted_week %}
+   {% for week, data in sorted_weeks.items %}
       <h3>Week {{ week }}</h3>
 
       {% if data.materials %}
@@ -86,7 +86,7 @@
       
    {% endfor %}
 
-   {% if not sorted_week and not general_materials.materials and not general_materials.assignments %}
+   {% if not sorted_weeks and not general_materials.materials and not general_materials.assignments %}
       <p>No materials or assignments available for this class.</p>
    {% endif %}
 

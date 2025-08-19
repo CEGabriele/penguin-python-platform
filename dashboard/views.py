@@ -442,7 +442,7 @@ def student_class_view(request, class_code):
     for pm in posted_material:
         week = pm.material.class_week
         weekly_assignments[week]['materials'].append(pm.material)
-    general_materials = weekly_assignments.pop(0, None)
+    general_materials = weekly_assignments.pop(0, {'assignments': [], 'materials': []})
     sorted_weeks = dict(sorted(weekly_assignments.items()))
     context = {
         'class': class_obj,
