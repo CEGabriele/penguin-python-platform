@@ -71,12 +71,5 @@
         {%endif%}
     {%endfor%}
 
-    
-    <a href = "{% url 'teacher_dashboard' %}" class = "button"> Go to dashboard </a> <br>
-    
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
 </body>
 </html>
