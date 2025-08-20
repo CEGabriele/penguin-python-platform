@@ -482,8 +482,8 @@ def get_code_feedback(request):
             data = json.loads(body_unicode)
 
             code = data.get("code")
-            question_id = data.get("question_id")
-            student_id = data.get("student_id")
+            question_id = int(data.get("question_id"))
+            student_id = int(data.get("student_id"))
 
             if not code or not question_id:
                 return JsonResponse({"error": "Missing code or question_id"}, status=400)
