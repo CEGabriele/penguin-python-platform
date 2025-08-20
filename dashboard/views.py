@@ -488,7 +488,7 @@ def get_code_feedback(request):
             if not code or not question_id:
                 return JsonResponse({"error": "Missing code or question_id"}, status=400)
 
-            feedback = get_ai_review(code, question_id)
+            feedback = get_ai_review(request, code, question_id)
 
             AIFeedback.objects.create(
                 question = get_object_or_404(HomeworkQuestion, id=question_id),
