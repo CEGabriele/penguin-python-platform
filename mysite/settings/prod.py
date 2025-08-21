@@ -32,14 +32,17 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_QUERYSTRING_AUTH = True  # media should be private → signed URLs
 AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # 1 day
 
-# Use our custom storages
+AWS_QUERYSTRING_AUTH = False   # <- set False here; the Media storage class still signs media
+
 DEFAULT_FILE_STORAGE = "project.storages.MediaRootS3Boto3Storage"
 STATICFILES_STORAGE = "project.storages.StaticRootS3Boto3Storage"
 
-# Public static (via S3 or CloudFront). If using S3 domain:
-STATIC_URL = f"https://homework-dashboard-resources.s3.amazonaws.com/static/"
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATIC_FILES_DIRS=[BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Media signed URLs; django-storages will sign when accessing file.url
 MEDIA_URL = f"https://homework-dashboard-resources.s3.amazonaws.com/media/"
