@@ -6,6 +6,7 @@ from .base import *
 from pathlib import Path
 
 DEBUG = False
+USES_S3=True
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 SECURE_SSL_REDIRECT = False

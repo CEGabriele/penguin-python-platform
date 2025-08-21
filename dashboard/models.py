@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import uuid, os
-from .storages import PrivateMediaStorage
+from .storages import MediaRootS3Boto3Storage
 
 def unique_student_upload_path(instance, filename):
     # If you want to KEEP original filenames:
@@ -75,7 +75,7 @@ class Student (models.Model):
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
     id = models.BigAutoField(primary_key=True)
-    file = models.FileField(storage=PrivateMediaStorage(), upload_to="student_files/")
+    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to="student_files/")
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
     file_type = models.CharField(max_length = 2)
@@ -121,7 +121,7 @@ class Material(models.Model):
     curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE, related_name = "materials")
     title = models.CharField()
     description = models.TextField(blank = True)
-    file = models.FileField(storage=PrivateMediaStorage(), upload_to='curriculum_materials', null = True, blank = True)
+    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to='curriculum_materials', null = True, blank = True)
     link = models.URLField(blank = True, null = True)
     class_week = models.IntegerField(default = 0)
 

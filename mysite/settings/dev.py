@@ -3,10 +3,15 @@ from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv()
 
+USES_S3=False
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 DATABASES["default"].update({
     "ENGINE": "django.db.backends.postgresql",
-    "NAME": os.getenv("DEV_DB_NAME"),
-    "USER": os.getenv("DEV_DB_USERNAME"),
+    "NAME": os.getenv("DB_NAME"),
+    "USER": os.getenv("DB_USERNAME"),
     "PASSWORD": os.getenv("DB_PASSWORD"),
     "HOST": os.getenv("DB_HOST"),
     "PORT": os.getenv("DB_PORT"),
@@ -40,7 +45,9 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
 
 from django.core.files.storage import FileSystemStorage
 class PrivateMediaStorage(FileSystemStorage):
