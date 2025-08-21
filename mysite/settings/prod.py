@@ -38,7 +38,8 @@ STATICFILES_STORAGE = "project.storages.StaticRootS3Boto3Storage"
 
 # Public static (via S3 or CloudFront). If using S3 domain:
 STATIC_URL = f"https://homework-dashboard-resources.s3.amazonaws.com/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_FILES_DIRS=[BASE_DIR / "static"]
 
 # Media signed URLs; django-storages will sign when accessing file.url
 MEDIA_URL = f"https://homework-dashboard-resources.s3.amazonaws.com/media/"
