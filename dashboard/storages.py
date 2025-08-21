@@ -1,6 +1,11 @@
-from django.conf import settings
-from django.core.files.storage import FileSystemStorage
+from storages.backends.s3boto3 import S3Boto3Storage
 
-class PrivateMediaStorage(FileSystemStorage):
-    def __init__(self, *args, **kwargs):
-        super().__init__(location=str(settings.PRIVATE_MEDIA_ROOT), base_url=None, *args, **kwargs)
+class StaticRootS3Boto3Storage(S3Boto3Storage):
+    location = "static"
+    default_acl = "public-read"
+    file_overwrite = True
+
+class MediaRootS3Boto3Storage(S3Boto3Storage):
+    location = "media"
+    default_acl = None
+    file_overwrite = False

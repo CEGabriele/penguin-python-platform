@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'dashboard',
     'django_icons',
     'django_select2',
+    'storages'
 ]
 
 DJANGO_ICONS = {
