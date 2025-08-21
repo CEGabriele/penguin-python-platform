@@ -6,7 +6,7 @@ from .base import *
 from pathlib import Path
 
 DEBUG = False
-USES_S3=True
+USE_S3=True
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 SECURE_SSL_REDIRECT = False
@@ -29,23 +29,20 @@ AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ca-central-1")
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_DEFAULT_ACL = None
 AWS_S3_FILE_OVERWRITE = False
-AWS_QUERYSTRING_AUTH = True  # media should be private → signed URLs
 AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # 1 day
 
-AWS_QUERYSTRING_AUTH = False   # <- set False here; the Media storage class still signs media
+AWS_QUERYSTRING_AUTH = False
 
 DEFAULT_FILE_STORAGE = "project.storages.MediaRootS3Boto3Storage"
 STATICFILES_STORAGE = "project.storages.StaticRootS3Boto3Storage"
 
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Media signed URLs; django-storages will sign when accessing file.url
-MEDIA_URL = f"https://homework-dashboard-resources.s3.amazonaws.com/media/"
 
 LOGGING = {
     "version": 1,

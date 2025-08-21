@@ -1,4 +1,3 @@
-
 import os
 from django.conf import settings
 
@@ -9,23 +8,26 @@ if USE_S3:
 
     class StaticRootS3Boto3Storage(S3Boto3Storage):
         location = "static"
-        default_acl = "public-read"
+        default_acl = None
         file_overwrite = True
+        querystring_auth = False
 
     class MediaRootS3Boto3Storage(S3Boto3Storage):
         location = "media"
-        default_acl = None
+        default_acl = "private"
         file_overwrite = False
+        querystring_auth = True
 
     class PrivateMediaStorage(MediaRootS3Boto3Storage):
-        """Backwards-compat alias used by old migrations."""
         pass
+
 else:
+    # Local fallback for dev
     from django.core.files.storage import FileSystemStorage
     from pathlib import Path
+
     class StaticRootS3Boto3Storage(FileSystemStorage):
         def __init__(self, *args, **kwargs):
-            # Serve static from /static/ in DEBUG; collectstatic can still use STATIC_ROOT
             static_root = getattr(settings, "STATIC_ROOT", Path("staticfiles"))
             kwargs.setdefault("location", str(static_root))
             kwargs.setdefault("base_url", None)
@@ -37,9 +39,8 @@ else:
             kwargs.setdefault("location", str(local_root))
             kwargs.setdefault("base_url", None)
             super().__init__(*args, **kwargs)
-    
+
     class PrivateMediaStorage(FileSystemStorage):
-        """Local fallback for dev."""
         def __init__(self, *args, **kwargs):
             local_root = getattr(settings, "PRIVATE_MEDIA_ROOT", Path("media"))
             super().__init__(location=str(local_root), base_url=None, *args, **kwargs)
