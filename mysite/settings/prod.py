@@ -44,9 +44,6 @@ AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # 1 day
 # Static should be public (no signatures); media uses signed URLs
 AWS_QUERYSTRING_AUTH = False
 
-# Make sure django-storages is enabled
-INSTALLED_APPS += ["storages"]
-
 # --------------------
 # Static / Media URLs
 # --------------------
