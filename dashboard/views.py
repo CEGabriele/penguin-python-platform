@@ -7,12 +7,13 @@ from itertools import groupby
 from operator import attrgetter
 from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
-import json
+import json, os
 import traceback
 from dashboard.services.ai_hw_review import get_ai_review
 from django.db.models import OuterRef, Exists, Count, Q
 from collections import defaultdict
 from django.db import connection
+from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -28,6 +29,17 @@ def teacher_required(view_function):
         
         return view_function(request, *args, **kwargs)
     return wrapper
+
+try:
+    from botocore.exceptions import ClientError
+except Exception:
+    ClientError = tuple()
+
+def _related_or_none(obj, attr: str):
+    try:
+        return getattr(obj, attr)
+    except ObjectDoesNotExist:
+        return None
 
 @login_required
 @student_required
@@ -217,29 +229,35 @@ def view_student(request, username):
 
 @login_required
 def download_file_view(request, file_id):
-    
-    file = Uploads.objects.get(id = file_id)
-    user = request.user
-    user_student = getattr(user, "student", None)   # None if no student profile
-    user_teacher = getattr(user, "teacher", None)   # None if no teacher profile
 
-    is_owner   = bool(user_student) and (file.student_id == user_student.id)
-    is_teacher = bool(user_teacher) and getattr(file.for_class, "teacher_id", None) == user_teacher.id
+    upload = get_object_or_404(
+        Uploads.objects.select_related("person", "for_class__teacher"),
+        id=file_id,
+    )
+
+    user = request.user
+    user_teacher = _related_or_none(user, "teacher")
     is_admin   = user.is_superuser
-    
+    is_owner   = (upload.person_id == user.id)    
+
+    class_id  = getattr(upload.for_class, "teacher_id", None)
+    is_teacher = (user_teacher is not None) and (class_id == getattr(user_teacher, "id", None))
 
     if not (is_admin or is_owner or is_teacher):
         raise Http404("Access denied")
+
+    # Open and stream the file; map storage issues to 404 instead of 500
     try:
-        file.file.open("rb")
-    except FileNotFoundError:
-            raise Http404("File not found")
-    
+        upload.file.open("rb")
+    except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
+        raise Http404("File not found on storage")
+
     return FileResponse(
-                file.file.open('rb'),
-                as_attachment=True,
-                filename = file.file.name.split('/')[-1]
-            )
+        upload.file,
+        as_attachment=True,
+        filename=os.path.basename(upload.file.name or "download.bin"),
+    )
+    
 
 @login_required
 def download_material_view(request, material_id):
