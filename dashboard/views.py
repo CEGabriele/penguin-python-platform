@@ -217,23 +217,29 @@ def view_student(request, username):
 
 @login_required
 def download_file_view(request, file_id):
-    try:
-        file = Uploads.objects.get(id = file_id)
+    
+    file = Uploads.objects.get(id = file_id)
+    user = request.user
+    user_student = getattr(user, "student", None)   # None if no student profile
+    user_teacher = getattr(user, "teacher", None)   # None if no teacher profile
 
-        allowed = (
-            request.user.is_superuser 
-            or file.student == request.user.student 
-            or file.for_class.teacher == request.user.teacher)
-        if allowed: 
-            return FileResponse(
+    is_owner   = bool(user_student) and (file.student_id == user_student.id)
+    is_teacher = bool(user_teacher) and getattr(file.for_class, "teacher_id", None) == user_teacher.id
+    is_admin   = user.is_superuser
+    
+
+    if not (is_admin or is_owner or is_teacher):
+        raise Http404("Access denied")
+    try:
+        file.file.open("rb")
+    except FileNotFoundError:
+            raise Http404("File not found")
+    
+    return FileResponse(
                 file.file.open('rb'),
                 as_attachment=True,
                 filename = file.file.name.split('/')[-1]
             )
-        else:
-            raise Http404("Access denied")
-    except Uploads.DoesNotExist:
-        raise Http404("File not found")
 
 @login_required
 def download_material_view(request, material_id):
