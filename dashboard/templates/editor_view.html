@@ -1,0 +1,82 @@
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <!-- load Monaco and Pyodide -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="navbar-links">
+      {% if user.teacher%}  
+      <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+      <a href="{% url 'teacher_assignments' %}">Assignments</a>
+        {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+        {% endif %}
+      {% else %}
+      <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
+      <a href="{% url 'student_assignments' %}">Assignments</a>
+      {%endif%}
+      <a href ="{% url 'editor_view' %}">Code Editor</a>
+      <form action="{% url 'logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="logout-button">Logout</button>
+      </form>
+      </div>
+  </nav>
+  <div class="editor-container">
+    <form method = "post">
+        {% csrf_token %}
+
+        <div id="controls">
+            <button id="run" type="button" onclick="window.runCode()">Run</button>
+            <button id="stop" type = "button" onclick="window.stopCode()">Stop</button>
+        </div>
+      
+        <script type="module" src="{% static 'editor/main.js'%}"></script>
+          
+          <!--
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const field = document.getElementById("id_code");
+        
+              // Load saved code back into editor (after Monaco init)
+              setTimeout(() => {
+                if (window.EditorAPI?.setValue && field.value) {
+                  window.EditorAPI.setValue(field.value);
+                }
+              }, 100);
+        
+              // On form submit, sync editor value into hidden field
+              const form = field.closest("form");
+              form.addEventListener("submit", () => {
+                if (window.EditorAPI?.getValue) {
+                  field.value = window.EditorAPI.getValue();
+                }
+              });
+            });
+          </script>
+            -->
+    </form>
+  </div>
+
+  <div id="main">
+      <div id="editor"></div>
+      <!-- dynamically opens and closes -->
+      <div id="graphics-container" style="display:none; text-align:center; background:#222; padding:5px;">
+        <!-- Pygame canvas -->
+        <canvas id="graphics-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
+        <!-- Turtle canvas -->
+        <canvas id="turtle-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
+      </div>
+
+      <div id="console"></div>
+  </div>
+</body>
+</html>

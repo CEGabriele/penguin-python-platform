@@ -596,3 +596,28 @@ def healthz(request):
 
     status = 200 if db_ok else 500
     return JsonResponse({"ok": db_ok}, status=status)
+
+def editor_view(request):
+    #assigned_homework = get_object_or_404(AssignedHomework, id=homework_id)
+    #question = get_object_or_404(HomeworkQuestion, id=question_id, assigned_homework=assigned_homework)
+    
+    user = request.user
+    """
+    response, created = StudentQuestionResponse.objects.get_or_create(
+        student=student,
+        question=question,
+        assigned_homework=assigned_homework
+    )
+
+    if request.method == 'POST':
+        code = request.POST.get('code', '')
+        filename = response.upload.filename +".py"
+        response = Uploads.objects.create(
+            file_type='HW',
+            person=request.user,
+            file=code,
+            filename=filename,
+            for_class=assigned_homework.for_class
+        )
+    """
+    return render(request, "editor_view.html", {user: request.user})

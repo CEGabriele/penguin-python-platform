@@ -7,6 +7,7 @@ print("Hello World!")
 
 `;
 
+
 let pyodide = null;
 let editor = null;
 let codeRunning = false;
@@ -23,7 +24,21 @@ require(['vs/editor/editor.main'], function () {
       language: 'python',
       theme: 'vs-dark',
       automaticLayout: true,
+      scrollBeyondLastLine: false,
    });
+
+   const editor_container = document.getElementById('editor');
+   const graphics_container = document.getElementById('graphics-container');
+
+   function updateHeight(){
+      const height = editor.getContentHeight();
+      editor_container.style.height = height + 'px';
+      graphics_container.style.top = height + 'px';
+      editor.layout()
+   }
+
+   updateHeight();
+   editor.onDidContentSizeChange(updateHeight);
 });
 
 // writes to the console
