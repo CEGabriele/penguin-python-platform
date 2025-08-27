@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, student_assignments, teacher_assignments_list, student_form_view, responses_view, student_class_view, teacher_class_view, get_code_feedback, admin_dashboard, admin_class_view, create_homework_template, assign_homework_assignment, get_due_date_form, post_material, create_material, download_material_view, editor_view
+from .views import *
 
 
 urlpatterns = [
