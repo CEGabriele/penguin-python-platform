@@ -65,7 +65,6 @@ body {
     cursor: pointer;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
     display: inline-block;
 
 }
@@ -269,8 +268,8 @@ a {
     cursor: pointer;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
     display: inline-block;
+    align-items: center;
     
 }
 
@@ -284,3 +283,57 @@ a {
     padding: 0.5rem 1rem;
     text-decoration: none;
 }
+
+.editor-container body {
+    color: black;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    font-family: sans-serif;
+ }
+ 
+ #controls {
+    padding: 10px;
+    background: #E5E6E4;
+    border-bottom: 1px solid;
+ }
+ 
+ #main {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+ }
+ 
+ #editor {
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid #444;
+    text-align: left;
+ }
+ 
+ #console {
+    width: 40%;
+    background: #111;
+    color: white;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    text-align: left;
+ }
+ 
+ #userInput {
+    background-color: #111;
+    border: none;
+    color: white;
+    text-decoration: none;
+ }
+ 
+ #graphics-container.hidden {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+ }
