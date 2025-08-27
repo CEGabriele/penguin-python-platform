@@ -15,6 +15,7 @@
       <div class="navbar-links">
           <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
           <a href="{% url 'student_assignments' %}">Assignments</a>
+          <a href ="{% url 'editor_view' %}">Code Editor</a>
           <form action="{% url 'logout' %}" method="post" style="display:inline;">
               {% csrf_token %}
               <button type="submit" class="logout-button">Logout</button>

@@ -17,6 +17,7 @@
         {% if teacher.is_admin %}
             <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
         {% endif %}
+        <a href ="{% url 'editor_view' %}">Code Editor</a>
         <form action="{% url 'logout' %}" method="post" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="logout-button">Logout</button>
