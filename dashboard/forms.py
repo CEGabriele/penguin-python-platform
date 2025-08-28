@@ -124,6 +124,7 @@ class ClassCreationForm(forms.ModelForm):
         widget=ModelSelect2MultipleWidget(
             search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
         ),
+        required = False,
         
     )
 

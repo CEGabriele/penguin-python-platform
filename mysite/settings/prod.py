@@ -41,6 +41,8 @@ AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazo
 AWS_DEFAULT_ACL = None
 AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # 1 day
 
+AWS_S3_FILE_OVERWRITE = True
+
 # Static should be public (no signatures); media uses signed URLs
 AWS_QUERYSTRING_AUTH = False
 

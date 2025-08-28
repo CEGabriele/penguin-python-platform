@@ -43,7 +43,7 @@
                                 <i class="bi bi-file-earmark-code"></i>
                             </div>
                             <div class = 'file-details'>
-                                <p class = "file-name">{{ file.file.name |cut:"student_files/"}}</p>
+                                <p class = "file-name">{{ file.display_name }}</p>
                                 <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
                                 <a class = 'download-link' href="{% url 'download_file' file.id %}">
                                     Download
@@ -66,7 +66,7 @@
                                     <i class="bi bi-file-earmark-code"></i>
                                 </div>
                                 <div class = 'file-details'>
-                                    <p class = "file-name">{{ file.file.name |cut:"student_files/"}}</p>
+                                    <p class = "file-name">{{ file.display_name |cut:"student_files/"}}</p>
                                     <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
                                     <a class = 'download-link' href="{% url 'download_file' file.id %}">
                                         Download

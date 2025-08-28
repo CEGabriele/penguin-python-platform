@@ -14,6 +14,8 @@ from django.db.models import OuterRef, Exists, Count, Q
 from collections import defaultdict
 from django.db import connection
 from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
+from django.utils.text import slugify
+from django.core.files.base import ContentFile
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -83,7 +85,6 @@ def student_dashboard(request):
             'hw_files': hw_files,
             'cw_files': cw_files,
                         })
-
 
 
     return render(request, 'student_dashboard.html', {
@@ -255,7 +256,7 @@ def download_file_view(request, file_id):
     return FileResponse(
         upload.file,
         as_attachment=True,
-        filename=os.path.basename(upload.file.name or "download.bin"),
+        filename=os.path.basename(upload.display_name or "download.bin"),
     )
     
 
@@ -597,27 +598,42 @@ def healthz(request):
     status = 200 if db_ok else 500
     return JsonResponse({"ok": db_ok}, status=status)
 
+@login_required
 def editor_view(request):
     #assigned_homework = get_object_or_404(AssignedHomework, id=homework_id)
     #question = get_object_or_404(HomeworkQuestion, id=question_id, assigned_homework=assigned_homework)
     
     user = request.user
-    """
-    response, created = StudentQuestionResponse.objects.get_or_create(
-        student=student,
-        question=question,
-        assigned_homework=assigned_homework
-    )
 
-    if request.method == 'POST':
-        code = request.POST.get('code', '')
-        filename = response.upload.filename +".py"
-        response = Uploads.objects.create(
-            file_type='HW',
+    if request.method == "POST":
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return HttpResponseBadRequest("Invalid AJAX request.")
+           
+        code = request.POST.get("code", "")
+        name = request.POST.get("name", "untitled")+".py"
+        class_id = request.POST.get("class_id")
+        class_obj = get_object_or_404(Class, id=class_id)
+
+        upload, _ = Uploads.objects.get_or_create(
             person=request.user,
-            file=code,
-            filename=filename,
-            for_class=assigned_homework.for_class
+            for_class=class_obj,
+            display_name = name,
+            file_type = "CW",
         )
-    """
-    return render(request, "editor_view.html", {user: request.user})
+
+        name = name[:-3]
+        label = slugify(name) or "code"
+        filename = f"{class_id}/user-{request.user.id}/{label}.py"
+        upload.file.save(filename, ContentFile(code), save=True)
+
+        return JsonResponse({"ok": True, "file_id": upload.id, "display_name": name, "filename":filename, "class": class_obj.name})
+
+    if hasattr(user, "teacher"):
+        class_options = user.teacher.classes.all()
+    elif hasattr(user, "student"):
+        class_options = user.student.classes.all()
+    else:
+        class_options = []
+    
+    
+    return render(request, "editor_view.html", {"user": request.user, "class_options": class_options, "initial_code": ""})

@@ -78,7 +78,8 @@ class Uploads (models.Model):
     file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to="student_files/")
     uploaded_at = models.DateTimeField(auto_now_add = True)
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
-    file_type = models.CharField(max_length = 2)
+    file_type = models.CharField(max_length = 2, default = "hw")
+    display_name = models.CharField(max_length = 200, blank = True, null = True)
 
 class HomeworkTemplate(models.Model):
     name = models.CharField(max_length=100)

@@ -37,32 +37,22 @@
         <div id="controls">
             <button id="run" type="button" onclick="window.runCode()">Run</button>
             <button id="stop" type = "button" onclick="window.stopCode()">Stop</button>
+            <label for="class">Class:</label>
+            <select id="class">
+                {% for c in class_options %}
+                    <option value="{{ c.id }}">
+                    {{ c.name }}</option>
+                {% endfor %}
+            </select>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" value="{{ code_name }}" required>
+            <button type="button" id="saveBtn">Save</button>
+            <span id="saveStatus" style="margin-left:8px; font-size:0.95rem; opacity:0.8;"></span>
         </div>
+
+        <textarea id="id_code" hidden>{{ initial_code|default_if_none:"" }}</textarea>
       
         <script type="module" src="{% static 'editor/main.js'%}"></script>
-          
-          <!--
-          <script>
-            document.addEventListener("DOMContentLoaded", function () {
-              const field = document.getElementById("id_code");
-        
-              // Load saved code back into editor (after Monaco init)
-              setTimeout(() => {
-                if (window.EditorAPI?.setValue && field.value) {
-                  window.EditorAPI.setValue(field.value);
-                }
-              }, 100);
-        
-              // On form submit, sync editor value into hidden field
-              const form = field.closest("form");
-              form.addEventListener("submit", () => {
-                if (window.EditorAPI?.getValue) {
-                  field.value = window.EditorAPI.getValue();
-                }
-              });
-            });
-          </script>
-            -->
     </form>
   </div>
 
@@ -78,5 +68,62 @@
 
       <div id="console"></div>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const hidden = document.getElementById("id_code");
+      setTimeout(() => {
+        if  (window.EditorAPI?.setValue && hidden.value ) {
+          window.EditorAPI.setValue(hidden.value);
+        }
+      }, 80);
+    });
+
+    function getCsrfToken() {
+      const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    }
+
+    async function ajaxSave(){
+      const saveBtn = document.getElementById("saveBtn");
+      const status = document.getElementById("saveStatus");
+      const name = document.getElementById("name").value;
+      const class_id = document.getElementById("class").value;
+      const code = window.EditorAPI.getValue();
+
+      saveBtn.disabled = true;
+      status.textContent = "Saving...";
+
+      try {
+        const response = await fetch("{% url 'editor_view' %}", {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": getCsrfToken(),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          name: name,
+          class_id: class_id,
+          code: code,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error("Save failed");
+
+      status.textContent = "Saved!";
+    } catch (e){
+      console.error(e);
+      status.textContent = "Save failed. Try again.";
+    } finally {
+      saveBtn.disabled = false;
+      setTimeout(() => { if (status.textContent.startsWith("Saved")) status.textContent = "Saved ✓"; }, 3000);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("saveBtn").addEventListener("click", ajaxSave);
+  });
+  </script>
 </body>
 </html>
