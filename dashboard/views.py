@@ -397,7 +397,27 @@ def student_form_view(request, assigned_hw_id):
                 form.instance.student = request.user.student
                 form.instance.question = question
                 form.instance.assigned_homework = assigned
-                
+
+                if getattr(question, 'question_type', None) == 'multiple_choice':
+
+                    code = request.POST.get(f'code_q{question.id}', '') or ''
+                    if code.strip():
+                        display_name = f"{assigned.template.name}-q{question.id}"
+                        label = slugify(display_name) or f"q{question.id}"
+                        # Organize by class / student / assignment
+                        filename = f"class-{assigned.for_class_id}/student-{request.user.id}/assigned-{assigned.id}/{label}.py"
+
+                        upload = Uploads(
+                            person=request.user,
+                            file_type='HW',          # use your scheme ('HW' for homework)
+                            for_class=assigned.for_class,
+                            display_name=display_name
+                        )
+                        upload.file.save(filename, ContentFile(code), save=True)
+                        form.instance.upload = upload
+                    else:
+                        form.instance.upload = None
+
                 uploaded_file = form.cleaned_data.get('upload')
                 
                 if uploaded_file:

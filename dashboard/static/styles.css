@@ -284,7 +284,7 @@ a {
     text-decoration: none;
 }
 
-.editor-container body {
+.editor-container body , #editor-container .body {
     color: black;
     margin: 0;
     display: flex;
@@ -292,27 +292,27 @@ a {
     font-family: sans-serif;
  }
  
- #controls {
+ .controls, #controls {
     padding: 10px;
     background: #E5E6E4;
     border-bottom: 1px solid;
  }
  
- #main {
+#main, .main {
     flex: 1;
     display: flex;
     flex-direction: row;
     overflow: hidden;
  }
  
- #editor {
+ #editor, .editor {
     flex: 1;
     min-width: 0;
     border-right: 1px solid #444;
     text-align: left;
  }
  
- #console {
+ #console, .console {
     width: 40%;
     background: #111;
     color: white;
@@ -325,14 +325,14 @@ a {
     text-align: left;
  }
  
- #userInput {
+ #userInput, .userInput{
     background-color: #111;
     border: none;
     color: white;
     text-decoration: none;
  }
  
- #graphics-container.hidden {
+ #graphics-container.hidden, .graphics-container.hidden {
     display: none !important;
     height: 0 !important;
     padding: 0 !important;

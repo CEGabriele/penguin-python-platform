@@ -6,6 +6,10 @@
         <link rel="stylesheet" href="{% static 'styles.css' %}">
         <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
         <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+        <!-- load Monaco and Pyodide -->
+        <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+        <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+        <script type="module" src="{% static 'editor/mini_editor.js' %}"></script>
         <script>
             /**
                 * This script handles the functionality of checking code files uploaded by students.
@@ -18,25 +22,17 @@
                         const question_id = parseInt(this.getAttribute("data-question-id"));
                         const student_id = {{ student_id }}
                         const parent = button.closest(".question-block");
-                        const fileInput = parent.querySelector("input[type='file']");
                         const feedbackDiv = parent.querySelector(".ai-feedback");
-                        let code = "";
+                        const ed = window.__editors?.get(qid);
+                        const code = ed ? ed.getValue() : "";
 
-                       
-                        if (fileInput && fileInput.files.length > 0) {
-
-                            if (isPythonFile(fileInput.files[0]) ){
-                                feedbackDiv.innerHTML = "<p>Checking your code...</p>";
-                                code = await readFile(fileInput.files[0]);
-                            } else {
-                                feedbackDiv.innerHTML = "<p>Please upload a Python file.</p>";
-                                return;
-                            }
-                        }
-                        if (!code){
-                            feedbackDiv.innerHTML = "<p>Please upload a file to check.</p>";
+                        if (!code.trim()) {
+                            feedbackDiv.textContent = "Please write some code first.";
                             return;
                         }
+                        feedbackDiv.textContent = "Checking your code...";
+                        
+                        
                         fetch("{% url 'get_code_feedback' %}", {
                             method: "POST",
                             headers: {
@@ -138,7 +134,7 @@
     <h2>{{assigned.template.name }}</h2>
     <p>{{ assigned.template.description }}</p>
     <p>Due {{ assigned.due_date }}</p>
-    <form method="post" enctype="multipart/form-data">
+    <form id = "hw-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ formset.management_form }}
     
@@ -150,19 +146,46 @@
             {% elif form.instance.question.question_type == "short" %}
                 {{ form.answer_text }}
             {% elif form.instance.question.question_type == "file" %}
-                {{ form.upload }}
-                {% if form.instance.question.uses_ai%}
-                    <button type="button" class="check-code-button" data-question-id = "{{form.instance.question.id}}">Check My Code</button>
-                    <div class = "ai-feedback"></div>
-                {%endif%}
-                
+            
+            <div class="editor-container mini-editor" data-qid="{{ form.instance.question.id }}">
+                <div class="controls" id="controls-q{{ form.instance.question.id }}">
+                  <button type="button" class="run-btn"  data-qid="{{ form.instance.question.id }}">Run</button>
+                  <button type="button" class="stop-btn" data-qid="{{ form.instance.question.id }}">Stop</button>
+                  <span id="status-q{{ form.instance.question.id }}" class="status"></span>
+                </div>
+              
+                <div class="main" id="main-q{{ form.instance.question.id }}">
+                  <div id="editor-q{{ form.instance.question.id }}" class="editor"></div>
+              
+                  <div id="graphics-container-q{{ form.instance.question.id }}" class="graphics-container" style="display:none;">
+                    <canvas id="graphics-canvas-q{{ form.instance.question.id }}" width="640" height="480"
+                            class="graphics-canvas" style="display:none;"></canvas>
+                    <canvas id="turtle-canvas-q{{ form.instance.question.id }}" width="640" height="480"
+                            class="turtle-canvas" style="display:none;"></canvas>
+                  </div>
+              
+                  <div id="console-q{{ form.instance.question.id }}" class="console"></div>
+                </div>
+              
+                <!-- hidden field copied on submit -->
+                <textarea name="code_q{{ form.instance.question.id }}"
+                          id="code-q{{ form.instance.question.id }}" hidden></textarea>
+              
+                {{ form.question }} {# keep hidden FK field #}
+            
+                {% if form.instance.question.uses_ai %}
+                  <button type="button" class="check-code-button" data-question-id="{{ form.instance.question.id }}">Check My Code</button>
+                  <div class="ai-feedback"></div>
+                {% endif %}
+              </div>
+            
             {% endif %}
 
             {{ form.question }}
 
             
         </div>
-{% endfor %}
+        {% endfor %}    
     
       <button type="submit">Submit Assignment</button>
     </form>
