@@ -637,11 +637,15 @@ def editor_view(request):
 
     if upload_id:
         u = get_object_or_404(Uploads, id=upload_id)
+
+        if not (u.person == user or (hasattr(user, "teacher") and u.for_class and u.for_class.teacher == user.teacher) or user.is_superuser):
+            return HttpResponse("Access denied.", status=403)
         selected_class_id = str(u.for_class.id)
         u.file.open("rb")
         data = u.file.read()
         initial_code = force_str(data, errors="ignore")
         code_name = u.display_name or u.file.name.split("/")[-1]
+
 
 
     if hasattr(user, "teacher"):
