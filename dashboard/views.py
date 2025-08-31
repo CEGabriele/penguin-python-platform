@@ -398,7 +398,7 @@ def student_form_view(request, assigned_hw_id):
                 form.instance.question = question
                 form.instance.assigned_homework = assigned
 
-                if getattr(question, 'question_type', None) == 'multiple_choice':
+                if getattr(question, 'question_type', None) == 'file':
 
                     code = request.POST.get(f'code_q{question.id}', '') or ''
                     if code.strip():
