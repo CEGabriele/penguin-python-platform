@@ -41,6 +41,7 @@
                             <a class = 'download-link' href="{% url 'download_file' file.id %}">
                                 Download
                             </a>
+                            <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ file.id }}">Open in Editor</a>
                         </div>
                     </div>
                 {%endfor%}
@@ -63,6 +64,7 @@
                             <a class = 'download-link' href="{% url 'download_file' file.id %}">
                                 Download
                             </a>
+                            <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ file.id }}">Open in Editor</a>
                         </div>
                     </div>
                 {%endfor%}

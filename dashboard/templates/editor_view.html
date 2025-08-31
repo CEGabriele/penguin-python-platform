@@ -40,8 +40,9 @@
             <label for="class">Class:</label>
             <select id="class">
                 {% for c in class_options %}
-                    <option value="{{ c.id }}">
-                    {{ c.name }}</option>
+                  <option value="{{ c.id }}" {%if selected_class_id == c.id %}selected{% endif %}>
+                    {{ c.name }}
+                  </option>
                 {% endfor %}
             </select>
             <label for="name">Name:</label>

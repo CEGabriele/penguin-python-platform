@@ -52,6 +52,7 @@
                                         <p class = "file-name">{{ student.last_cw_file.display_name |cut:"student_files/"}}</p>
                                         <p class = "upload-date"> Uploaded {{student.last_cw_file.uploaded_at | date:"n/j/y"}}</p>
                                         <a  class = "download-link" href="{% url 'download_file' student.last_cw_file.id %}">Download</a>
+                                        <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ student.last_cw_file.id }}">Open in Editor</a>
                                     </div>
                                    
                                     
@@ -69,7 +70,8 @@
                                     <div class='file-details'>
                                         <p class = "file-name">{{ student.last_hw_file.display_name |cut:"student_files/"}}</p>
                                         <p class = "upload-date"> Uploaded {{student.last_hw_file.uploaded_at | date:"n/j/y"}}</p>
-                                        <a  class = "download-link" href="{% url 'download_file' student.last_hw_file.id %}">Download</a>
+                                        <a class = "download-link" href="{% url 'download_file' student.last_hw_file.id %}">Download</a>
+                                        <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ student.last_hw_file.id }}">Open in Editor</a>
                                     </div>
                                 </div>
                             {%else%}

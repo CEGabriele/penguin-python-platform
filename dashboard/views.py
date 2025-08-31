@@ -16,6 +16,7 @@ from django.db import connection
 from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
 from django.utils.text import slugify
 from django.core.files.base import ContentFile
+from django.utils.encoding import force_str
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -627,6 +628,21 @@ def editor_view(request):
         upload.file.save(filename, ContentFile(code), save=True)
 
         return JsonResponse({"ok": True, "file_id": upload.id, "display_name": name, "filename":filename, "class": class_obj.name})
+    
+    upload_id = request.GET.get("upload_id")
+
+    initial_code = ""
+    code_name = ""
+    selected_class_id = None
+
+    if upload_id:
+        u = get_object_or_404(Uploads, id=upload_id)
+        selected_class_id = str(u.for_class.id)
+        u.file.open("rb")
+        data = u.file.read()
+        initial_code = force_str(data, errors="ignore")
+        code_name = u.display_name or u.file.name.split("/")[-1]
+
 
     if hasattr(user, "teacher"):
         class_options = user.teacher.classes.all()
@@ -636,4 +652,4 @@ def editor_view(request):
         class_options = []
     
     
-    return render(request, "editor_view.html", {"user": request.user, "class_options": class_options, "initial_code": ""})
+    return render(request, "editor_view.html", {"user": request.user, "class_options": class_options, "initial_code": initial_code, "code_name": code_name, "selected_class_id": selected_class_id})
