@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>{{ assigned..name }}</title>
+        <title>{{ assigned.name }}</title>
         <link rel="stylesheet" href="{% static 'styles.css' %}">
         <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
         <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
@@ -16,6 +16,31 @@
                 * It reads the file, checks if it's a Python file, and sends it to the server for feedback.
             */
             document.addEventListener("DOMContentLoaded", function() {
+                
+                document.querySelectorAll(".run-btn").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                      const qid = btn.dataset.qid;
+                      runMini(qid);
+                    });
+                });
+                
+                document.querySelectorAll(".stop-btn").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                      const qid = btn.dataset.qid;
+                      stopMini(qid);
+                    });
+                });
+
+                const form = document.getElementById("hw-form");
+                form.addEventListener("submit", function() {
+                    for (const [qid, editor] of window.__miniEditors.entries()) {
+                    const textarea = document.getElementById(`code-q${qid}`);
+                    if (textarea) {
+                        textarea.value = editor.getValue();
+                    }
+                    }
+                });
+                
                 const buttons = document.querySelectorAll(".check-code-button");
                 buttons.forEach(button => {
                     button.addEventListener("click", async function() {
@@ -23,7 +48,7 @@
                         const student_id = {{ student_id }}
                         const parent = button.closest(".question-block");
                         const feedbackDiv = parent.querySelector(".ai-feedback");
-                        const ed = window.__editors?.get(qid);
+                        const ed = window.__miniEditors?.get(String(question_id))
                         const code = ed ? ed.getValue() : "";
 
                         if (!code.trim()) {
