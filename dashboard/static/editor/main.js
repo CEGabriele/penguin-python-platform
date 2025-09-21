@@ -19,8 +19,17 @@ let lastRunUsedTurtle = false;
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
 require(['vs/editor/editor.main'], function () {
+   let code = default_code
+   const minLines = 30;
+   const lineCount = code.split("\n").length;
+
+   if (lineCount < minLines) {
+      code += "\n".repeat(minLines - lineCount);
+   }
+   
+
    editor = monaco.editor.create(document.getElementById('editor'), {
-      value: default_code,
+      value: code,
       language: 'python',
       theme: 'vs-dark',
       automaticLayout: true,
@@ -34,7 +43,6 @@ require(['vs/editor/editor.main'], function () {
       const height = editor.getContentHeight();
       editor_container.style.height = height + 'px';
       graphics_container.style.top = height + 'px';
-      editor.layout()
    }
 
    updateHeight();

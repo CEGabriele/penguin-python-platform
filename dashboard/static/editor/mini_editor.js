@@ -20,11 +20,19 @@ window.current_qid = null;
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
 require(['vs/editor/editor.main'], function () {
-  document.querySelectorAll('.mini-editor').forEach(block => {
+   let code = default_code
+   const minLines = 20;
+   const lineCount = code.split("\n").length;
+
+   if (lineCount < minLines) {
+      code += "\n".repeat(minLines - lineCount);
+   }
+  
+   document.querySelectorAll('.mini-editor').forEach(block => {
     const qid = String(block.dataset.qid);
     const host = document.getElementById(`editor-q${qid}`);
     const editor = monaco.editor.create(host, {
-       value: default_code,
+       value: code,
        language: 'python',
        theme: 'vs-dark',
        automaticLayout: true,
