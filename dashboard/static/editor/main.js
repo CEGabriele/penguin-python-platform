@@ -56,107 +56,98 @@ window.console_write = function (s) {
    consoleDiv.scrollTop = consoleDiv.scrollHeight;
 };
 
-// do some fancy stuff to allow for live inputs
-window.console_input = async function (prompt) {
-   if (inputInProgress) throw new Error('Reentrant input call');
-   inputInProgress = true;
-   const consoleDiv = document.getElementById('console');
-
-   return await new Promise((resolve, reject) => {
-      if (!abortController) abortController = new AbortController();
-      abortController.signal.addEventListener('abort', () => {
-         inputInProgress = false;
-         reject(new Error('Input aborted.'));
-      });
-
-      const inputLine = document.createElement('div');
-      inputLine.innerHTML = `<span>${prompt}</span><input id="userInput" />`;
-      const inputBox = inputLine.querySelector('input');
-      consoleDiv.appendChild(inputLine);
-      inputBox.focus();
-
-      const handler = (e) => {
-         if (e.key === 'Enter') {
-            const value = inputBox.value;
-            inputLine.innerHTML = `<span>${prompt}${value}</span>`;
-            inputBox.removeEventListener('keydown', handler);
-            inputInProgress = false;
-            resolve(value);
-         }
-      };
-      inputBox.addEventListener('keydown', handler);
+window.console_input = function (promptText = "") {
+   return new Promise((resolve, reject) => {
+     // prevent overlapping inputs
+     if (window.inputInProgress) {
+       reject(new Error("Input already in progress"));
+       return;
+     }
+     window.inputInProgress = true;
+ 
+     const consoleEl = document.getElementById("console");
+ 
+     const line = document.createElement("div");
+     const promptSpan = document.createElement("span");
+     promptSpan.textContent = promptText || "";
+     const inputBox = document.createElement("input");
+     inputBox.type = "text";
+     inputBox.className = "console-input-box";
+ 
+     line.appendChild(promptSpan);
+     line.appendChild(inputBox);
+     consoleEl.appendChild(line);
+     inputBox.focus();
+     consoleEl.scrollTop = consoleEl.scrollHeight;
+ 
+     const onEnter = (e) => {
+       if (e.key === "Enter") {
+         const val = inputBox.value;
+         line.innerHTML = `<span>${promptText}${val}</span>`;
+         inputBox.removeEventListener("keydown", onEnter);
+         window.inputInProgress = false;
+         resolve(val);
+       }
+     };
+     inputBox.addEventListener("keydown", onEnter);
+ 
+     // handle aborts
+     if (!window.abortController) window.abortController = new AbortController();
+     window.abortController.signal.addEventListener("abort", () => {
+       inputBox.removeEventListener("keydown", onEnter);
+       window.inputInProgress = false;
+       reject(new Error("Input aborted"));
+     });
    });
-};
+ };
 
-// makes sure await/async is used
-function autoWrapAsync(code) {
-   if (code.includes("async def __main__")) return code;
-
-   let transformed = code.replace(/\binput\s*\(/g, "await input(");
-
-   let lines = transformed.split("\n");
-
-   lines = lines.map(line => "    " + line);
-
-   const loopRegex = /^\s*(for|while)\b.*:\s*$/;
-   const newLines = [];
-
-   for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      newLines.push(line);
-
-      if (loopRegex.test(line)) {
-         const indent = line.match(/^\s*/)[0] + "    ";
-         newLines.push(`${indent}await asyncio.sleep(0)`);
-      }
-   }
-
-   return `import asyncio\nasync def __main__():\n${newLines.join("\n")}\n\nawait __main__()`;
-}
-
-
-
-
-// make sure turtle has a canvas again
-function ensureTurtleCanvas() {
+ function ensureTurtleCanvas() {
    const container = document.getElementById('graphics-container');
    let canvas = document.getElementById('turtle-canvas');
    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.id = 'turtle-canvas';
-      canvas.width = 640;
-      canvas.height = 480;
-      canvas.style.border = '1px solid #444';
-      canvas.style.display = 'none';
-      container?.appendChild(canvas);
+     canvas = document.createElement('canvas');
+     canvas.id = 'turtle-canvas';
+     canvas.width = 640;
+     canvas.height = 480;
+     canvas.style.border = '1px solid #444';
+     canvas.style.display = 'none';
+     container?.appendChild(canvas);
    }
+ 
    return canvas;
-}
+ }
 
-// loading pyodide
 async function loadPyodideAndPackages() {
-   pyodide = await loadPyodide();
-   await pyodide.loadPackage('micropip');
+pyodide = await loadPyodide();
+window.pyodide = pyodide; // for debugging if needed
+await pyodide.loadPackage("micropip");
 
-   // register fake "turtle" module
-   pyodide.registerJsModule('turtle', turtleModule);
+// register fake turtle module if needed
+pyodide.registerJsModule("turtle", turtleModule);
 
-   // console setup
-   await pyodide.runPythonAsync(`
-import sys, asyncio, js
+// ✅ define console I/O and fully compatible input()
+await pyodide.runPythonAsync(`
+import sys, asyncio, js, builtins
+
 class ConsoleIO:
     def write(self, s):
         try:
             js.console_write(s)
         except Exception:
-            js.console.log(s)
+            pass
     def flush(self): pass
-sys.stdout = sys.stderr = ConsoleIO()
-async def input(prompt=''):
-    return await js.console_input(prompt)
-  `);
 
-   console_write('Pyodide is ready.\n');
+sys.stdout = sys.stderr = ConsoleIO()
+
+# async-only input; print prompt exactly once via JS
+async def input(prompt=""):
+    if prompt:
+        js.console_write(prompt)
+    return await js.console_input("")
+
+builtins.input = input
+`);
+console_write("Pyodide is ready ");
 }
 loadPyodideAndPackages();
 
@@ -221,12 +212,11 @@ async function runCode() {
       });
    }
 
-   // wrapping allows input to convert to async
-   const code = autoWrapAsync(rawCode);
    abortController = new AbortController();
 
    try {
-      await pyodide.runPythonAsync(code);
+      const wrapped = autoWrapAsync(rawCode);
+      await pyodide.runPythonAsync(wrapped);
    } catch (err) {
       console_write(`<span style="color:red;">${err.toString()}</span>\n`);
    } finally {
@@ -326,3 +316,92 @@ window.EditorAPI = {
    getValue: () => editor?.getValue?.() ?? '',
    setValue: (v) => editor?.setValue?.(v ?? ''),
 };
+
+function autoWrapAsync(code) {
+   code = code.replace(/\r\n/g, "\n");
+ 
+   // Step 1 — replace input() with await input()
+   // (but skip "def " lines to avoid inserting await inside definitions)
+   let lines = code.split("\n").map(line => {
+     if (/^\s*def\s+/.test(line)) return line;
+     return line.replace(/\binput\s*\(/g, "await input(");
+   });
+ 
+   // Step 2 — identify functions that contain 'await'
+   const defRx = /^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)\s*:\s*$/;
+   const funcs = [];
+   const indent = (l) => (l.match(/^\s*/)||[""])[0].length;
+ 
+   for (let i = 0; i < lines.length; i++) {
+     const match = lines[i].match(defRx);
+     if (!match) continue;
+     const name = match[1];
+     const baseIndent = indent(lines[i]);
+     let j = i + 1;
+     while (j < lines.length) {
+       const l = lines[j];
+       if (l.trim() && indent(l) <= baseIndent) break;
+       j++;
+     }
+     funcs.push({ name, start: i, end: j });
+   }
+ 
+   // Step 3 — mark which functions need async
+   const asyncFuncs = new Set();
+   for (const f of funcs) {
+     const body = lines.slice(f.start + 1, f.end).join("\n");
+     if (/\bawait\b/.test(body)) asyncFuncs.add(f.name);
+   }
+ 
+   // Step 4 — propagate async to callers
+   let changed = true;
+   while (changed) {
+     changed = false;
+     for (const f of funcs) {
+       if (asyncFuncs.has(f.name)) continue;
+       const body = lines.slice(f.start + 1, f.end).join("\n");
+       for (const callee of asyncFuncs) {
+         const callRx = new RegExp(`\\b${callee}\\s*\\(`);
+         if (callRx.test(body)) {
+           asyncFuncs.add(f.name);
+           changed = true;
+           break;
+         }
+       }
+     }
+   }
+ 
+   // Step 5 — rewrite def → async def (only once)
+   for (const f of funcs) {
+     if (asyncFuncs.has(f.name)) {
+       lines[f.start] = lines[f.start].replace(/^(\s*)def(\s+)/, "$1async def$2");
+     }
+   }
+ 
+   // Step 6 — add await to call sites (but skip definition lines)
+   if (asyncFuncs.size > 0) {
+     const asyncNames = Array.from(asyncFuncs);
+     const callRx = new RegExp(`\\b(${asyncNames.join("|")})\\s*\\(`, "g");
+     lines = lines.map(line => {
+       if (/^\s*(async\s+)?def\s+/.test(line)) return line; // skip defs
+       if (/\bawait\s+/.test(line)) return line; // skip already awaited
+       return line.replace(callRx, (match, name) => `await ${name}(`);
+     });
+   }
+ 
+   // Step 7 — add small async sleep inside loops for UI smoothness
+   const loopRx = /^\s*(for|while)\b.*:\s*$/;
+   const expanded = [];
+   for (let i = 0; i < lines.length; i++) {
+     expanded.push(lines[i]);
+     if (loopRx.test(lines[i])) {
+       const base = (lines[i].match(/^\s*/)||[""])[0] + "    ";
+       expanded.push(`${base}await asyncio.sleep(0)`);
+     }
+   }
+ 
+   // Step 8 — wrap everything in async main
+   const indented = expanded.map(l => "    " + l).join("\n");
+   return `import asyncio\nasync def __user_main__():\n${indented}\n\nawait __user_main__()`;
+}
+ 
