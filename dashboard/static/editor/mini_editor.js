@@ -102,29 +102,92 @@ window._mini_console_input = async function(qid, prompt) {
 
 // makes sure await/async is used
 function autoWrapAsync(code) {
-   if (code.includes("async def __main__")) return code;
+   code = code.replace(/\r\n/g, "\n");
 
-   let transformed = code.replace(/\binput\s*\(/g, "await input(");
+   // Step 1 — replace input() with await input()
+   let lines = code.split("\n").map(line => {
+     if (/^\s*def\s+/.test(line)) return line;
+     return line.replace(/\binput\s*\(/g, "await input(");
+   });
 
-   let lines = transformed.split("\n");
-
-   lines = lines.map(line => "    " + line);
-
-   const loopRegex = /^\s*(for|while)\b.*:\s*$/;
-   const newLines = [];
+   // Step 2 — identify functions
+   const defRx = /^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)\s*:\s*$/;
+   const funcs = [];
+   const indent = (l) => (l.match(/^\s*/)||[""])[0].length;
 
    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      newLines.push(line);
-
-      if (loopRegex.test(line)) {
-         const indent = line.match(/^\s*/)[0] + "    ";
-         newLines.push(`${indent}await asyncio.sleep(0)`);
-      }
+     const match = lines[i].match(defRx);
+     if (!match) continue;
+     const name = match[1];
+     const baseIndent = indent(lines[i]);
+     let j = i + 1;
+     while (j < lines.length) {
+       const l = lines[j];
+       if (l.trim() && indent(l) <= baseIndent) break;
+       j++;
+     }
+     funcs.push({ name, start: i, end: j });
    }
 
-   return `import asyncio\nasync def __main__():\n${newLines.join("\n")}\n\nawait __main__()`;
+   // Step 3 — mark which functions need async
+   const asyncFuncs = new Set();
+   for (const f of funcs) {
+     const body = lines.slice(f.start + 1, f.end).join("\n");
+     if (/\bawait\b/.test(body)) asyncFuncs.add(f.name);
+   }
+
+   // Step 4 — propagate async to callers
+   let changed = true;
+   while (changed) {
+     changed = false;
+     for (const f of funcs) {
+       if (asyncFuncs.has(f.name)) continue;
+       const body = lines.slice(f.start + 1, f.end).join("\n");
+       for (const callee of asyncFuncs) {
+         const callRx = new RegExp(`\\b${callee}\\s*\\(`);
+         if (callRx.test(body)) {
+           asyncFuncs.add(f.name);
+           changed = true;
+           break;
+         }
+       }
+     }
+   }
+
+   // Step 5 — rewrite def → async def
+   for (const f of funcs) {
+     if (asyncFuncs.has(f.name)) {
+       lines[f.start] = lines[f.start].replace(/^(\s*)def(\s+)/, "$1async def$2");
+     }
+   }
+
+   // Step 6 — add await to call sites
+   if (asyncFuncs.size > 0) {
+     const asyncNames = Array.from(asyncFuncs);
+     const callRx = new RegExp(`\\b(${asyncNames.join("|")})\\s*\\(`, "g");
+     lines = lines.map(line => {
+       if (/^\s*(async\s+)?def\s+/.test(line)) return line;
+       if (/\bawait\s+/.test(line)) return line;
+       return line.replace(callRx, (match, name) => `await ${name}(`);
+     });
+   }
+
+   // Step 7 — async sleep inside loops
+   const loopRx = /^\s*(for|while)\b.*:\s*$/;
+   const expanded = [];
+   for (let i = 0; i < lines.length; i++) {
+     expanded.push(lines[i]);
+     if (loopRx.test(lines[i])) {
+       const base = (lines[i].match(/^\s*/)||[""])[0] + "    ";
+       expanded.push(`${base}await asyncio.sleep(0)`);
+     }
+   }
+
+   // Step 8 — wrap everything in async main
+   const indented = expanded.map(l => "    " + l).join("\n");
+   return `import asyncio\nasync def __user_main__():\n${indented}\n\nawait __user_main__()`;
 }
+
 
 
 
