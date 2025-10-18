@@ -634,7 +634,13 @@ def editor_view(request):
                 return HttpResponseBadRequest("Invalid JSON")
 
             code = data.get("code", "")
-            name = data.get("name", "autosave") + ".py"
+            name = data.get("name", "untitled")
+            class_id = data.get("class_id")
+            if name.lower().endswith(".py"):
+                base_name = name[:-3]
+            else:
+                base_name = name
+            name = base_name + ".py"
             class_id = data.get("class_id")
 
             class_obj = get_object_or_404(Class, id=class_id)
