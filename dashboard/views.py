@@ -409,7 +409,7 @@ def student_form_view(request, assigned_hw_id):
 
                         upload = Uploads(
                             person=request.user,
-                            file_type='HW',          # use your scheme ('HW' for homework)
+                            file_type='HW',
                             for_class=assigned.for_class,
                             display_name=display_name
                         )
@@ -626,7 +626,38 @@ def editor_view(request):
     
     user = request.user
 
-    if request.method == "POST":
+    if request.method == "POST" and request.headers.get("content-type", "").startswith("application/json"):
+            import json
+            try:
+                data = json.loads(request.body)
+            except Exception:
+                return HttpResponseBadRequest("Invalid JSON")
+
+            code = data.get("code", "")
+            name = data.get("name", "autosave") + ".py"
+            class_id = data.get("class_id")
+
+            class_obj = get_object_or_404(Class, id=class_id)
+
+            upload, _ = Uploads.objects.get_or_create(
+                person=user,
+                for_class=class_obj,
+                display_name=name,
+                file_type="CW",
+            )
+
+            label = slugify(name[:-3]) or "code"
+            filename = f"{class_id}/user-{request.user.id}/{label}.py"
+            upload.file.save(filename, ContentFile(code), save=True)
+
+            return JsonResponse({
+                "ok": True,
+                "file_id": upload.id,
+                "display_name": name[:-3],
+                "filename": filename,
+                "class": class_obj.name,
+            })
+    elif request.method == "POST":
         if request.headers.get("x-requested-with") != "XMLHttpRequest":
             return HttpResponseBadRequest("Invalid AJAX request.")
            
