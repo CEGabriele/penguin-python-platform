@@ -322,14 +322,14 @@ window.EditorAPI = {
 function autoWrapAsync(code) {
   code = code.replace(/\r\n/g, "\n");
 
-  // Step 1 — replace input() with await input()
+  // replace input() with await input()
   // (but skip "def " lines to avoid inserting await inside definitions)
   let lines = code.split("\n").map(line => {
     if (/^\s*def\s+/.test(line)) return line;
     return line.replace(/\binput\s*\(/g, "await input(");
   });
 
-  // Step 2 — identify functions that contain 'await'
+  // identify functions that contain 'await'
   const defRx = /^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)\s*:\s*$/;
   const funcs = [];
   const indent = (l) => (l.match(/^\s*/)||[""])[0].length;
@@ -348,14 +348,14 @@ function autoWrapAsync(code) {
     funcs.push({ name, start: i, end: j });
   }
 
-  // Step 3 — mark which functions need async
+  // mark which functions need async
   const asyncFuncs = new Set();
   for (const f of funcs) {
     const body = lines.slice(f.start + 1, f.end).join("\n");
     if (/\bawait\b/.test(body)) asyncFuncs.add(f.name);
   }
 
-  // Step 4 — propagate async to callers
+  // propagate async to callers
   let changed = true;
   while (changed) {
     changed = false;
@@ -373,14 +373,14 @@ function autoWrapAsync(code) {
     }
   }
 
-  // Step 5 — rewrite def → async def (only once)
+  // rewrite def → async def (only once)
   for (const f of funcs) {
     if (asyncFuncs.has(f.name)) {
       lines[f.start] = lines[f.start].replace(/^(\s*)def(\s+)/, "$1async def$2");
     }
   }
 
-  // Step 6 — add await to call sites (but skip definition lines)
+  // add await to call sites (but skip definition lines)
   if (asyncFuncs.size > 0) {
     const asyncNames = Array.from(asyncFuncs);
     const callRx = new RegExp(`\\b(${asyncNames.join("|")})\\s*\\(`, "g");
@@ -390,19 +390,10 @@ function autoWrapAsync(code) {
       return line.replace(callRx, (match, name) => `await ${name}(`);
     });
   }
-
-  // Step 7 — add small async sleep inside loops for UI smoothness
-  const loopRx = /^\s*(for|while)\b.*:\s*$/;
   const expanded = [];
   for (let i = 0; i < lines.length; i++) {
     expanded.push(lines[i]);
-    if (loopRx.test(lines[i])) {
-      const base = (lines[i].match(/^\s*/)||[""])[0] + "    ";
-      expanded.push(`${base}await asyncio.sleep(0)`);
-    }
   }
-
-  // Step 8 — wrap everything in async main
   const indented = expanded.map(l => "    " + l).join("\n");
   return `import asyncio\nasync def __user_main__():\n${indented}\n\nawait __user_main__()`;
 }
