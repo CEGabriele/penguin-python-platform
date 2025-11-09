@@ -1,12 +1,16 @@
 from .base import *
 from dotenv import load_dotenv
 from pathlib import Path
+import os
 load_dotenv()
 
 USES_S3=False
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "dashboard", "static"),
+]
 
 DATABASES["default"].update({
     "ENGINE": "django.db.backends.postgresql",
