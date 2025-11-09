@@ -122,7 +122,7 @@ function ensureTurtleCanvas() {
 
 function initWorker(){
   if (worker) worker.terminate();
-  worker = new Worker('/static/editor/worker.js');
+  worker = new Worker(window.WORKER_URL);
   
   worker.onmessage = (e) => {
     const message = e.data;
