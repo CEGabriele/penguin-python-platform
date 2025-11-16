@@ -158,6 +158,7 @@
 
     <h2>{{assigned.template.name }}</h2>
     <p>{{ assigned.template.description }}</p>
+    <input type="hidden" id="class" value="{{ assigned.for_class.id }}">
     <p>Due {{ assigned.due_date }}</p>
     <form id = "hw-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
@@ -176,7 +177,7 @@
                 <div class="controls" id="controls-q{{ form.instance.question.id }}">
                   <button type="button" class="run-btn"  data-qid="{{ form.instance.question.id }}">Run</button>
                   <button type="button" class="stop-btn" data-qid="{{ form.instance.question.id }}">Stop</button>
-                  <span id="status-q{{ form.instance.question.id }}" class="status"></span>
+                  <span id="saveStatus-q{{ form.instance.question.id }}" class="save-status"></span>
                 </div>
               
                 <div class="main" id="main-q{{ form.instance.question.id }}">

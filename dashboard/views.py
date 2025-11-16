@@ -714,3 +714,59 @@ def editor_view(request):
     
     
     return render(request, "editor_view.html", {"user": request.user, "class_options": class_options, "initial_code": initial_code, "code_name": code_name, "selected_class_id": selected_class_id})
+
+@csrf_exempt
+@login_required
+def mini_autosave_view(request):
+    """
+    Autosaves code typed into a mini editor for a specific homework question.
+    It updates or creates a StudentQuestionResponse for that question + student.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid method")
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return HttpResponseBadRequest("Invalid JSON")
+
+    code = data.get("code", "").strip()
+    qid = data.get("question_id")
+    class_id = data.get("class_id")
+    name = data.get("name", "mini_autosave.py")
+
+    # Basic validation
+    if not (qid and class_id and request.user.is_authenticated):
+        return JsonResponse({"error": "Missing data"}, status=400)
+
+    # Get the question
+    try:
+        question = HomeworkQuestion.objects.get(id=qid)
+    except HomeworkQuestion.DoesNotExist:
+        return JsonResponse({"error": "Question not found"}, status=404)
+
+    # Get the student's class and assigned homework
+    student = request.user.student
+    try:
+        class_obj = Class.objects.get(id=class_id)
+    except Class.DoesNotExist:
+        return JsonResponse({"error": "Class not found"}, status=404)
+
+    # Find the AssignedHomework for this class and this question’s template
+    assigned = AssignedHomework.objects.filter(
+        for_class=class_obj,
+        template=question.template
+    ).first()
+
+    if not assigned:
+        return JsonResponse({"error": "AssignedHomework not found"}, status=404)
+
+    # Save or update student's response
+    StudentQuestionResponse.objects.update_or_create(
+        student=student,
+        assigned_homework=assigned,
+        question=question,
+        defaults={"answer_text": code},
+    )
+
+    return JsonResponse({"ok": True, "saved": True, "name": name})

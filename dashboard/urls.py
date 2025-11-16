@@ -23,5 +23,7 @@ urlpatterns = [
     path('post_material/<int:class_id>/<int:material_id>/', post_material, name='post_material_htmx'),
     path('create_material', create_material, name='create_material'),
     path('editor/', editor_view, name='editor_view'),
+    path("mini-autosave/", mini_autosave_view, name="mini_autosave"),
+
 
 ]

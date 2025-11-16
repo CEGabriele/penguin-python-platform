@@ -10,6 +10,8 @@ print("Hello World!")
 
 let pyodide = null;
 window.__miniEditors = new Map();
+let autosaveTimers = new Map();
+let lastSavedCode = new Map();
 let codeRunning = false;
 let inputInProgress = false;
 let abortController = null;
@@ -52,7 +54,13 @@ require(['vs/editor/editor.main'], function () {
 
    updateHeight();
    editor.onDidContentSizeChange(updateHeight);
-
+   editor.onDidChangeModelContent(() => {
+      clearTimeout(autosaveTimers.get(qid));
+      autosaveTimers.set(qid, setTimeout(() => {
+         autosaveMini(qid).catch(err => console.error("Autosave error:", err));
+      }, 2000));
+       
+   });
    window.__miniEditors.set(qid, editor);
   });
 });
@@ -343,6 +351,66 @@ window.EditorAPI = {
   getValue: (qid) => window.__miniEditors.get(String(qid))?.getValue() ?? '',
   setValue: (qid, v) => window.__miniEditors.get(String(qid))?.setValue(v ?? ''),
 };
+
+async function autosaveMini(qid) {
+   const editor = window.__miniEditors.get(qid);
+   if (!editor) return;
+ 
+   const code = editor.getValue().trim();
+   if (!code) return; // skip blank code
+ 
+   const name = `mini-q${qid}-autosave.py`;
+   const class_id = document.getElementById("class")?.value || null;
+ 
+   if (lastSavedCode.get(qid) === code) return;
+   lastSavedCode.set(qid, code);
+ 
+   const statusEl = document.getElementById(`saveStatus-q${qid}`);
+   if (statusEl) statusEl.textContent = "Saving...";
+ 
+   try {
+      const response = await fetch("/dashboard/mini-autosave/", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           "X-CSRFToken": getCookie("csrftoken"),
+         },
+         body: JSON.stringify({
+           code: code,
+           question_id: qid,
+           class_id: class_id,
+           name: name,
+         }),
+       });
+ 
+     const data = await response.json().catch(() => ({}));
+ 
+     if (response.ok && data.ok) {
+       if (statusEl) statusEl.textContent = "Saved ✓";
+     } else {
+       if (statusEl) statusEl.textContent = "Save failed ✗";
+       console.warn("Autosave server error:", data);
+     }
+   } catch (err) {
+     if (statusEl) statusEl.textContent = "Network error ⚠️";
+     console.error("Autosave error:", err);
+   }
+} 
+
+function getCookie(name) {
+   let cookieValue = null;
+   if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+         cookie = cookie.trim();
+         if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+         }
+      }
+   }
+   return cookieValue;
+}
 
 // loading pyodide
 async function loadPyodideAndPackages() {
