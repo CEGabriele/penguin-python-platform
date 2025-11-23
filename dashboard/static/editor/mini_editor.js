@@ -31,14 +31,16 @@ require(['vs/editor/editor.main'], function () {
    }
   
    document.querySelectorAll('.mini-editor').forEach(block => {
-    const qid = String(block.dataset.qid);
-    const host = document.getElementById(`editor-q${qid}`);
-    const editor = monaco.editor.create(host, {
-       value: code,
-       language: 'python',
-       theme: 'vs-dark',
-       automaticLayout: true,
-       scrollBeyondLastLine: false,
+   const qid = String(block.dataset.qid);
+   const host = document.getElementById(`editor-q${qid}`);
+   const editor = monaco.editor.create(host, {
+      value: (window.initialCodeMap && window.initialCodeMap[qid])
+         ? window.initialCodeMap[qid]
+         : code,
+      language: 'python',
+      theme: 'vs-dark',
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
     });
 
 

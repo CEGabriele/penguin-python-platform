@@ -9,6 +9,9 @@
         <!-- load Monaco and Pyodide -->
         <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
         <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+        <script>
+            window.initalCodeMap = {{initial_code_map|safe}};
+        </script>
         <script type="module" src="{% static 'editor/mini_editor.js' %}"></script>
         <script>
             /**
@@ -193,11 +196,10 @@
                   <div id="console-q{{ form.instance.question.id }}" class="console"></div>
                 </div>
               
-                <!-- hidden field copied on submit -->
-                <textarea name="code_q{{ form.instance.question.id }}"
-                          id="code-q{{ form.instance.question.id }}" hidden></textarea>
+                {{ form.code }}
+                <textarea id="code-q{{ form.instance.question.id }}" hidden></textarea>
               
-                {{ form.question }} {# keep hidden FK field #}
+                {{ form.question }}
             
                 {% if form.instance.question.uses_ai %}
                   <button type="button" class="check-code-button" data-question-id="{{ form.instance.question.id }}">Check My Code</button>
@@ -206,8 +208,6 @@
               </div>
             
             {% endif %}
-
-            {{ form.question }}
 
             
         </div>

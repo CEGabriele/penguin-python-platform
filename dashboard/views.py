@@ -438,8 +438,20 @@ def student_form_view(request, assigned_hw_id):
         
     else:
         formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
-
-    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset, 'student_id':request.user.student.id})
+    
+    responses = StudentQuestionResponse.objects.filter(student = request.user.student, assigned_homework = assigned)
+    initial_code_map = {}
+    for r in responses:
+        if r.upload and r.upload.file:
+            try:
+                r.upload.file.open("rb")
+                text = r.upload.file.read().decode("utf-8")
+            except:
+                text = ""
+            initial_code_map[r.question.id] = text
+        else:
+            initial_code_map[r.question.id] = ""
+    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset, 'student_id':request.user.student.id, 'initial_code_map': initial_code_map})
 
 @login_required
 @teacher_required
@@ -760,13 +772,34 @@ def mini_autosave_view(request):
 
     if not assigned:
         return JsonResponse({"error": "AssignedHomework not found"}, status=404)
+    
+    if not name.lower().endswith(".py"):
+        name += ".py"
+
+    from django.core.files.base import ContentFile
+    label = slugify(name[:-3]) or f"q{qid}"
+    filepath = f"class-{class_id}/student-{student.id}/question-{qid}/{label}.py"
+
+    upload, _ = Uploads.objects.get_or_create(
+        person=request.user,
+        for_class=class_obj,
+        display_name=name,
+        file_type="HW",
+    )
+
+    upload.file.save(filepath, ContentFile(code), save=True)
 
     # Save or update student's response
-    StudentQuestionResponse.objects.update_or_create(
+    response_obj, created = StudentQuestionResponse.objects.update_or_create(
         student=student,
         assigned_homework=assigned,
         question=question,
-        defaults={"answer_text": code},
+        defaults={"upload": upload},
     )
 
-    return JsonResponse({"ok": True, "saved": True, "name": name})
+    return JsonResponse({
+        "ok": True,
+        "upload_id": upload.id,
+        "filename": filepath,
+        "display_name": name,
+    })
