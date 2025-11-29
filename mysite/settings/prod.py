@@ -15,21 +15,17 @@ CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split("
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-# --------------------
-# Security (adjust as you prefer)
-# --------------------
-SECURE_SSL_REDIRECT = False         # consider True in production
-SESSION_COOKIE_SECURE = False       # consider True in production
-CSRF_COOKIE_SECURE = False          # consider True in production
+# Security
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 
-# --------------------
-# AWS / S3 (regional)
-# --------------------
+# AWS / S3
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
@@ -43,12 +39,9 @@ AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}  # 1 day
 
 AWS_S3_FILE_OVERWRITE = True
 
-# Static should be public (no signatures); media uses signed URLs
 AWS_QUERYSTRING_AUTH = False
 
-# --------------------
 # Static / Media URLs
-# --------------------
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
@@ -58,9 +51,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"  # type: ignore[name-defined]
 # If you actually have a project-level ./static folder, uncomment:
 # STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# --------------------
 # Django 4.2+ STORAGES
-# --------------------
 STORAGES = {
     "staticfiles": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -82,9 +73,7 @@ STORAGES = {
     },
 }
 
-# --------------------
 # Logging
-# --------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
