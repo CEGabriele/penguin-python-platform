@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+
 
 
 CACHES = {
@@ -150,7 +155,9 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+#changing this temporarily. change back to '/dashboard/student-dashboard/'
 LOGIN_REDIRECT_URL = '/dashboard/student-dashboard/'
+
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")

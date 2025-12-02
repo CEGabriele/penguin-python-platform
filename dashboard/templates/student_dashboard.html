@@ -4,7 +4,7 @@
 <head>
     <title>{{ student.user.get_short_name|default:student.user.username }}'s Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=12"> <!-- cache busting -->
     <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 </head>
@@ -16,22 +16,27 @@
             <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
             <a href="{% url 'student_assignments' %}">Assignments</a>
             <a href ="{% url 'editor_view' %}">Code Editor</a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+        </div>
+         <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="logout-button">Logout</button>
-            </form>
-        </div>
+        </form>
     </nav>
     <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
+
 
     {% if classes %}
     <div class="class-grid">
         {%for class in classes%}
             <div class="class-card">
-                <h1>{{ class.class.name }}</h1>
-                <a href="{% url 'student_class_view' class.class.code %}" class = "button">
-                    View Class Page
-                </a>
+                <div class="class-card-title">
+                    <h1>{{ class.class.name }}</h1>
+                    <a href="{% url 'student_class_view' class.class.code %}" class = "button view-class-btn">
+                        View Class Page
+                    </a>
+                </div>
+                <!-- Optional: icons at the bottom -->
+                {% comment %}
                 <div class = "file-section">
                     <h2>My Files</h2>
                     <h4>Classwork</h4>
@@ -95,12 +100,49 @@
                         </form>
                     </div>
                 </div>
+                {% endcomment %}
+                <div class="card-icons">
+                    <i class="bi bi-folder-fill my-files-icon" title="My Files"></i>
+                    <i class=" bi bi-cloud-arrow-up-fill upload-icon" title="Upload File"data-class-code="{{ class.class.code }}"></i>
+                </div>
+                <!-- Hidden upload form - Lily Added-->
+                <form id="uploadForm-{{ class.class.code }}" class="upload-form" method="post" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="uploaded_file" id="fileInput-{{ class.class.code }}" />
+                    <input type="hidden" name="class_code" value="{{ class.class.code }}">
+                    <button type="submit">Upload</button>
+                </form>
             </div>
         {%endfor%}
     </div>
     {% endif %}
     
-    
+ <!-- Javascript to handle clicks on the icons -->   
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // When upload icon is clicked, trigger the hidden file input
+    document.querySelectorAll('.upload-icon').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const classCode = this.dataset.classCode;
+            const fileInput = document.getElementById('fileInput-' + classCode);
+            if (fileInput) {
+                fileInput.click();  // Opens the file picker
+            }
+        });
+    });
+
+    // Automatically submit the form when a file is selected
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                this.form.submit();
+            }
+        });
+    });
+});
+</script>
+
+   
 </body>
 
 </html>

@@ -70,6 +70,27 @@ def student_dashboard(request):
             if cw_form.is_valid():
                 cw_form.save(user = user)
                 return redirect('student_dashboard')
+            #added this part to handle file upload from icon click
+        elif 'uploaded_file' in request.FILES:
+            uploaded_file = request.FILES['uploaded_file']
+            class_code = request.POST.get('class_code')
+
+            try:
+                from .models import Uploads, Class  # ensure imported
+                class_obj = Class.objects.get(code=class_code)
+            except Class.DoesNotExist:
+                return HttpResponseBadRequest("Invalid class code.")
+
+            # Create new Uploads entry (Classwork type)
+            Uploads.objects.create(
+                person=user,
+                for_class=class_obj,
+                file=uploaded_file,
+                display_name=uploaded_file.name,
+                file_type='CW'  # or 'HW' if you want homework instead
+            )
+
+            return redirect('student_dashboard')
     
     classes = []
     

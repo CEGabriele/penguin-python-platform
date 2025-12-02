@@ -10,20 +10,24 @@
 </head>
 
 <body>
+    <!--changed this below so i could move logout button to right -->
     <nav class="navbar">
-        <div class="navbar-links">
-            <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
-            <a href="{% url 'teacher_assignments' %}">Assignments</a>
-            {% if teacher.is_admin %}
-                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-            {% endif %}
-            <a href ="{% url 'editor_view' %}">Code Editor</a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="logout-button">Logout</button>
-            </form>
-        </div>
-    </nav>
+    <div class="navbar-links">
+        <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+        <a href="{% url 'teacher_assignments' %}">Assignments</a>
+        {% if teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+        {% endif %}
+        <a href="{% url 'editor_view' %}">Code Editor</a>
+    </div>
+    <div class="logout-container">
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </div>
+</nav>
+
     <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
 
     {% if classes%}
