@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm, MaterialForm
-from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, Material, PostedMaterial, AIFeedback
+from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm
+from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, AIFeedback
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -283,18 +283,6 @@ def download_file_view(request, file_id):
     
 
 @login_required
-def download_material_view(request, material_id):
-    try:
-        material = Material.objects.get(id = material_id)
-        return FileResponse(
-                material.file.open('rb'),
-                as_attachment=True,
-                filename=material.file.name.split('/')[-1]
-        )
-    except Material.DoesNotExist:
-        raise Http404("Material not found")
-
-@login_required
 @student_required
 def student_assignments(request):
     student = Student.objects.get(user = request.user)
@@ -512,20 +500,14 @@ def student_class_view(request, class_code):
         return redirect('student_dashboard')
     
     assigned_homework = AssignedHomework.objects.filter(for_class = class_obj).select_related('template')
-    posted_material = PostedMaterial.objects.filter(for_class = class_obj).select_related('material')
-    weekly_assignments = defaultdict(lambda: {'assignments': [], 'materials': []})
+    weekly_assignments = defaultdict(lambda: {'assignments': []})
 
     for hw in assigned_homework:
         week = hw.template.class_week
         weekly_assignments[week]['assignments'].append(hw)
-    for pm in posted_material:
-        week = pm.material.class_week
-        weekly_assignments[week]['materials'].append(pm.material)
-    general_materials = weekly_assignments.pop(0, {'assignments': [], 'materials': []})
     sorted_weeks = dict(sorted(weekly_assignments.items()))
     context = {
         'class': class_obj,
-        'general_materials': general_materials,
         'sorted_weeks': sorted_weeks,
     }
 
@@ -537,7 +519,6 @@ def teacher_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code, teacher = request.user.teacher)
     curriculum = class_obj.curriculum
     homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
-    curriculum_materials = Material.objects.filter(curriculum = curriculum)
     assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
     teacher = Teacher.objects.get(user = request.user)
 
@@ -546,7 +527,6 @@ def teacher_class_view(request, class_code):
     return render(request, 'teacher_class_view.html', {
         'class': class_obj,
         'homework_templates': homework_templates,
-        'curriculum_materials': curriculum_materials,
         'assigned_homeworks': assigned_homeworks,
         'students': students,
         'teacher': teacher,
@@ -611,30 +591,6 @@ def assign_homework_assignment(request):
         else:
             return render(request, 'partials/due_date_form.html', {'form': form, 'teacher' : request.user.teacher})
     return HttpResponseBadRequest("Invalid request.")
-
-@csrf_exempt
-def post_material(request, class_id, material_id):
-    if request.method == "POST":
-        class_obj = Class.objects.get(id=class_id, teacher=request.user.teacher)
-        material = Material.objects.get(id=material_id, curriculum=class_obj.curriculum)
-        if not class_obj or not material:
-            return HttpResponseBadRequest("Invalid class or material.")
-
-        if not PostedMaterial.objects.filter(for_class=class_obj, material=material).exists():
-            PostedMaterial.objects.create(for_class=class_obj, material=material)
-            
-        return HttpResponse("Material posted.")
-
-def create_material(request):
-    if request.method == 'POST':
-        form = MaterialForm(request.POST, request.FILES)
-        if form.is_valid():
-            material = form.save()
-            return redirect('admin_dashboard')
-    else:
-        form = MaterialForm()
-
-    return render(request, 'create_material.html', {'form': form, 'teacher': request.user.teacher})
 
 def healthz(request):
     """

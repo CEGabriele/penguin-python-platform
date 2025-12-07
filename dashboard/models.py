@@ -4,7 +4,6 @@ import uuid, os
 from .storages import MediaRootS3Boto3Storage
 
 def unique_student_upload_path(instance, filename):
-    # If you want to KEEP original filenames:
     return f"student_uploads/{filename}"
 
 class Teacher (models.Model):
@@ -118,17 +117,6 @@ class StudentQuestionResponse (models.Model):
     selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
     upload = models.ForeignKey("dashboard.Uploads", on_delete=models.SET_NULL, null=True, blank=True)
 
-class Material(models.Model):
-    curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE, related_name = "materials")
-    title = models.CharField()
-    description = models.TextField(blank = True)
-    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to='curriculum_materials', null = True, blank = True)
-    link = models.URLField(blank = True, null = True)
-    class_week = models.IntegerField(default = 0)
-
-class PostedMaterial(models.Model):
-    material = models.ForeignKey(Material, on_delete = models.CASCADE)
-    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, related_name = "posted_materials")
 
 class CompletedCurriculum(models.Model):
     student = models.ForeignKey(Student, on_delete = models.CASCADE)

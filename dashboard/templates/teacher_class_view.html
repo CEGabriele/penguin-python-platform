@@ -49,29 +49,6 @@
       {% endfor %}
 
 
-      <h2>Student Materials</h2>
-        {% for material in curriculum_materials %}
-         <div class="feed-card">
-            <strong>{{ material.title }}</strong>
-            {% if material.file %}
-              (<a href="{{ material.file.url }}" target="_blank" class="download-link">Download</a>)
-            {% endif %}
-            {% if material.link %}
-              (<a href="{{ material.link }}" target="_blank" class = "button">Link</a>)
-            {% endif %}
-            <p>{{ material.description }}</p>
-
-            <div id="post-material-{{ material.id }}">
-               <button 
-                 hx-post="{% url 'post_material_htmx' class.id material.id %}" 
-                 hx-target="#post-material-{{ material.id }}" 
-                 hx-swap="outerHTML"> Post to Class</button>
-             </div>
-         </div>
-        {% empty %}
-          No curriculum materials yet.
-        {% endfor %}
-
    </div>
    
    <div class = 'class-info'>

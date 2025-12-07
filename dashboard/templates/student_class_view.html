@@ -27,21 +27,6 @@
    <h1>{{class.name}} - {{class.day}}</h1>
    <h3>{{class.teacher}}</h3>
    <br>
-   {% if general_materials.materials %}
-      <h3>Class Materials</h3>
-      {% for material in general_materials.materials %}
-         <div class = "assignment-card">
-            <h3>{{material.name}}</h3>
-            <p>{{material.description}}</p>
-            {% if material.file %}
-               <a href="{{ material.file.url }}" class="button">Download</a>
-            {% endif %}
-            {% if material.link %}
-               <a href="{{ material.link }}" class="button">View Link</a>
-            {% endif %}
-         </div>
-      {% endfor %}
-   {% endif %}
    {% if general_materials.assignments%}
       <h4>Assignments</h4>
       {% for assignment in general_materials.assignments %}
@@ -55,23 +40,6 @@
 
    {% for week, data in sorted_weeks.items %}
       <h3>Week {{ week }}</h3>
-
-      {% if data.materials %}
-         <h4>Materials</h4>
-            {% for material in data.materials %}
-               <div class = "assignment-card">
-                  <h3>{{material.name}}</h3>
-                  <p>{{material.description}}</p>
-                  {% if material.file %}
-                     <a href="{{ material.file.url }}" class="button">Download</a>
-                  {% endif %}
-                  {% if material.link %}
-                     <a href="{{ material.link }}" class="button">View Link</a>
-                  {% endif %}
-               </div>
-            {% endfor %}
-      {% endif %}
-
       {% if data.assignments %}
          <h4>Assignments</h4>
          <ul>

@@ -4,7 +4,6 @@ from .views import *
 
 urlpatterns = [
     path('download/<int:file_id>/', download_file_view, name = 'download_file'),
-    path('download-material/<int:file_id>/', download_material_view, name = 'download_material'),
     path('student-dashboard/', student_dashboard, name = 'student_dashboard'),
     path('teacher-dashboard/', teacher_dashboard, name = 'teacher_dashboard'),
     path('view-student/<str:username>/', view_student, name = 'view_student'),
@@ -20,8 +19,6 @@ urlpatterns = [
     path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
     path('set-due-date/<int:class_id>/<int:template_id>/', get_due_date_form, name="get_homework_due_date_form"),
     path('assign_homework_assignment', assign_homework_assignment, name="assign_homework_assignment"),
-    path('post_material/<int:class_id>/<int:material_id>/', post_material, name='post_material_htmx'),
-    path('create_material', create_material, name='create_material'),
     path('editor/', editor_view, name='editor_view'),
     path("mini-autosave/", mini_autosave_view, name="mini_autosave"),
 
