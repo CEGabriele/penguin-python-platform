@@ -18,13 +18,11 @@
     <div class="navbar-links">
       {% if user.teacher%}  
       <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
-      <a href="{% url 'teacher_assignments' %}">Assignments</a>
         {% if user.teacher.is_admin %}
             <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
         {% endif %}
       {% else %}
       <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
-      <a href="{% url 'student_assignments' %}">Assignments</a>
       {%endif%}
       <a href ="{% url 'editor_view' %}">Code Editor</a>
       <form action="{% url 'logout' %}" method="post" style="display:inline;">
