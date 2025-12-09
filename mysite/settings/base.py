@@ -156,7 +156,7 @@ MEDIA_URL = '/media/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #changing this temporarily. change back to '/dashboard/student-dashboard/'
-LOGIN_REDIRECT_URL = '/dashboard/student-dashboard/'
+LOGIN_REDIRECT_URL = '/dashboard/editor/'
 
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 

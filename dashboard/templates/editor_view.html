@@ -2,18 +2,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    
+    <!-- Icons -->
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <!-- load Monaco and Pyodide -->
+
+    <!-- Monaco + Pyodide -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+
+    <script>
+        window.WORKER_URL = "/static/editor/worker.js";
+    </script>
 </head>
-<script>
-  window.WORKER_URL = "/static/editor/worker.js";
-</script>
 
 <body>
+    {% comment %}
   <nav class="navbar">
     <div class="navbar-links">
       {% if user.teacher%}  
@@ -31,101 +37,211 @@
       </form>
       </div>
   </nav>
+  {% endcomment%}
   <div class="editor-container">
     <form method = "post">
         {% csrf_token %}
 
-        <div id="controls">
-            <button id="run" type="button" onclick="window.runCode()">Run</button>
-            <button id="stop" type = "button" onclick="window.stopCode()">Stop</button>
-            <label for="class">Class:</label>
-            <select id="class">
-                {% for c in class_options %}
-                  <option value="{{ c.id }}" {%if selected_class_id == c.id %}selected{% endif %}>
-                    {{ c.name }}
-                  </option>
-                {% endfor %}
-            </select>
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" value="{{ code_name }}" required>
-            <button type="button" id="saveBtn">Save</button>
-            <span id="saveStatus" style="margin-left:8px; font-size:0.95rem; opacity:0.8;"></span>
+<!-- SIDE MENU -->
+<div class="side-menu" id="sideMenu">
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+
+    <div class="menu-items">
+
+        {% if user.teacher %}
+            <a href="{% url 'teacher_dashboard' %}">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <span class="menu-label">Teacher Dashboard</span>
+            </a>
+
+            <a href="{% url 'teacher_assignments' %}">
+                <i class="fa-solid fa-folder-open"></i>
+                <span class="menu-label">Assignments</span>
+            </a>
+
+            {% if user.teacher.is_admin %}
+                <a href="{% url 'admin_dashboard' %}">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span class="menu-label">Admin Dashboard</span>
+                </a>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'student_dashboard' %}">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span class="menu-label">Student Dashboard</span>
+            </a>
+
+            <a href="{% url 'student_assignments' %}">
+                <i class="fa-solid fa-book"></i>
+                <span class="menu-label">Assignments</span>
+            </a>
+        {% endif %}
+
+        <a href="{% url 'editor_view' %}">
+            <i class="fa-solid fa-code"></i>
+            <span class="menu-label">Code Editor</span>
+        </a>
+
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="menu-label">Logout</span>
+            </button>
+        </form>
+
+    </div>
+</div>
+
+
+
+<!-- MAIN WHITE BUBBLE -->
+<div class="page-bubble">
+
+    <div class="editor-container">
+        <form method="post">
+            {% csrf_token %}
+
+            <div id="controls">
+
+                <!-- FLOATING RUN & STOP ICONS -->
+                <div id="editor-controls">
+                    <button type="button" onclick="window.runCode()" class="icon-btn">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+
+                    <button type="button" onclick="window.stopCode()" class="icon-btn">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                </div>
+
+                <!-- CLASS + NAME + SAVE -->
+                <label for="class">Class:</label>
+                <select id="class">
+                    {% for c in class_options %}
+                      <option value="{{ c.id }}" 
+                              {% if selected_class_id == c.id %}selected{% endif %}>
+                        {{ c.name }}
+                      </option>
+                    {% endfor %}
+                </select>
+
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" value="{{ code_name }}" required>
+
+                <button type="button" id="saveBtn">Save</button>
+                <span id="saveStatus"
+                      style="margin-left:8px; font-size:0.95rem; opacity:0.8;"></span>
+            </div>
+
+            <textarea id="id_code" hidden>{{ initial_code|default_if_none:"" }}</textarea>
+
+            <script type="module" src="{% static 'editor/main.js' %}"></script>
+        </form>
+    </div>
+
+
+
+    <!-- EDITOR + GRAPHICS -->
+    <div id="main">
+
+        <div id="editor"></div>
+
+        <div id="graphics-container" 
+             style="display:none; text-align:center; background:#222; padding:5px;">
+             
+            <canvas id="graphics-canvas" width="640" height="480"
+                    style="border:1px solid #444; display:none;"></canvas>
+            <canvas id="turtle-canvas" width="640" height="480"
+                    style="border:1px solid #444; display:none;"></canvas>
         </div>
 
-        <textarea id="id_code" hidden>{{ initial_code|default_if_none:"" }}</textarea>
-      
-        <script type="module" src="{% static 'editor/main.js'%}"></script>
-    </form>
-  </div>
+        <div id="console"></div>
+    </div>
+</div>
 
-  <div id="main">
-      <div id="editor"></div>
-      <!-- dynamically opens and closes -->
-      <div id="graphics-container" style="display:none; text-align:center; background:#222; padding:5px;">
-        <!-- Pygame canvas -->
-        <canvas id="graphics-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
-        <!-- Turtle canvas -->
-        <canvas id="turtle-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
-      </div>
 
-      <div id="console"></div>
-  </div>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const hidden = document.getElementById("id_code");
-      setTimeout(() => {
-        if  (window.EditorAPI?.setValue && hidden.value ) {
-          window.EditorAPI.setValue(hidden.value);
+
+<!-- JS FOR SAVING -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const hidden = document.getElementById("id_code");
+    setTimeout(() => {
+        if (window.EditorAPI?.setValue && hidden.value) {
+            window.EditorAPI.setValue(hidden.value);
         }
-      }, 80);
-    });
+    }, 80);
+});
 
-    function getCsrfToken() {
-      const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
-      return m ? decodeURIComponent(m[1]) : "";
-    }
+function getCsrfToken() {
+    const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : "";
+}
 
-    async function ajaxSave(){
-      const saveBtn = document.getElementById("saveBtn");
-      const status = document.getElementById("saveStatus");
-      const name = document.getElementById("name").value;
-      const class_id = document.getElementById("class").value;
-      const code = window.EditorAPI.getValue();
+async function ajaxSave() {
+    const saveBtn = document.getElementById("saveBtn");
+    const status = document.getElementById("saveStatus");
+    const name = document.getElementById("name").value;
+    const class_id = document.getElementById("class").value;
+    const code = window.EditorAPI.getValue();
 
-      saveBtn.disabled = true;
-      status.textContent = "Saving...";
+    saveBtn.disabled = true;
+    status.textContent = "Saving...";
 
-      try {
+    try {
         const response = await fetch("{% url 'editor_view' %}", {
-        method: "POST",
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-          "X-CSRFToken": getCsrfToken(),
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          name: name,
-          class_id: class_id,
-          code: code,
-        }),
-      });
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": getCsrfToken(),
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                name: name,
+                class_id: class_id,
+                code: code,
+            }),
+        });
 
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error("Save failed");
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error("Save failed");
 
-      status.textContent = "Saved!";
-    } catch (e){
-      console.error(e);
-      status.textContent = "Save failed. Try again.";
+        status.textContent = "Saved!";
+    } catch (e) {
+        console.error(e);
+        status.textContent = "Save failed. Try again.";
     } finally {
-      saveBtn.disabled = false;
-      setTimeout(() => { if (status.textContent.startsWith("Saved")) status.textContent = "Saved ✓"; }, 3000);
+        saveBtn.disabled = false;
+        setTimeout(() => {
+            if (status.textContent.startsWith("Saved")) {
+                status.textContent = "Saved ✓";
+            }
+        }, 3000);
     }
-  }
+}
 
-  document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveBtn").addEventListener("click", ajaxSave);
-  });
-  </script>
+});
+</script>
+
+
+
+<!-- SIDEMENU TOGGLE -->
+<script>
+function toggleMenu() {
+    const menu = document.getElementById("sideMenu");
+    menu.classList.toggle("expanded");
+
+    const pageBubble = document.querySelector(".page-bubble");
+
+    if (menu.classList.contains("expanded")) {
+        pageBubble.style.marginLeft = "200px";
+    } else {
+        pageBubble.style.marginLeft = "60px";
+    }
+}
+</script>
+
 </body>
 </html>

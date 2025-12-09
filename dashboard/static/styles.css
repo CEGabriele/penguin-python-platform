@@ -6,11 +6,88 @@
 
 body {
     font-family: "Poppins", sans-serif;
-    background-color: #f7f7f7; /*testing*/
+    background-color: #f5f5f5; /*testing*/
     text-align: center;
     margin: 4vh;
     align-items: center;
 }
+
+/* Global content bubble */
+.page-bubble {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+
+    width: 85vw;
+    height: 85vh;
+    padding: 32px;
+
+    background: #ffffff;
+    border: none;               /* 🚫 No borders */
+    box-shadow: none;           /* 🚫 No shadow */
+
+    border-radius: 18px;        /* Smooth, ChatGPT-like rounded corners */
+    
+    z-index: 1000;
+
+    margin-left: 60px;          /* still works with your sidebar */
+    transition: margin-left 0.3s;
+}
+
+
+/* Side menu styles */
+.side-menu {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 60px;              /* collapsed width */
+    overflow-x: hidden;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    z-index: 2000;
+}
+
+.side-menu.expanded {
+    width: 200px;             /* expanded width */
+}
+
+.side-menu .menu-toggle {
+    background: none;
+    border: none;
+    color: #61605f;
+    font-size: 1.5rem;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.side-menu .menu-items {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-menu a, .side-menu button.logout-button {
+    color: #61605f;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 1rem;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.side-menu a:hover, .side-menu button.logout-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* shift the page bubble initially */
+.page-bubble {
+    margin-left: 60px; /* start offset to match collapsed menu */
+    transition: margin-left 0.3s;
+}
+
 
 .class-grid{
     display: grid;
@@ -55,6 +132,25 @@ body {
     flex-direction: column;  /* stacks title above button */
     align-items: flex-start; /* aligns button to the left */
     margin-bottom: 10px;     /* optional spacing below */
+}
+/*adding some details for the play and pause buttons*/
+/* Icon buttons for run/stop */
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 10px;
+    font-size: 20px;       /* size of the icon */
+    color: #555;           /* icon color */
+    transition: color 0.2s;
+}
+
+.icon-btn:hover {
+    color: var(--accent-color);   /* match your theme */
+}
+
+.icon-btn i {
+    pointer-events: none; /* make icon clicks count as button clicks */
 }
 
 
@@ -382,12 +478,17 @@ a {
     flex-direction: column;
     font-family: sans-serif;
  }
- 
+ /* changing up the control bar. 
  .controls, #controls {
     padding: 10px;
     background: #E5E6E4;
     border-bottom: 1px solid;
  }
+    */
+ #controls {
+    background: #ffffff !important;
+}
+
  
 #main, .main {
     flex: 1;
@@ -396,13 +497,48 @@ a {
     overflow: hidden;
  }
  
- #editor, .editor {
+ /* Make the editor area a positioned container */
+#main {
+    position: relative;
+}
+
+/* Floating run/stop controls */
+#editor-controls {
+    position: absolute;
+    top: 10px;     /* small offset inside the editor */
+    left: 10px;    /* aligns with the editor's left edge */
+    display: flex;
+    gap: 10px;
+    z-index: 9999;
+}
+
+
+
+/* Icon-only buttons (no background, no box) */
+.icon-btn {
+    background: none !important;   /* removes ALL background */
+    border: none !important;       /* removes outline box */
+    box-shadow: none !important;   /* removes subtle shadows */
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-size: 22px;               /* icon size */
+    color: #444;                   /* icon color */
+}
+
+.icon-btn:focus {
+    outline: none !important;      /* removes dotted focus outline */
+}
+
+
+#editor, .editor {
     flex: 1;
     min-width: 0;
     border-right: 1px solid #444;
     text-align: left;
- }
- 
+    position: relative;   /* ← add this */
+}
+
  #console, .console {
     width: 40%;
     background: #111;
