@@ -17,6 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
 from django.utils.text import slugify
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
+from django.views.decorators.http import require_GET
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -344,17 +345,6 @@ def create_assignment(request):
             title=title,
             description=description
         )
-
-        resource_files = request.FILES.getlist("resource_file")
-        resource_links = request.POST.getlist("resource_link")
-
-        for file, link in zip(resource_files, resource_links):
-            if file or link:
-                AssignmentResource.objects.create(
-                    assignment=assignment,
-                    file=file if file else None,
-                    link=link if link else None
-                )
 
         return redirect("teacher_assignment_detail", assignment_id=assignment.id)
 
@@ -973,6 +963,8 @@ def editor_view(request):
         flush=True
     )
 
+    saved_code = Uploads.objects.filter(person=request.user).order_by("-uploaded_at")
+
     return render(request, "editor_view.html", {
         "user": user,
         "class_options": class_options,
@@ -980,4 +972,28 @@ def editor_view(request):
         "code_name": code_name,
         "selected_class_id": selected_class_id,
         "assigned": assigned,
+        "saved_code": saved_code
+    })
+@login_required
+def load_upload(request, pk):
+    upload = get_object_or_404(Uploads, pk=pk)
+
+    # Security
+    if not (
+        upload.person == request.user
+        or (hasattr(request.user, "teacher")
+            and upload.for_class
+            and upload.for_class.teacher == request.user.teacher)
+        or request.user.is_superuser
+    ):
+        return JsonResponse({"ok": False}, status=403)
+
+    upload.file.open("rb")
+    code = force_str(upload.file.read(), errors="ignore")
+
+    return JsonResponse({
+        "ok": True,
+        "code": code,
+        "name": upload.display_name,
+        "class_id": upload.for_class_id,
     })

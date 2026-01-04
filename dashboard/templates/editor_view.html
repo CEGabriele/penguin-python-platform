@@ -20,23 +20,46 @@
 
 <body>
 
+    <!-- TOP NAVBAR -->
+<div class="top-nav">
+    <a href="{% url 'student_dashboard' %}" class="app-title">
+        Homework Dashboard
+    </a>
+  
+    <div class="top-nav-right">
+      <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+  
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="nav-btn">Logout</button>
+    </div>
+  </div>  
+
 <!-- SIDE MENU -->
 <div class="side-menu" id="sideMenu">
-    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-
     <div class="menu-items">
-
+        <div class="files-list">
+            {% for code in saved_code %}
+                <button type="button"
+                        class="file-item"
+                        data-upload-id="{{ code.id }}">
+                    <i class="fa-regular fa-file-code"></i>
+                    <span class="menu-label">{{ code.display_name }}</span>
+                </button>
+            {% empty %}
+                <div class="files-empty">No saved files</div>
+            {% endfor %}
+        </div>
+        <!--
         {% if user.teacher %}
             <a href="{% url 'teacher_dashboard' %}">
                 <i class="fa-solid fa-chalkboard-user"></i>
                 <span class="menu-label">Teacher Dashboard</span>
             </a>
-            <!--
             <a href="{% url 'teacher_assignments' %}">
                 <i class="fa-solid fa-folder-open"></i>
                 <span class="menu-label">Assignments</span>
             </a>
-            -->
             {% if user.teacher.is_admin %}
                 <a href="{% url 'admin_dashboard' %}">
                     <i class="fa-solid fa-user-gear"></i>
@@ -49,12 +72,10 @@
                 <span class="menu-label">Student Dashboard</span>
             </a>
 
-            <!--
             <a href="{% url 'student_assignments' %}">
                 <i class="fa-solid fa-book"></i>
                 <span class="menu-label">Assignments</span>
             </a>
-            -->
         {% endif %}
 
         <a href="{% url 'editor_view' %}">
@@ -70,6 +91,7 @@
             </button>
         </form>
 
+    -->
     </div>
 </div>
     
@@ -252,5 +274,56 @@ function toggleMenu() {
     }
 }
 </script>
+
+<script>
+    const LOAD_UPLOAD_BASE = "{% url 'load_upload' 0 %}".replace("/0/", "/");
+  
+    async function loadUpload(uploadId) {
+      const res = await fetch(`${LOAD_UPLOAD_BASE}${uploadId}/`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+  
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Load failed:", res.status, text.slice(0, 200));
+        alert(`Failed to load file (HTTP ${res.status}). Check console.`);
+        return;
+      }
+  
+      const data = await res.json();
+      if (!data.ok) {
+        alert("Failed to load file (server returned ok=false)");
+        return;
+      }
+  
+      // Load code into Monaco
+      if (!window.EditorAPI?.setValue) {
+        alert("Editor not ready yet (EditorAPI.setValue missing).");
+        return;
+      }
+      window.EditorAPI.setValue(data.code || "");
+  
+      // Update name field
+      document.getElementById("name").value = data.name || "";
+  
+      // Update class dropdown (if editable)
+      const classEl = document.getElementById("class");
+      if (classEl && classEl.tagName === "SELECT" && data.class_id) {
+        classEl.value = String(data.class_id);
+      }
+    }
+  
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".file-item").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".file-item").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            loadUpload(btn.dataset.uploadId);
+          });
+        });
+      });
+  </script>
+  
+    
 </body>
 </html>

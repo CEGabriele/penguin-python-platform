@@ -24,9 +24,7 @@ urlpatterns = [
     path("assignment/<int:assigned_id>/submissions/", teacher_view_submissions, name="teacher_view_submissions"),
     path("teacher-assignment/<int:assignment_id>/", teacher_assignment_detail, name="teacher_assignment_detail"),
     path('assign_assignment_to_class/<int:assignment_id>/', assign_assignment_to_class, name='assign_assignment_to_class'),
-    path(
-    "assignment/<int:assigned_id>/submit/",submit_assignment,name="submit_assignment",
-),
-
+    path("assignment/<int:assigned_id>/submit/",submit_assignment,name="submit_assignment"),
+    path("editor/load-upload/<int:pk>/", load_upload, name="load_upload"),
 
 ]
