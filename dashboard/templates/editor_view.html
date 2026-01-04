@@ -19,28 +19,6 @@
 </head>
 
 <body>
-    {% comment %}
-  <nav class="navbar">
-    <div class="navbar-links">
-      {% if user.teacher%}  
-      <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
-        {% if user.teacher.is_admin %}
-            <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-        {% endif %}
-      {% else %}
-      <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
-      {%endif%}
-      <a href ="{% url 'editor_view' %}">Code Editor</a>
-      <form action="{% url 'logout' %}" method="post" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit" class="logout-button">Logout</button>
-      </form>
-      </div>
-  </nav>
-  {% endcomment%}
-  <div class="editor-container">
-    <form method = "post">
-        {% csrf_token %}
 
 <!-- SIDE MENU -->
 <div class="side-menu" id="sideMenu">
@@ -53,12 +31,12 @@
                 <i class="fa-solid fa-chalkboard-user"></i>
                 <span class="menu-label">Teacher Dashboard</span>
             </a>
-
+            <!--
             <a href="{% url 'teacher_assignments' %}">
                 <i class="fa-solid fa-folder-open"></i>
                 <span class="menu-label">Assignments</span>
             </a>
-
+            -->
             {% if user.teacher.is_admin %}
                 <a href="{% url 'admin_dashboard' %}">
                     <i class="fa-solid fa-user-gear"></i>
@@ -71,10 +49,12 @@
                 <span class="menu-label">Student Dashboard</span>
             </a>
 
+            <!--
             <a href="{% url 'student_assignments' %}">
                 <i class="fa-solid fa-book"></i>
                 <span class="menu-label">Assignments</span>
             </a>
+            -->
         {% endif %}
 
         <a href="{% url 'editor_view' %}">
@@ -92,86 +72,72 @@
 
     </div>
 </div>
-
-
-
-<!-- MAIN WHITE BUBBLE -->
+    
 <div class="page-bubble">
 
-    <div class="editor-container">
-        <form method="post">
-            {% csrf_token %}
+    {% if assigned %}
+        <div class="assignment-context">
+            <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
+            <strong>Class:</strong> {{ assigned.for_class.name }}
+        </div>
+    {% endif %}
 
-            <div id="controls">
+    <form method="post" id="editorForm">
+        {% csrf_token %}
 
-                <!-- FLOATING RUN & STOP ICONS -->
-                <div id="editor-controls">
-                    <button type="button" onclick="window.runCode()" class="icon-btn">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
+        <div id="controls">
 
-                    <button type="button" onclick="window.stopCode()" class="icon-btn">
-                        <i class="fa-solid fa-stop"></i>
-                    </button>
-                </div>
-
-                <!-- CLASS + NAME + SAVE -->
-                <label for="class">Class:</label>
-                <select id="class">
-                    {% for c in class_options %}
-                      <option value="{{ c.id }}" 
-                              {% if selected_class_id == c.id %}selected{% endif %}>
-                        {{ c.name }}
-                      </option>
-                    {% endfor %}
-                </select>
-
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" value="{{ code_name }}" required>
-
-                <button type="button" id="saveBtn">Save</button>
-                <span id="saveStatus"
-                      style="margin-left:8px; font-size:0.95rem; opacity:0.8;"></span>
+            <div id="editor-controls">
+                <button type="button" onclick="window.runCode()" class="icon-btn">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <button type="button" onclick="window.stopCode()" class="icon-btn">
+                    <i class="fa-solid fa-stop"></i>
+                </button>
             </div>
 
-            <textarea id="id_code" hidden>{{ initial_code|default_if_none:"" }}</textarea>
+            {% if not assigned %}
+                <label>Class:</label>
+                <select id="class">
+                    {% for c in class_options %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <input type="hidden" id="class" value="{{ assigned.for_class.id }}">
+            {% endif %}
 
-            <script type="module" src="{% static 'editor/main.js' %}"></script>
-        </form>
-    </div>
+            <label>Name:</label>
+            <input type="text" id="name" value="{{ code_name }}" required>
 
+            {% if not assigned%}
+                <button type="button" id="saveBtn">Save</button>
+            {% endif %}
+            <span id="saveStatus"></span>
 
-
-    <!-- EDITOR + GRAPHICS -->
-    <div id="main">
-
-        <div id="editor"></div>
-
-        <div id="graphics-container" 
-             style="display:none; text-align:center; background:#222; padding:5px;">
-             
-            <canvas id="graphics-canvas" width="640" height="480"
-                    style="border:1px solid #444; display:none;"></canvas>
-            <canvas id="turtle-canvas" width="640" height="480"
-                    style="border:1px solid #444; display:none;"></canvas>
+            {% if assigned %}
+                <button type="button" id="submitBtn">Submit Assignment</button>
+                <span id="submitStatus"></span>
+            {% endif %}
         </div>
 
+        <textarea id="id_code" hidden>{{ initial_code }}</textarea>
+    </form>
+    <div id="main">
+        <div id="editor"></div>
         <div id="console"></div>
+        <div id="graphics-container"
+            style="display:none; text-align:center; background:#222; padding:5px;">
+        <canvas id="graphics-canvas" width="640" height="480"
+                style="border:1px solid #444; display:none;"></canvas>
+        </div>
+
     </div>
+
 </div>
+<script type="module" src="{% static 'editor/main.js' %}" defer></script>
 
-
-
-<!-- JS FOR SAVING -->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const hidden = document.getElementById("id_code");
-    setTimeout(() => {
-        if (window.EditorAPI?.setValue && hidden.value) {
-            window.EditorAPI.setValue(hidden.value);
-        }
-    }, 80);
-});
 
 function getCsrfToken() {
     const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
@@ -189,7 +155,7 @@ async function ajaxSave() {
     status.textContent = "Saving...";
 
     try {
-        const response = await fetch("{% url 'editor_view' %}", {
+        const response = await fetch(window.location.href, {
             method: "POST",
             headers: {
                 "X-Requested-With": "XMLHttpRequest",
@@ -221,10 +187,54 @@ async function ajaxSave() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("saveBtn").addEventListener("click", ajaxSave);
+    document.getElementById("saveBtn")?.addEventListener("click", ajaxSave);
 });
-</script>
+{% if assigned %}
+async function submitAssignment() {
+    const btn = document.getElementById("submitBtn");
+    const status = document.getElementById("submitStatus");
 
+    const code = window.EditorAPI.getValue();
+    const name = document.getElementById("name").value;
+
+    btn.disabled = true;
+    status.textContent = "Submitting…";
+
+    try {
+        const response = await fetch(
+            "{% url 'submit_assignment' assigned.id %}",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrfToken(),
+                },
+                body: JSON.stringify({ code, name }),
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            throw new Error("Submission failed");
+        }
+
+        status.textContent = "Submitted!";
+    } catch (err) {
+        console.error(err);
+        status.textContent = "Submission failed";
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document
+        .getElementById("submitBtn")
+        ?.addEventListener("click", submitAssignment);
+});
+{% endif %}
+
+</script>    
 
 
 <!-- SIDEMENU TOGGLE -->
@@ -242,6 +252,5 @@ function toggleMenu() {
     }
 }
 </script>
-
 </body>
 </html>

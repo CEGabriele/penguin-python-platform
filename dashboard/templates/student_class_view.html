@@ -21,10 +21,32 @@
           </form>
       </div>
   </nav>
+  <h1>{{class.name}} - {{class.day}}</h1>
+  <h3>{{class.teacher}}</h3>
 
+  <h3>Assignments</h3>
+  <div class = "class-grid">
+   {% for assigned in assigned_assignments %}
+      <div class="assignment-card">
+         <strong>{{ assigned.assignment.title }}</strong><br>
+         Due: {{ assigned.due_date }}<br>
 
-   <h1>{{class.name}} - {{class.day}}</h1>
-   <h3>{{class.teacher}}</h3>
+         {% if assigned.assignment.id in submitted_ids %}
+               ✅ Submitted
+         {% else %}
+               ❌ Not submitted
+         {% endif %}
+
+         <br>
+         <a href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
+            Open Assignment
+        </a>
+      </div>
+   {% empty %}
+      <li>No assignments yet.</li>
+   {% endfor %}
+   </div>
+<!---
    <br>
    {% if general_materials.assignments%}
       <h4>Assignments</h4>
@@ -57,6 +79,7 @@
    {% if not sorted_weeks and not general_materials.materials and not general_materials.assignments %}
       <p>No materials or assignments available for this class.</p>
    {% endif %}
+-->
 
 </body>
 

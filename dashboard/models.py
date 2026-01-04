@@ -130,3 +130,39 @@ class AIFeedback(models.Model):
 
     def __str__(self):
         return f"Feedback for {self.student.user.get_full_name()} on question {self.question.prompt}"
+
+
+class Assignment(models.Model):
+    created_by = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+
+    def __str__(self) -> str:
+        return self.title
+    
+class AssignedToClass(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='assigned_classes')
+    for_class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    due_date = models.DateField()
+
+    def __str__(self) -> str:
+        return f"{self.assignment.title} assigned to {self.for_class.name}"
+    
+class StudentSubmission(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    upload = models.ForeignKey(
+        Uploads,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assignment_submissions",
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    submitted = models.BooleanField(default=False, blank = True)
+
+    ai_feedback = models.TextField(blank=True, null=True)
+
+    def __str__(self) -> str:
+        return f"Submission by {self.student.user.get_full_name()} for {self.assignment.title}"

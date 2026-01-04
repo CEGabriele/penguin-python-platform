@@ -1,0 +1,25 @@
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+<head>
+<body>
+    <div class = "container">
+        <h1>Create Assignment</h1>
+        <form method="POST" enctype = "multipart/form-data">
+            {% csrf_token %}
+            <label for="title">Assignment Title:</label>
+            <input type="text" id="title" name="title" required><br><br>
+
+            <label for="description">Description / Instructions:</label><br>
+            <textarea id="description" name="description" rows="4" cols="50" required></textarea><br><br>
+
+
+            <button type="submit">Create Assignment</button>
+
+        
+        </form>
+</body>

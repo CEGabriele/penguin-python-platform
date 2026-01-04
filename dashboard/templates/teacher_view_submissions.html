@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+   <title>View Assignment Submissions</title>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+   <link rel="stylesheet" href="{% static 'styles.css' %}">
+   <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
+   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-links">
+            <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+            {% if teacher.is_admin %}
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+            {% endif %}
+            <a href ="{% url 'editor_view' %}">Code Editor</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+    
+    <h2>Submissions</h2>
+
+    <p>
+        <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
+        <strong>Class:</strong> {{ assigned.for_class.name }}<br>
+        <strong>Due date:</strong> {{ assigned.due_date }}
+    </p>
+    
+    <hr>
+    
+    {% if submissions %}
+        <ul>
+            {% for submission in submissions %}
+                <li>
+                    <strong>{{ submission.student.user.get_full_name }}</strong><br>
+                    Submitted at: {{ submission.submitted_at }}<br>
+    
+                    {% if submission.upload_id %}
+                        <a class = 'download-link' href="{% url 'download_file' submission.upload_id %}">
+                            Download
+                        </a>    
+                    {% else %}
+                        No file submitted
+                    {% endif %}
+                </li>
+                <br>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No submissions yet.</p>
+    {% endif %}
+    
+    <hr>
+    
+    <a href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
+        Back to Assignment
+    </a>    
+</body>
+</html>

@@ -552,15 +552,24 @@ a {
     text-align: left;
  }
  
- #userInput, .userInput{
+#userInput, .userInput{
     background-color: #111;
     border: none;
     color: white;
     text-decoration: none;
- }
+}
  
- #graphics-container.hidden, .graphics-container.hidden {
+#graphics-container.hidden, .graphics-container.hidden {
     display: none !important;
     height: 0 !important;
     padding: 0 !important;
- }
+}
+.assignment-context {
+    background: #fff7e6;
+    border: 1px solid #ffd18b;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
