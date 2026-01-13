@@ -28,7 +28,7 @@
    <h1>{{class.name}}</h1>
    <p>{{class.day}} - {{class.time}}</p>
 
-   
+   <!---
    <div class = "class-feed">
       <h1>Class Materials</h1>
       <h2>Available Homework Templates</h2>
@@ -49,6 +49,7 @@
 
 
    </div>
+-->
    
    <div class = 'class-info'>
       <h1>Class Info</h1>
@@ -60,7 +61,8 @@
              </div>
          {%endfor%}
      </div>
-    <h2>Assigned Assignments</h2>
+   <!--
+   <h2>Assigned Assignments</h2>
      {% for assignment in assigned_homeworks%}
          <div class = "assignment-card">    
             <h3>{{assignment.template.name}}</h3>
@@ -69,6 +71,30 @@
          </div>
       {%endfor%}
    </div>
+   -->
+   <ul>
+      {% for assigned in assigned_assignments %}
+          <li>
+              <strong>{{ assigned.assignment.title }}</strong><br>
+              Due: {{ assigned.due_date }}<br>
+      
+              <a href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
+                  Assignment Details
+              </a>
+              |
+              <a href="{% url 'teacher_view_submissions' assigned.id %}">
+                  View Submissions
+              </a>
+          </li>
+      {% empty %}
+          <li>No assignments assigned yet.</li>
+      {% endfor %}
+   </ul>
+
+   <a class = "button" href="{% url 'create_assignment' %}">
+       Create New Assignment
+   </a>
+
 
 </body>
 

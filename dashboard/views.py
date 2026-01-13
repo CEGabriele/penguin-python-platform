@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
 from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm
-from .models import Student, Uploads, Teacher, User, Class, HomeworkQuestion, AssignedHomework, StudentQuestionResponse, HomeworkTemplate, AIFeedback
+from .models import *
 from django.contrib.auth.decorators import login_required
 from itertools import groupby
 from operator import attrgetter
@@ -17,6 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
 from django.utils.text import slugify
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
+from django.views.decorators.http import require_GET
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -330,7 +331,131 @@ def teacher_assignments_list(request):
 
     return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms, 'teacher': teacher})
 
+@login_required
+@teacher_required
+def create_assignment(request):
+    teacher = Teacher.objects.get(user=request.user)
 
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+
+        assignment = Assignment.objects.create(
+            created_by=teacher,
+            title=title,
+            description=description
+        )
+
+        return redirect("teacher_assignment_detail", assignment_id=assignment.id)
+
+    return render(request, "create_assignment.html")
+
+@login_required
+@teacher_required
+def teacher_assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
+    resources = assignment.resources.all()
+    assigned_classes = assignment.assigned_classes.select_related("for_class")
+
+    return render(request, "teacher_assignment_detail.html", {
+        "assignment": assignment,
+        "resources": resources,
+        "assigned_classes": assigned_classes,
+    })
+
+@login_required
+@teacher_required
+def assign_assignment_to_class(request, assignment_id):
+    assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
+    classes = request.user.teacher.classes.all()
+
+    if request.method == "POST":
+        class_id = request.POST.get("class_id")
+        due_date = request.POST.get("due_date")
+
+        class_obj = get_object_or_404(Class, id=class_id, teacher=request.user.teacher)
+
+        AssignedToClass.objects.create(
+            assignment=assignment,
+            for_class=class_obj,
+            due_date=due_date
+        )
+
+        return redirect("teacher_assignment_detail", assignment_id=assignment.id)
+
+    return render(request, "assign_to_class.html", {
+        "assignment": assignment,
+        "classes": classes,
+    })
+
+@login_required
+@teacher_required
+def teacher_view_submissions(request, assigned_id):
+    assigned = get_object_or_404(AssignedToClass, id=assigned_id, assignment__created_by__user=request.user)
+    submissions = StudentSubmission.objects.filter(assignment=assigned.assignment).select_related('student__user')
+
+    return render(request, "teacher_view_submissions.html", {
+        "assigned": assigned,
+        "submissions": submissions,
+    })
+
+
+@login_required
+@student_required
+def submit_assignment(request, assigned_id):
+    if request.method != "POST":
+        return HttpResponseBadRequest("Invalid method")
+
+    assigned = get_object_or_404(AssignedToClass, id=assigned_id)
+    student = request.user.student
+
+    if assigned.for_class not in student.classes.all():
+        return HttpResponse("Access denied", status=403)
+
+    submission, _ = StudentSubmission.objects.get_or_create(
+        student=student,
+        assignment=assigned.assignment,
+    )
+
+    if submission.submitted:
+        return JsonResponse({"error": "Already submitted"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return HttpResponseBadRequest("Invalid JSON")
+
+    code = data.get("code", "").strip()
+    filename = data.get("name", "assignment.py")
+
+    if not code:
+        return JsonResponse({"error": "No code submitted"}, status=400)
+
+    if not filename.lower().endswith(".py"):
+        filename += ".py"
+
+    label = slugify(filename[:-3]) or "assignment"
+    path = (
+        f"class-{assigned.for_class.id}/"
+        f"student-{student.id}/"
+        f"assignment-{assigned.id}/"
+        f"{label}.py"
+    )
+
+    upload = submission.upload or Uploads.objects.create(
+        person=student.user,
+        for_class=assigned.for_class,
+        file_type="HW",
+        display_name=filename,
+    )
+
+    upload.file.save(path, ContentFile(code), save=True)
+
+    submission.upload = upload
+    submission.submitted = True
+    submission.save()
+
+    return JsonResponse({"ok": True})
 
 @login_required
 @teacher_required
@@ -499,6 +624,7 @@ def student_class_view(request, class_code):
     if class_obj not in student.classes.all():
         return redirect('student_dashboard')
     
+    """
     assigned_homework = AssignedHomework.objects.filter(for_class = class_obj).select_related('template')
     weekly_assignments = defaultdict(lambda: {'assignments': []})
 
@@ -510,19 +636,43 @@ def student_class_view(request, class_code):
         'class': class_obj,
         'sorted_weeks': sorted_weeks,
     }
+    """
+    assigned_assignments = AssignedToClass.objects.filter(for_class = class_obj).select_related('assignment').order_by('due_date')
+    submitted_ids = set(
+        StudentSubmission.objects
+        .filter(student=student)
+        .values_list("assignment_id", flat=True)
+    )
+    return render(request, 'student_class_view.html', {
+        'class': class_obj,
+        'assigned_assignments': assigned_assignments,
+        'submitted_ids': submitted_ids,
+    })
 
-    return render(request, 'student_class_view.html', context)
+    #return render(request, 'student_class_view.html', context)
 
 @login_required
 @teacher_required
 def teacher_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code, teacher = request.user.teacher)
+    assigned_assignments = (
+        AssignedToClass.objects
+        .filter(for_class=class_obj)
+        .select_related("assignment")
+        .order_by("due_date")
+    )
+    students = class_obj.students.all()
+
+    return render(request, "teacher_class_view.html", {
+        "class": class_obj,
+        "assigned_assignments": assigned_assignments,
+        "students": students,
+    })
+    """
     curriculum = class_obj.curriculum
     homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
     assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
     teacher = Teacher.objects.get(user = request.user)
-
-    students = class_obj.students.all()
 
     return render(request, 'teacher_class_view.html', {
         'class': class_obj,
@@ -531,6 +681,7 @@ def teacher_class_view(request, class_code):
         'students': students,
         'teacher': teacher,
     })
+    """
 
 @csrf_exempt
 def get_code_feedback(request):
@@ -610,173 +761,239 @@ def healthz(request):
 
 @login_required
 def editor_view(request):
-    #assigned_homework = get_object_or_404(AssignedHomework, id=homework_id)
-    #question = get_object_or_404(HomeworkQuestion, id=question_id, assigned_homework=assigned_homework)
-    
     user = request.user
+    is_json = "application/json" in request.headers.get("content-type", "")
 
-    if request.method == "POST" and request.headers.get("content-type", "").startswith("application/json"):
-            import json
-            try:
-                data = json.loads(request.body)
-            except Exception:
-                return HttpResponseBadRequest("Invalid JSON")
+    assigned_id = request.GET.get("assigned_id")
+    assigned = None
 
-            code = data.get("code", "")
-            name = data.get("name", "untitled")
-            class_id = data.get("class_id")
-            if name.lower().endswith(".py"):
-                base_name = name[:-3]
-            else:
-                base_name = name
-            name = base_name + ".py"
-            class_id = data.get("class_id")
+    # Assignment context (if present)
+    if assigned_id:
+        assigned = get_object_or_404(AssignedToClass, id=assigned_id)
 
-            class_obj = get_object_or_404(Class, id=class_id)
+        # Security: student must belong to class
+        if hasattr(user, "student"):
+            if assigned.for_class not in user.student.classes.all():
+                return HttpResponse("Access denied", status=403)
 
-            upload, _ = Uploads.objects.get_or_create(
-                person=user,
-                for_class=class_obj,
-                display_name=name,
-                file_type="CW",
-            )
-
-            label = slugify(name[:-3]) or "code"
-            filename = f"{class_id}/user-{request.user.id}/{label}.py"
-            upload.file.save(filename, ContentFile(code), save=True)
-
-            return JsonResponse({
-                "ok": True,
-                "file_id": upload.id,
-                "display_name": name[:-3],
-                "filename": filename,
-                "class": class_obj.name,
-            })
-    elif request.method == "POST":
-        if request.headers.get("x-requested-with") != "XMLHttpRequest":
-            return HttpResponseBadRequest("Invalid AJAX request.")
-           
-        code = request.POST.get("code", "")
-        name = request.POST.get("name", "untitled")+".py"
-        class_id = request.POST.get("class_id")
-        class_obj = get_object_or_404(Class, id=class_id)
-
-        upload, _ = Uploads.objects.get_or_create(
-            person=request.user,
-            for_class=class_obj,
-            display_name = name,
-            file_type = "CW",
-        )
-
-        name = name[:-3]
-        label = slugify(name) or "code"
-        filename = f"{class_id}/user-{request.user.id}/{label}.py"
-        upload.file.save(filename, ContentFile(code), save=True)
-
-        return JsonResponse({"ok": True, "file_id": upload.id, "display_name": name, "filename":filename, "class": class_obj.name})
-    
-    upload_id = request.GET.get("upload_id")
-
+    # Load initial code (assignment)
     initial_code = ""
     code_name = ""
     selected_class_id = None
 
-    if upload_id:
+    if assigned and hasattr(user, "student"):
+        submission, _ = StudentSubmission.objects.get_or_create(
+        student=user.student,
+        assignment=assigned.assignment,
+        )
+
+        print(
+        "EDITOR READ:",
+        "submission_id=", submission.id,
+        "upload_id=", submission.upload_id,
+        "file=", submission.upload.file.name if submission.upload else None,
+        flush=True)
+
+        if submission and submission.upload and submission.upload.file:
+            try:
+                submission.upload.file.open("rb")
+                initial_code = submission.upload.file.read().decode("utf-8")
+                code_name = submission.upload.display_name
+                selected_class_id = str(assigned.for_class.id)
+            except Exception:
+                pass
+
+    # JSON AUTOSAVE (editor autosave)
+    if request.method == "POST" and is_json:
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+        code = data.get("code", "")
+        if assigned:
+            name = "assignment.py"
+        else:
+            name = data.get("name", "autosave.py")
+
+        class_id = data.get("class_id")
+
+        if not name.lower().endswith(".py"):
+            name += ".py"
+
+        # ASSIGNMENT AUTOSAVE
+        if assigned and hasattr(user, "student"):
+            submission, _ = StudentSubmission.objects.get_or_create(
+                student=user.student,
+                assignment=assigned.assignment,
+            )
+
+            if submission.submitted:
+                return JsonResponse(
+                    {"ok": False, "error": "Assignment already submitted"},
+                    status=403,
+                )
+
+            label = slugify(name[:-3]) or "assignment"
+            path = (
+                f"class-{assigned.for_class.id}/"
+                f"student-{user.student.id}/"
+                f"assignment-{assigned.id}/"
+                f"{label}.py"
+            )
+
+            upload = submission.upload or Uploads.objects.create(
+                person=user,
+                for_class=assigned.for_class,
+                file_type="HW",
+                display_name=name,
+            )
+
+            print(
+            "AUTOSAVE WRITE:",
+                "submission_id=", submission.id,
+                "upload_id=", upload.id,
+                "path=", upload.file.name,
+                "code_len=", len(code),
+                flush=True
+            )
+
+            upload.file.save(path, ContentFile(code), save=True)
+            submission.upload = upload
+            submission.save()
+
+            print("JSON AUTOSAVE:", request.get_full_path(), "assigned:", bool(assigned), "code_len:", len(code))
+
+            return JsonResponse({"ok": True, "autosaved": True})
+
+        # FREE EDITOR AUTOSAVE (CW)
+        if not class_id:
+            return JsonResponse(
+                {"ok": False, "error": "Missing class_id"},
+                status=400,
+            )
+
+        class_obj = get_object_or_404(Class, id=class_id)
+
+        upload, _ = Uploads.objects.get_or_create(
+            person=user,
+            for_class=class_obj,
+            display_name=name,
+            file_type="CW",
+        )
+
+        label = slugify(name[:-3]) or "code"
+        filename = f"class-{class_id}/user-{user.id}/{label}.py"
+        upload.file.save(filename, ContentFile(code), save=True)
+
+        return JsonResponse({"ok": True, "autosaved": True})
+
+    # LEGACY AJAX SAVE (Save button)
+    if request.method == "POST":
+        if request.headers.get("x-requested-with") != "XMLHttpRequest":
+            return HttpResponseBadRequest("Invalid POST request")
+
+        # Prevent legacy saves for assignments
+        if assigned:
+            return JsonResponse(
+                {"ok": False, "error": "Assignments use autosave only"},
+                status=400,
+            )
+
+        code = request.POST.get("code", "")
+        name = request.POST.get("name", "code.py")
+        class_id = request.POST.get("class_id")
+
+        if not class_id:
+            return JsonResponse(
+                {"ok": False, "error": "Missing class_id"},
+                status=400,
+            )
+
+        if not name.lower().endswith(".py"):
+            name += ".py"
+
+        class_obj = get_object_or_404(Class, id=class_id)
+
+        upload, _ = Uploads.objects.get_or_create(
+            person=user,
+            for_class=class_obj,
+            display_name=name,
+            file_type="CW",
+        )
+
+        label = slugify(name[:-3]) or "code"
+        filename = f"class-{class_id}/user-{user.id}/{label}.py"
+        upload.file.save(filename, ContentFile(code), save=True)
+
+        return JsonResponse({"ok": True})
+
+    # Load file by upload_id (editor)
+    upload_id = request.GET.get("upload_id")
+
+    if upload_id and not assigned:
         u = get_object_or_404(Uploads, id=upload_id)
 
-        if not (u.person == user or (hasattr(user, "teacher") and u.for_class and u.for_class.teacher == user.teacher) or user.is_superuser):
-            return HttpResponse("Access denied.", status=403)
+        if not (
+            u.person == user
+            or (hasattr(user, "teacher") and u.for_class and u.for_class.teacher == user.teacher)
+            or user.is_superuser
+        ):
+            return HttpResponse("Access denied", status=403)
+
         selected_class_id = str(u.for_class.id)
         u.file.open("rb")
-        data = u.file.read()
-        initial_code = force_str(data, errors="ignore")
+        initial_code = force_str(u.file.read(), errors="ignore")
         code_name = u.display_name or u.file.name.split("/")[-1]
 
-
-
+    # Class dropdown options
     if hasattr(user, "teacher"):
         class_options = user.teacher.classes.all()
     elif hasattr(user, "student"):
         class_options = user.student.classes.all()
     else:
         class_options = []
-    
-    
-    return render(request, "editor_view.html", {"user": request.user, "class_options": class_options, "initial_code": initial_code, "code_name": code_name, "selected_class_id": selected_class_id})
 
-@csrf_exempt
+    print(
+        "EDITOR GET:",
+        request.get_full_path(),
+        "assigned=", bool(assigned),
+        "initial_len=", len(initial_code or ""),
+        "code_name=", code_name,
+        flush=True
+    )
+
+    saved_code = Uploads.objects.filter(person=request.user).order_by("-uploaded_at")
+
+    return render(request, "editor_view.html", {
+        "user": user,
+        "class_options": class_options,
+        "initial_code": initial_code,
+        "code_name": code_name,
+        "selected_class_id": selected_class_id,
+        "assigned": assigned,
+        "saved_code": saved_code
+    })
 @login_required
-def mini_autosave_view(request):
-    """
-    Autosaves code typed into a mini editor for a specific homework question.
-    It updates or creates a StudentQuestionResponse for that question + student.
-    """
-    if request.method != "POST":
-        return HttpResponseBadRequest("Invalid method")
+def load_upload(request, pk):
+    upload = get_object_or_404(Uploads, pk=pk)
 
-    try:
-        data = json.loads(request.body)
-    except Exception:
-        return HttpResponseBadRequest("Invalid JSON")
+    # Security
+    if not (
+        upload.person == request.user
+        or (hasattr(request.user, "teacher")
+            and upload.for_class
+            and upload.for_class.teacher == request.user.teacher)
+        or request.user.is_superuser
+    ):
+        return JsonResponse({"ok": False}, status=403)
 
-    code = data.get("code", "").strip()
-    qid = data.get("question_id")
-    class_id = data.get("class_id")
-    name = data.get("name", "mini_autosave.py")
-
-    # Basic validation
-    if not (qid and class_id and request.user.is_authenticated):
-        return JsonResponse({"error": "Missing data"}, status=400)
-
-    # Get the question
-    try:
-        question = HomeworkQuestion.objects.get(id=qid)
-    except HomeworkQuestion.DoesNotExist:
-        return JsonResponse({"error": "Question not found"}, status=404)
-
-    # Get the student's class and assigned homework
-    student = request.user.student
-    try:
-        class_obj = Class.objects.get(id=class_id)
-    except Class.DoesNotExist:
-        return JsonResponse({"error": "Class not found"}, status=404)
-
-    # Find the AssignedHomework for this class and this question’s template
-    assigned = AssignedHomework.objects.filter(
-        for_class=class_obj,
-        template=question.template
-    ).first()
-
-    if not assigned:
-        return JsonResponse({"error": "AssignedHomework not found"}, status=404)
-    
-    if not name.lower().endswith(".py"):
-        name += ".py"
-
-    from django.core.files.base import ContentFile
-    label = slugify(name[:-3]) or f"q{qid}"
-    filepath = f"class-{class_id}/student-{student.id}/question-{qid}/{label}.py"
-
-    upload, _ = Uploads.objects.get_or_create(
-        person=request.user,
-        for_class=class_obj,
-        display_name=name,
-        file_type="HW",
-    )
-
-    upload.file.save(filepath, ContentFile(code), save=True)
-
-    # Save or update student's response
-    response_obj, created = StudentQuestionResponse.objects.update_or_create(
-        student=student,
-        assigned_homework=assigned,
-        question=question,
-        defaults={"upload": upload},
-    )
+    upload.file.open("rb")
+    code = force_str(upload.file.read(), errors="ignore")
 
     return JsonResponse({
         "ok": True,
-        "upload_id": upload.id,
-        "filename": filepath,
-        "display_name": name,
+        "code": code,
+        "name": upload.display_name,
+        "class_id": upload.for_class_id,
     })

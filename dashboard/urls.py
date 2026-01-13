@@ -18,9 +18,13 @@ urlpatterns = [
     path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
     path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
     path('set-due-date/<int:class_id>/<int:template_id>/', get_due_date_form, name="get_homework_due_date_form"),
-    path('assign_homework_assignment', assign_homework_assignment, name="assign_homework_assignment"),
-    path('editor/', editor_view, name='editor_view'),
-    path("mini-autosave/", mini_autosave_view, name="mini_autosave"),
-
+    path('assign_homework_assignment',assign_homework_assignment, name="assign_homework_assignment"),
+    path('editor/',editor_view, name='editor_view'),
+    path('create-assignment/',create_assignment, name='create_assignment'),
+    path("assignment/<int:assigned_id>/submissions/", teacher_view_submissions, name="teacher_view_submissions"),
+    path("teacher-assignment/<int:assignment_id>/", teacher_assignment_detail, name="teacher_assignment_detail"),
+    path('assign_assignment_to_class/<int:assignment_id>/', assign_assignment_to_class, name='assign_assignment_to_class'),
+    path("assignment/<int:assigned_id>/submit/",submit_assignment,name="submit_assignment"),
+    path("editor/load-upload/<int:pk>/", load_upload, name="load_upload"),
 
 ]

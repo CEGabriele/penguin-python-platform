@@ -20,15 +20,13 @@ let lastRunUsedTurtle = false;
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
 require(['vs/editor/editor.main'], function () {
-  let code = default_code
-  const minLines = 30;
-  const lineCount = code.split("\n").length;
-
-  if (lineCount < minLines) {
-    code += "\n".repeat(minLines - lineCount);
-  }
+  const hidden = document.getElementById("id_code");
   
-
+  const code =
+    hidden && hidden.value !== ""
+      ? hidden.value
+      : default_code;
+  
   editor = monaco.editor.create(document.getElementById('editor'), {
     value: code,
     language: 'python',
@@ -36,6 +34,8 @@ require(['vs/editor/editor.main'], function () {
     automaticLayout: true,
     scrollBeyondLastLine: false,
   });
+  lastSavedCode = editor.getValue();
+
 
   const editor_container = document.getElementById('editor');
   const graphics_container = document.getElementById('graphics-container');
@@ -43,7 +43,7 @@ require(['vs/editor/editor.main'], function () {
   function updateHeight(){
     const height = editor.getContentHeight();
     editor_container.style.height = height + 'px';
-    graphics_container.style.top = height + 'px';
+    if (graphics_container) graphics_container.style.top = height + 'px';
   }
 
   updateHeight();
@@ -51,6 +51,7 @@ require(['vs/editor/editor.main'], function () {
   editor.onDidChangeModelContent(onEditorChange);
   setInterval(autosave, 60000); // periodic autosave every minute
 });
+
 
 // writes to the console
 window.console_write = function (s) {
@@ -171,6 +172,7 @@ initWorker();
 
 // runs when run button is pressed
 async function runCode() {
+  if (!editor) return;
   // make sure everything is ready
   if (codeRunning) return alert('Code is already running.');
 
@@ -295,9 +297,6 @@ window.EditorAPI = {
   setValue: (v) => editor?.setValue?.(v ?? ''),
 };
 
-const CLASS_SELECT = document.getElementById("class");
-const NAME_INPUT = document.getElementById("name");
-const STATUS_SPAN = document.getElementById("saveStatus");
 let lastSavedCode = "";
 let autosaveTimer;
 
@@ -317,18 +316,19 @@ function getCookie(name) {
 }
 
 async function autosave() {
-  if (!editor) return;
+  if (!editor || !editor.getModel()) return;
+  const { classSelect, nameInput, statusSpan } = getEls();
+
   const code = editor.getValue();
-  const class_id = CLASS_SELECT?.value;
-  const name = NAME_INPUT?.value || "autosave";
+  const class_id = classSelect?.value;
+  const name = nameInput?.value || "autosave";
 
   if (code === lastSavedCode || !class_id) return;
-  lastSavedCode = code;
 
   try {
-    const response = await fetch(window.location.pathname, {
+    const response = await fetch(window.location.href, {
       method: "POST",
-      headers: {
+      headers: { 
         "Content-Type": "application/json",
         "X-CSRFToken": getCookie("csrftoken"),
       },
@@ -339,13 +339,16 @@ async function autosave() {
       }),
     });
     if (response.ok) {
-      STATUS_SPAN.textContent = "Autosaved";
+      statusSpan.textContent = "Autosaved";
+      lastSavedCode = code;
     } else {
-      STATUS_SPAN.textContent = "Save failed";
+      statusSpan.textContent = "Save failed";
     }
   } catch (err) {
-    STATUS_SPAN.textContent = "Network error";
+    statusSpan.textContent = "Network error";
   }
+
+
 }
 
 function onEditorChange() {
@@ -353,5 +356,10 @@ function onEditorChange() {
   autosaveTimer = setTimeout(autosave, 2000);
 }
 
-
- 
+function getEls() {
+  return {
+    classSelect: document.getElementById("class"),
+    nameInput: document.getElementById("name"),
+    statusSpan: document.getElementById("saveStatus"),
+  };
+}

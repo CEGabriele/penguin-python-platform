@@ -11,48 +11,6 @@ body {
     margin: 4vh;
     align-items: center;
 }
-
-/* Global content bubble */
-.page-bubble {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-
-    width: 85vw;
-    height: 85vh;
-    padding: 32px;
-
-    background: #ffffff;
-    border: none;               /* 🚫 No borders */
-    box-shadow: none;           /* 🚫 No shadow */
-
-    border-radius: 18px;        /* Smooth, ChatGPT-like rounded corners */
-    
-    z-index: 1000;
-
-    margin-left: 60px;          /* still works with your sidebar */
-    transition: margin-left 0.3s;
-}
-
-
-/* Side menu styles */
-.side-menu {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 60px;              /* collapsed width */
-    overflow-x: hidden;
-    transition: 0.3s;
-    display: flex;
-    flex-direction: column;
-    z-index: 2000;
-}
-
-.side-menu.expanded {
-    width: 200px;             /* expanded width */
-}
-
 .side-menu .menu-toggle {
     background: none;
     border: none;
@@ -355,18 +313,6 @@ button:hover , .button:hover, .navbar-links a {
     margin-bottom: 10px;
 }
 
-.collapsible:after {
-    content: '\02795'; /* Unicode character for "plus" sign (+) */
-    font-size: 13px;
-    color: white;
-    float: right;
-    margin-left: 5px;
-  }
-  
-.active:after {
-    content: "\2796"; /* Unicode character for "minus" sign (-) */
-    color: white
-}
 
 .feed-card {
     background-color: #ffffff;
@@ -513,7 +459,6 @@ a {
 }
 
 
-
 /* Icon-only buttons (no background, no box) */
 .icon-btn {
     background: none !important;   /* removes ALL background */
@@ -552,15 +497,211 @@ a {
     text-align: left;
  }
  
- #userInput, .userInput{
+#userInput, .userInput{
     background-color: #111;
     border: none;
     color: white;
     text-decoration: none;
- }
+}
  
- #graphics-container.hidden, .graphics-container.hidden {
+#graphics-container.hidden, .graphics-container.hidden {
     display: none !important;
     height: 0 !important;
     padding: 0 !important;
- }
+}
+.assignment-context {
+    background: #fff7e6;
+    border: 1px solid #ffd18b;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+
+/* ===== Light File Sidebar ===== */
+/*
+.side-menu{
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 4px 0 12px rgba(0,0,0,0.04);
+  padding: 12px 8px;
+}
+
+.side-menu .menu-toggle{
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #444;
+  cursor: pointer;
+}
+
+.side-menu .menu-toggle:hover{
+  background: rgba(0,0,0,0.06);
+}
+*/
+
+.side-menu{
+  position: fixed;
+  left: 0; top: 0;
+  width: 140px;
+  height: 100vh;
+  z-index: 2000;
+}
+
+.page-bubble{
+  position: fixed;
+  top: 4vh;
+  right: 4vh;
+  bottom: 4vh;
+  left: 140px;
+  padding: 32px;
+  background: #fff;
+  border-radius: 18px;
+  z-index: 1000;
+}
+
+/* Menu content */
+.side-menu .menu-items{
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px);
+}
+
+/* File list container */
+.files-list{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Scrollbar */
+.files-list::-webkit-scrollbar{
+  width: 8px;
+}
+.files-list::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.15);
+  border-radius: 999px;
+}
+
+/* Individual file */
+.file-item{
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #333;
+  font-size: 0.95rem;
+  transition: background 0.15s ease,
+              border-color 0.15s ease,
+              transform 0.12s ease;
+}
+
+/* File icon */
+.file-item i{
+  color: rgba(0,0,0,0.45);
+  width: 18px;
+  text-align: center;
+}
+
+/* Hover */
+.file-item:hover{
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+/* Active file */
+.file-item.active{
+  background: rgba(252,164,43,0.16);
+  border-color: rgba(252,164,43,0.45);
+}
+
+.file-item.active i{
+  color: rgba(252,164,43,0.95);
+}
+
+/* Empty state */
+.files-empty{
+  color: rgba(0,0,0,0.55);
+  font-size: 0.9rem;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.03);
+  border: 1px dashed rgba(0,0,0,0.15);
+}
+
+
+/* =========================
+   Top Navigation Bar
+========================= */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 140;      /* start after sidebar */
+    right: 0;
+    height: 56px;
+  
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  
+    z-index: 1500;
+  }
+  
+  .top-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .app-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #222;
+    margin-right: 8px;
+  }
+  
+  .top-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .user-name {
+    font-size: 0.9rem;
+    color: rgba(0,0,0,0.65);
+  }
+  
+  /* Navbar buttons */
+  .nav-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  
+  .nav-btn:hover {
+    background-color: var(--accent-color-light);
+  }
+  
