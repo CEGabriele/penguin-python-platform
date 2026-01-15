@@ -427,14 +427,54 @@ a {
  /* changing up the control bar. 
  .controls, #controls {
     padding: 10px;
-    background: #E5E6E4;
+    background: #E5E6E4; 
     border-bottom: 1px solid;
  }
     */
  #controls {
     background: #ffffff !important;
+    display: flex;
+    align-items: center; /* going to vertically center items */
+    gap:15px;
+    justify-content: flex-start; /* on the right side */
+    padding: 10px 20px; /*inner spacing*/
+    margin-bottom: 2px; /*spacing below*/
+    margin-left: 842px;
+
+}
+/*adjusting label spacing*/
+#controls label.class-label {
+     position: relative;
+
 }
 
+
+/* Class dropdown & Name input styling */
+#controls select#class,
+#controls input#name {
+    height: 24px;            /* same height for both */
+    /*padding: 4px 12px;*/
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.2);
+    font-size: 0.7rem;
+}
+
+/* Name input shorter width */
+#controls input#name {
+    width: 110px;
+    max-width: 150px;    /* limit max width */
+     /* adjust % until it lines up with right side */
+    margin-bottom: 0;
+}
+
+/* Save button styling to match */
+#saveBtn {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-left: 35px; /* space between Name input and Save button */
+}
  
 #main, .main {
     flex: 1;
@@ -554,7 +594,8 @@ a {
 
 .page-bubble{
   position: fixed;
-  top: 4vh;
+  top: 8vh; /*going to make it lower*/
+  padding-top: 12px; /*pushing down a bit*/
   right: 4vh;
   bottom: 4vh;
   left: 140px;
@@ -653,9 +694,9 @@ a {
     right: 0;
     height: 56px;
   
-    background: #ffffff;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    background: transparent; /* removing white background */
+    /*border-bottom: 1px solid rgba(0,0,0,0.08);*/
+    box-shadow: none; /* 0 4px 10px rgba(0,0,0,0.05);*/
   
     display: flex;
     align-items: center;

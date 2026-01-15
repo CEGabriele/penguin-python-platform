@@ -7,7 +7,7 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v= 4"> <!-- cache buster -->
 
     <!-- Monaco + Pyodide -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
@@ -22,9 +22,12 @@
 
     <!-- TOP NAVBAR -->
 <div class="top-nav">
+    <!-- Not sure if this is necessary
     <a href="{% url 'student_dashboard' %}" class="app-title">
         Homework Dashboard
     </a>
+-->
+
   
     <div class="top-nav-right">
       <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
@@ -119,7 +122,8 @@
             </div>
 
             {% if not assigned %}
-                <label>Class:</label>
+            <label for="class" class="class-label">Class:</label>
+              <!--label>Class:</label-->
                 <select id="class">
                     {% for c in class_options %}
                         <option value="{{ c.id }}">{{ c.name }}</option>
