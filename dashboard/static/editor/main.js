@@ -123,7 +123,7 @@ function ensureTurtleCanvas() {
 
 function initWorker(){
   if (worker) worker.terminate();
-  worker = new Worker(window.WORKER_URL, {type: 'module'});
+  worker = new Worker(window.WORKER_URL);
   
   worker.onmessage = (e) => {
     const message = e.data;
