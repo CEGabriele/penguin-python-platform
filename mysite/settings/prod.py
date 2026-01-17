@@ -59,7 +59,8 @@ MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 STATIC_ROOT = BASE_DIR / "staticfiles"  # type: ignore[name-defined]
 
 # If you actually have a project-level ./static folder, uncomment:
-# STATICFILES_DIRS = [BASE_DIR / "static"]
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Django 4.2+ STORAGES
 STORAGES = {
