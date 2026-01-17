@@ -1,6 +1,6 @@
 try {
   self.postMessage("WORKER_BOOTED_BEFORE_IMPORT");
-  importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
+  importScripts(self.location.origin + "/static/pyodide/pyodide.js");
   self.postMessage("WORKER_BOOTED_AFTER_IMPORT");
 } catch (e) {
   self.postMessage({
