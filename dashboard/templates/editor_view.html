@@ -15,7 +15,7 @@
     
     <script>
         window.MonacoEnvironment = {
-        getWorker: function () {
+        getWorkerUrl: function () {
             return new Worker(window.WORKER_URL, { type: "classic" });
         }
         };
