@@ -1,3 +1,5 @@
+self.postMessage("WORKER_BOOTED");
+
 importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
 
 let pyodide = null;

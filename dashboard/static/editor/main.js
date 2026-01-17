@@ -123,7 +123,7 @@ function ensureTurtleCanvas() {
 
 function initWorker(){
   if (worker) worker.terminate();
-  worker = new Worker(window.WORKER_URL);
+  worker = new Worker(window.WORKER_URL, {type: 'module'});
   
   worker.onmessage = (e) => {
     const message = e.data;
@@ -363,3 +363,11 @@ function getEls() {
     statusSpan: document.getElementById("saveStatus"),
   };
 }
+
+worker.onmessage = (e) => {
+  console.log("FROM WORKER:", e.data);
+};
+
+worker.onerror = (e) => {
+  console.error("WORKER ERROR:", e);
+};
