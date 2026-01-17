@@ -1,6 +1,15 @@
-self.postMessage("WORKER_BOOTED");
-
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
+try {
+  self.postMessage("WORKER_BOOTED_BEFORE_IMPORT");
+  importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
+  self.postMessage("WORKER_BOOTED_AFTER_IMPORT");
+} catch (e) {
+  self.postMessage({
+    type: "error",
+    error: "importScripts failed",
+    message: e.message,
+    stack: e.stack,
+  });
+}
 
 let pyodide = null;
 let frameTimer = null;
