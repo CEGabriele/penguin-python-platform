@@ -48,7 +48,11 @@ AWS_S3_FILE_OVERWRITE = True
 AWS_QUERYSTRING_AUTH = False
 
 # Static / Media URLs
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+#STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
 # Local staging dir required for collectstatic (Django won’t serve from here)

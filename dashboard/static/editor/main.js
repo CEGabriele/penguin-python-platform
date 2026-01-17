@@ -16,6 +16,8 @@ let inputInProgress = false;
 let abortController = null;
 let lastRunUsedPygame = false;
 let lastRunUsedTurtle = false;
+let lastSavedCode = "";
+let autosaveTimer;
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -297,8 +299,6 @@ window.EditorAPI = {
   setValue: (v) => editor?.setValue?.(v ?? ''),
 };
 
-let lastSavedCode = "";
-let autosaveTimer;
 
 function getCookie(name) {
   let cookieValue = null;
