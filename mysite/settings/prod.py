@@ -62,6 +62,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Django 4.2+ STORAGES
 STORAGES = {
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
     "default": {  # MEDIA (private)
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
