@@ -8,8 +8,9 @@ body {
     font-family: "Poppins", sans-serif;
     background-color: #f5f5f5; /*testing*/
     text-align: center;
-    margin: 4vh;
+    margin: 0;
     align-items: center;
+    padding-top: 48px;
 }
 .side-menu .menu-toggle {
     background: none;
@@ -38,13 +39,7 @@ body {
 
 .side-menu a:hover, .side-menu button.logout-button:hover {
     background: rgba(255, 255, 255, 0.1);
-}
-
-/* shift the page bubble initially */
-.page-bubble {
-    margin-left: 60px; /* start offset to match collapsed menu */
-    transition: margin-left 0.3s;
-}
+}  
 
 
 .class-grid{
@@ -552,17 +547,18 @@ a {
   z-index: 2000;
 }
 
-.page-bubble{
-  position: fixed;
-  top: 4vh;
-  right: 4vh;
-  bottom: 4vh;
-  left: 140px;
-  padding: 32px;
-  background: #fff;
-  border-radius: 18px;
-  z-index: 1000;
-}
+.page-bubble {
+    position: fixed;
+    top: calc(56px + 4vh);
+    right: 4vh;
+    bottom: 4vh;
+    left: 140px;
+  
+    padding: 32px;
+    background: #fff;
+    border-radius: 18px;
+    z-index: 1000;
+  }  
 
 /* Menu content */
 .side-menu .menu-items{
@@ -641,15 +637,14 @@ a {
   background: rgba(0,0,0,0.03);
   border: 1px dashed rgba(0,0,0,0.15);
 }
-
-
 /* =========================
-   Top Navigation Bar
+   Top Navigation (Right-Aligned)
 ========================= */
+
 .top-nav {
     position: fixed;
     top: 0;
-    left: 140;      /* start after sidebar */
+    left: 140px; /* after sidebar */
     right: 0;
     height: 56px;
   
@@ -659,23 +654,10 @@ a {
   
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
+    justify-content: flex-end;
+    padding: 0 24px;
   
     z-index: 1500;
-  }
-  
-  .top-nav-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  
-  .app-title {
-    font-weight: 600;
-    font-size: 1.05rem;
-    color: #222;
-    margin-right: 8px;
   }
   
   .top-nav-right {
@@ -684,24 +666,57 @@ a {
     gap: 14px;
   }
   
-  .user-name {
+  /* Nav links */
+  .nav-link {
     font-size: 0.9rem;
-    color: rgba(0,0,0,0.65);
+    font-weight: 500;
+    color: #333;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   
-  /* Navbar buttons */
+  .nav-link:hover {
+    background: rgba(0,0,0,0.05);
+  }
+  
+  /* Active page */
+  .nav-link.active {
+    background: rgba(252,164,43,0.18);
+    color: #000;
+  }
+  
+  /* Divider between nav and user info */
+  .nav-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(0,0,0,0.12);
+    margin: 0 4px;
+  }
+  
+  /* User name */
+  .user-name {
+    font-size: 0.85rem;
+    color: rgba(0,0,0,0.65);
+    white-space: nowrap;
+  }
+  
+  /* Logout button */
   .nav-btn {
     background-color: var(--accent-color);
     color: white;
     border: none;
     border-radius: 10px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 0.85rem;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: background 0.2s ease, transform 0.15s ease;
   }
   
   .nav-btn:hover {
     background-color: var(--accent-color-light);
+    transform: translateY(-1px);
   }
   

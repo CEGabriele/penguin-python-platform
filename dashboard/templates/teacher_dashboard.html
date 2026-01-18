@@ -10,24 +10,27 @@
 </head>
 
 <body>
-    <!--changed this below so i could move logout button to right -->
-    <nav class="navbar">
-    <div class="navbar-links">
-        <a href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
-        {% if teacher.is_admin %}
-            <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-        {% endif %}
-        <a href="{% url 'editor_view' %}">Code Editor</a>
-    </div>
-    <div class="logout-container">
-        <form action="{% url 'logout' %}" method="post">
+    <div class="top-nav">
+        <div class="top-nav-right">
+          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
+      
+          {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
+          {% endif %}
+      
+          <span class="nav-divider"></span>
+      
+          <span class="user-name">
+            {{ user.get_full_name|default:user.username }}
+          </span>
+      
+          <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <button type="submit" class="logout-button">Logout</button>
-        </form>
-    </div>
-</nav>
-
-    <h1>Welcome, {{ teacher.user.get_short_name|default:teacher.user.username }}</h1>
+            <button type="submit" class="nav-btn">Logout</button>
+          </form>
+        </div>
+    </div> 
 
     {% if classes%}
 

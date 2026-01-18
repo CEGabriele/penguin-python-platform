@@ -354,12 +354,10 @@ def create_assignment(request):
 @teacher_required
 def teacher_assignment_detail(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
-    resources = assignment.resources.all()
     assigned_classes = assignment.assigned_classes.select_related("for_class")
 
     return render(request, "teacher_assignment_detail.html", {
         "assignment": assignment,
-        "resources": resources,
         "assigned_classes": assigned_classes,
     })
 

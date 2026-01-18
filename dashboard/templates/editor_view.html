@@ -29,21 +29,28 @@
 </head>
 
 <body>
-
-    <!-- TOP NAVBAR -->
-<div class="top-nav">
-    <a href="{% url 'student_dashboard' %}" class="app-title">
-        Homework Dashboard
-    </a>
-  
-    <div class="top-nav-right">
-      <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
-  
-      <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="nav-btn">Logout</button>
-    </div>
-  </div>  
+    <div class="top-nav">
+        <div class="top-nav-right">
+          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
+      
+          {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
+          {% endif %}
+      
+          <span class="nav-divider"></span>
+      
+          <span class="user-name">
+            {{ user.get_full_name|default:user.username }}
+          </span>
+      
+          <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="nav-btn">Logout</button>
+          </form>
+        </div>
+    </div>      
+      
 
 <!-- SIDE MENU -->
 <div class="side-menu" id="sideMenu">
@@ -110,7 +117,7 @@
     {% if assigned %}
         <div class="assignment-context">
             <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
-            <strong>Class:</strong> {{ assigned.for_class.name }}
+            {{ assigned.assignment.description }}
         </div>
     {% endif %}
 

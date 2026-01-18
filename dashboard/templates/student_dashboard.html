@@ -11,18 +11,27 @@
 
 <body>
 
-    <nav class="navbar">
-        <div class="navbar-links">
-            <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
-            <a href ="{% url 'editor_view' %}">Code Editor</a>
+    <div class="top-nav">
+        <div class="top-nav-right">
+          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
+      
+          {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
+          {% endif %}
+      
+          <span class="nav-divider"></span>
+      
+          <span class="user-name">
+            {{ user.get_full_name|default:user.username }}
+          </span>
+      
+          <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="nav-btn">Logout</button>
+          </form>
         </div>
-         <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="logout-button">Logout</button>
-        </form>
-    </nav>
-    <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
-
+    </div> 
 
     {% if classes %}
     <div class="class-grid">
