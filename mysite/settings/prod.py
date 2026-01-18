@@ -55,8 +55,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
-# Local staging dir required for collectstatic (Django won’t serve from here)
-STATIC_ROOT = BASE_DIR / "staticfiles"  # type: ignore[name-defined]
 
 # If you actually have a project-level ./static folder, uncomment:
 
@@ -64,15 +62,6 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Django 4.2+ STORAGES
 STORAGES = {
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        "OPTIONS": {
-            "location": "static",
-            "default_acl": None,
-            "file_overwrite": True,
-            "querystring_auth": False,  # public static
-        },
-    },
     "default": {  # MEDIA (private)
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
