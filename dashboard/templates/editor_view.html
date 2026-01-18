@@ -15,11 +15,12 @@
     
     <script>
         window.MonacoEnvironment = {
-        getWorkerUrl: function () {
-            return new Worker(window.WORKER_URL, { type: "classic" });
-        }
+          getWorkerUrl: function () {
+            return "/static/editor/worker.js";
+          }
         };
     </script>
+      
     
     <!-- Monaco + Pyodide -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
