@@ -1,4 +1,9 @@
 // import js turtle
+
+window.WORKER_URL = "/static/editor/worker.js";
+console.log("FORCED WORKER_URL =", window.WORKER_URL);
+
+
 import turtleModule from './turtle.js';
 
 let default_code = `# write your Python code here
@@ -16,6 +21,8 @@ let inputInProgress = false;
 let abortController = null;
 let lastRunUsedPygame = false;
 let lastRunUsedTurtle = false;
+let lastSavedCode = "";
+let autosaveTimer;
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -123,7 +130,7 @@ function ensureTurtleCanvas() {
 
 function initWorker(){
   if (worker) worker.terminate();
-  worker = new Worker(window.WORKER_URL);
+  worker = new Worker(window.WORKER_URL, {type: 'classic'});
   
   worker.onmessage = (e) => {
     const message = e.data;
@@ -297,8 +304,6 @@ window.EditorAPI = {
   setValue: (v) => editor?.setValue?.(v ?? ''),
 };
 
-let lastSavedCode = "";
-let autosaveTimer;
 
 function getCookie(name) {
   let cookieValue = null;

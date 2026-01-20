@@ -18,6 +18,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # Security
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 USE_X_FORWARDED_HOST = True
 SECURE_REDIRECT_EXEMPT = [r"^healthz/"]
 
@@ -47,25 +48,25 @@ AWS_S3_FILE_OVERWRITE = True
 AWS_QUERYSTRING_AUTH = False
 
 # Static / Media URLs
-STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+#STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
 MEDIA_URL  = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
 
-# Local staging dir required for collectstatic (Django won’t serve from here)
-STATIC_ROOT = BASE_DIR / "staticfiles"  # type: ignore[name-defined]
 
 # If you actually have a project-level ./static folder, uncomment:
-# STATICFILES_DIRS = [BASE_DIR / "static"]
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    BASE_DIR / "dashboard" / "static",
+]
 
 # Django 4.2+ STORAGES
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        "OPTIONS": {
-            "location": "static",
-            "default_acl": None,
-            "file_overwrite": True,
-            "querystring_auth": False,  # public static
-        },
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
     "default": {  # MEDIA (private)
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",

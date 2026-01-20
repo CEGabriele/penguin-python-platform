@@ -9,16 +9,48 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
     <link rel="stylesheet" href="{% static 'styles.css' %}?v= 4"> <!-- cache buster -->
 
+    <script>
+        window.WORKER_URL = "{% static 'editor/worker.js' %}";
+    </script>
+    
+    <script>
+        window.MonacoEnvironment = {
+          getWorkerUrl: function () {
+            return "/static/editor/worker.js";
+          }
+        };
+    </script>
+      
+    
     <!-- Monaco + Pyodide -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
-
-    <script>
-        window.WORKER_URL = "/static/editor/worker.js";
-    </script>
+  
 </head>
 
 <body>
+    <div class="top-nav">
+        <div class="top-nav-right">
+          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
+          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
+      
+          {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
+          {% endif %}
+      
+          <span class="nav-divider"></span>
+      
+          <span class="user-name">
+            {{ user.get_full_name|default:user.username }}
+          </span>
+      
+          <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="nav-btn">Logout</button>
+          </form>
+        </div>
+    </div>      
+      
 
     <!-- TOP NAVBAR -->
 <div class="top-nav">
@@ -103,7 +135,7 @@
     {% if assigned %}
         <div class="assignment-context">
             <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
-            <strong>Class:</strong> {{ assigned.for_class.name }}
+            {{ assigned.assignment.description }}
         </div>
     {% endif %}
 
