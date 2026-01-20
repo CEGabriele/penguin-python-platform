@@ -1,5 +1,9 @@
-#virtual environment
+#virtual environment - added something
+.venv/
 .env
+
+.python-version
+
 
 #python cache
 __pycache__/
@@ -13,3 +17,8 @@ __pycache__/
 
 media/
 /private_media\/n
+
+# Mac system files
+.DS_Store
+dashboard/.DS_Store
+dashboard/static/.DS_Store
