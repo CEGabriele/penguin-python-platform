@@ -1,4 +1,5 @@
 {% load static %}
+{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,27 +12,7 @@
     {{student_form.media}}
 </head>
 <body>
-    <div class="top-nav">
-        <div class="top-nav-right">
-          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
-          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
-      
-          {% if user.teacher.is_admin %}
-            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
-          {% endif %}
-      
-          <span class="nav-divider"></span>
-      
-          <span class="user-name">
-            {{ user.get_full_name|default:user.username }}
-          </span>
-      
-          <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="nav-btn">Logout</button>
-          </form>
-        </div>
-    </div> 
+    
 
     <h1>Class: {{ class_obj.name }}</h1>
     <p> Teacher: {{ class_obj.teacher.user.get_full_name }}</p>

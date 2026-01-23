@@ -1,4 +1,5 @@
 {% load static%}
+{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,16 +9,7 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="navbar-links">
-            <a href="{% url 'student_dashboard' %}">Student Dashboard</a>
-            <a href ="{% url 'editor_view' %}">Code Editor</a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="logout-button">Logout</button>
-            </form>
-        </div>
-    </nav>
+    
 
     <h1>{{request.user.get_short_name}}'s Assignments</h1>
     <div class="class-grid">

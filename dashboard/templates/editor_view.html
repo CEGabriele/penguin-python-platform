@@ -1,4 +1,5 @@
 {% load static %}
+{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,7 +8,7 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="stylesheet" href="{% static 'styles.css' %}?v= 4"> <!-- cache buster -->
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=13">
 
     <script>
         window.WORKER_URL = "{% static 'editor/worker.js' %}";
@@ -29,46 +30,8 @@
 </head>
 
 <body>
-    <div class="top-nav">
-        <div class="top-nav-right">
-          <a href="{% url 'student_dashboard' %}" class="nav-link">Dashboard</a>
-          <a href="{% url 'editor_view' %}" class="nav-link">Editor</a>
+    
       
-          {% if user.teacher.is_admin %}
-            <a href="{% url 'admin_dashboard' %}" class="nav-link">Admin</a>
-          {% endif %}
-      
-          <span class="nav-divider"></span>
-      
-          <span class="user-name">
-            {{ user.get_full_name|default:user.username }}
-          </span>
-      
-          <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="nav-btn">Logout</button>
-          </form>
-        </div>
-    </div>      
-      
-
-    <!-- TOP NAVBAR -->
-<div class="top-nav">
-    <!-- Not sure if this is necessary
-    <a href="{% url 'student_dashboard' %}" class="app-title">
-        Homework Dashboard
-    </a>
--->
-
-  
-    <div class="top-nav-right">
-      <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
-  
-      <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="nav-btn">Logout</button>
-    </div>
-  </div>  
 
 <!-- SIDE MENU -->
 <div class="side-menu" id="sideMenu">
@@ -154,8 +117,7 @@
             </div>
 
             {% if not assigned %}
-            <label for="class" class="class-label">Class:</label>
-              <!--label>Class:</label-->
+                <label>Class:</label>
                 <select id="class">
                     {% for c in class_options %}
                         <option value="{{ c.id }}">{{ c.name }}</option>

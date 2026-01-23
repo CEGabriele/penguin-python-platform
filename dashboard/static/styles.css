@@ -587,33 +587,18 @@ a {
   z-index: 2000;
 }
 
-<<<<<<< HEAD
-.page-bubble{
-  position: fixed;
-  top: 8vh; /*going to make it lower*/
-  padding-top: 12px; /*pushing down a bit*/
-  right: 4vh;
-  bottom: 4vh;
-  left: 140px;
-  padding: 32px;
-  background: #fff;
-  border-radius: 18px;
-  z-index: 1000;
-}
-=======
 .page-bubble {
     position: fixed;
     top: calc(56px + 4vh);
     right: 4vh;
     bottom: 4vh;
-    left: 140px;
-  
+    left: 180px;
     padding: 32px;
     background: #fff;
     border-radius: 18px;
     z-index: 1000;
   }  
->>>>>>> origin/main
+
 
 /* Menu content */
 .side-menu .menu-items{
