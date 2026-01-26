@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid, os
 from .storages import MediaRootS3Boto3Storage
+from django.db.models import Q
 
 def unique_student_upload_path(instance, filename):
     return f"student_uploads/{filename}"
@@ -64,21 +65,87 @@ class Student (models.Model):
     date_of_birth = models.DateField
     classes = models.ManyToManyField(Class, related_name = 'students')
 
-    def latest_file(self, which_type, which_class):
-        return self.user.uploads_set.order_by("-uploaded_at").filter(file_type = which_type, for_class = which_class).first()
+    def latest_assignment_file(self, for_class):
+        return Uploads.objects.filter(
+            person=self.user,
+            for_class=for_class,
+            assignment__isnull=False,
+        ).order_by("-last_edited").first()
+
+    def latest_classwork_file(self, for_class):
+        return Uploads.objects.filter(
+            person=self.user,
+            for_class=for_class,
+            assignment__isnull=True,
+        ).order_by("-last_edited").first()
 
     def __str__(self):
         return self.user.get_full_name()
-    
+
+def get_user_role(user):
+    if hasattr(user, "student"):
+        return "student"
+    if hasattr(user, "teacher"):
+        return "teacher"
+    return "user"
+
+from django.utils.text import slugify
+
+def upload_path(instance, filename):
+    user = instance.person
+
+    if not user or not hasattr(user, "student"):
+        return f"uploads/unknown/{filename}"
+
+    student = user.student
+
+    if not instance.for_class:
+        return f"student_files/student_{student.id}/drafts/{filename}"
+
+    base = (
+        f"student_files/"
+        f"student_{student.id}/"
+        f"class_{instance.for_class.id}"
+    )
+
+    # Naming homework after assignment title if applicable
+    if instance.assignment:
+        assignment_name = slugify(instance.assignment.title) or "assignment"
+        return f"{base}/assignments/{assignment_name}.py"
+
+    safe = filename or "classwork.py"
+    return f"{base}/classwork/{safe}"
 
 class Uploads (models.Model):
     person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
-    id = models.BigAutoField(primary_key=True)
-    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to="student_files/")
+    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to=upload_path)
+    
     uploaded_at = models.DateTimeField(auto_now_add = True)
+    last_edited = models.DateTimeField(auto_now = True)
+
     for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
-    file_type = models.CharField(max_length = 2, default = "hw")
+    assignment = models.ForeignKey(
+        "Assignment",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="uploads",
+    )
+
     display_name = models.CharField(max_length = 200, blank = True, null = True)
+
+    submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+
+    # Enforce unique classwork filenames per student per class
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person", "for_class", "display_name"],
+                condition=Q(assignment__isnull=True),
+                name="unique_classwork_name_per_student_class",
+            )
+        ]
 
 class HomeworkTemplate(models.Model):
     name = models.CharField(max_length=100)
@@ -149,20 +216,3 @@ class AssignedToClass(models.Model):
     def __str__(self) -> str:
         return f"{self.assignment.title} assigned to {self.for_class.name}"
     
-class StudentSubmission(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    upload = models.ForeignKey(
-        Uploads,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assignment_submissions",
-    )
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    submitted = models.BooleanField(default=False, blank = True)
-
-    ai_feedback = models.TextField(blank=True, null=True)
-
-    def __str__(self) -> str:
-        return f"Submission by {self.student.user.get_full_name()} for {self.assignment.title}"

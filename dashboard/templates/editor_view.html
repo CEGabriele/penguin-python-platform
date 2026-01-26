@@ -53,20 +53,33 @@
       
 
 <!-- SIDE MENU -->
-<div class="side-menu" id="sideMenu">
-    <div class="menu-items">
-        <div class="files-list">
-            {% for code in saved_code %}
-                <button type="button"
-                        class="file-item"
-                        data-upload-id="{{ code.id }}">
-                    <i class="fa-regular fa-file-code"></i>
-                    <span class="menu-label">{{ code.display_name }}</span>
-                </button>
-            {% empty %}
-                <div class="files-empty">No saved files</div>
-            {% endfor %}
+<div class="side-menu">
+    {% for class_obj, uploads in files_by_class.items %}
+        <div class="class-group">
+            <div class="class-title">
+                
+                <i class="fa-solid fa-folder"></i>
+                {{ class_obj.name }}
+            </div>
+
+            <ul class="files-list">
+                {% for file in uploads %}
+                <li
+                class="file-item {% if file.assignment %}assignment{% endif %}"
+                {% if file.assigned_id %}
+                    data-assigned-id="{{ file.assigned_id }}"
+                {% else %}
+                    data-upload-id="{{ file.id }}"
+                {% endif %}
+            >
+                    <i class="fa-solid fa-file"></i>
+                    <span class="file-name">{{ file.display_name }}</span>
+
+                </li>
+                {% endfor %}
+            </ul>
         </div>
+    {% endfor %}
         <!--
         {% if user.teacher %}
             <a href="{% url 'teacher_dashboard' %}">
@@ -149,9 +162,6 @@
             <label>Name:</label>
             <input type="text" id="name" value="{{ code_name }}" required>
 
-            {% if not assigned%}
-                <button type="button" id="saveBtn">Save</button>
-            {% endif %}
             <span id="saveStatus"></span>
 
             {% if assigned %}
@@ -331,13 +341,25 @@ function toggleMenu() {
     }
   
     document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll(".file-item").forEach(btn => {
-          btn.addEventListener("click", () => {
-            document.querySelectorAll(".file-item").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            loadUpload(btn.dataset.uploadId);
-          });
-        });
+                document.querySelectorAll(".file-item").forEach(item => {
+        item.addEventListener("click", () => {
+            document.querySelectorAll(".file-item")
+            .forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
+
+            const assignedId = item.dataset.assignedId;
+            const uploadId = item.dataset.uploadId;
+
+            if (assignedId) {
+            // 🔥 Assignment → reload editor with context
+            window.location.href = `/dashboard/editor/?assigned_id=${assignedId}`;
+            } else if (uploadId) {
+            // 📄 Classwork → load inline
+            loadUpload(uploadId);
+            }
+  });
+});
+
       });
   </script>
   
