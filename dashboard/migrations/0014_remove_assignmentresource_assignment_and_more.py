@@ -15,26 +15,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='assignmentresource',
-            name='assignment',
-        ),
-        migrations.RemoveField(
-            model_name='studentsubmission',
-            name='assignment',
-        ),
-        migrations.RemoveField(
-            model_name='studentsubmission',
-            name='student',
-        ),
-        migrations.RemoveField(
-            model_name='studentsubmission',
-            name='upload',
-        ),
-        migrations.RemoveField(
-            model_name='uploads',
-            name='',
-        ),
         migrations.AddField(
             model_name='uploads',
             name='assignment',
