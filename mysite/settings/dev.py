@@ -8,6 +8,10 @@ USES_S3=False
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [
+    BASE_DIR.parent / "static",
+]
+
 
 DATABASES["default"].update({
     "ENGINE": "django.db.backends.postgresql",
