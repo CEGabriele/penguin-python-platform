@@ -148,7 +148,7 @@ body {
 
 }
 
-button:hover , .button:hover, .navbar-links a {
+button:hover , .button:hover, .bar-links a {
     background-color: var(--accent-color-light);
 }
 /* Style only the "View Class Page" button inside class cards */
@@ -338,9 +338,10 @@ a {
     justify-content: space-between;
     align-items: center;
     background-color: #fff;
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 16px;
+   /* max-width: 1200px;*/
+    margin:  0 6rem 16px 2rem; 
+    padding-block:2.2rem;
+    padding-inline: 3rem;
     box-shadow: 0 6px 12px rgba(0,0,0,0.25);
     transition: box-shadow 0.3s ease, transform 0.3s ease; /*smooth transition*/
 }
@@ -415,6 +416,8 @@ a {
 .editor-container body , #editor-container .body {
     color: black;
     margin: 0;
+    margin-top:0px; /*removing extra space above editor*/
+    padding-top:0px;
     display: flex;
     flex-direction: column;
     font-family: sans-serif;
@@ -431,10 +434,13 @@ a {
     display: flex;
     align-items: center; /* going to vertically center items */
     gap:15px;
+    font-size:.85rem;
     justify-content: flex-start; /* on the right side */
-    padding: 10px 20px; /*inner spacing*/
-    margin-bottom: 2px; /*spacing below*/
-    margin-left: 842px;
+    padding: .1px 24px; /*inner spacing*/
+    margin-left: 850px;
+    margin-top: 32px; /*spacing below*/
+    margin-bottom:-10px;
+    padding-top:0px;
 
 }
 /*adjusting label spacing*/
@@ -447,11 +453,12 @@ a {
 /* Class dropdown & Name input styling */
 #controls select#class,
 #controls input#name {
-    height: 24px;            /* same height for both */
+    height: 20px;            /* same height for both */
     /*padding: 4px 12px;*/
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.2);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
+    margin-bottom:0px;
 }
 
 /* Name input shorter width */
@@ -459,16 +466,17 @@ a {
     width: 110px;
     max-width: 150px;    /* limit max width */
      /* adjust % until it lines up with right side */
-    margin-bottom: 0;
+    margin-bottom: 0px;
 }
 
 /* Save button styling to match */
 #saveBtn {
-    height: 36px;
-    padding: 0 14px;
+    height: 25px;
+    padding: 0 12px;
     border-radius: 8px;
-    font-size: 0.9rem;
-    margin-left: 35px; /* space between Name input and Save button */
+    font-size: .9rem;
+    margin-left: 10px; /* space between Name input and Save button */
+    margin-bottom:0px;
 }
  
 #main, .main {
@@ -480,6 +488,8 @@ a {
  
  /* Make the editor area a positioned container */
 #main {
+    margin-top:0;
+    padding-top:0;
     position: relative;
 }
 
@@ -487,7 +497,7 @@ a {
 #editor-controls {
     position: absolute;
     top: 10px;     /* small offset inside the editor */
-    left: 10px;    /* aligns with the editor's left edge */
+    left: 30px;    /* aligns with the editor's left edge */
     display: flex;
     gap: 10px;
     z-index: 9999;
@@ -512,6 +522,7 @@ a {
 
 
 #editor, .editor {
+    margin-top:0; /*removing extra space above editor*/
     flex: 1;
     min-width: 0;
     border-right: 1px solid #444;
@@ -683,7 +694,7 @@ a {
 
 .top-nav {
     position: fixed;
-    top: 0;
+    top: 20px;
     left: 140px; /* after sidebar */
     right: 0;
     height: 56px;
@@ -695,7 +706,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 24px;
+    padding: 0 40px;
   
     z-index: 1500;
   }
@@ -708,7 +719,7 @@ a {
   
   /* Nav links */
   .nav-link {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 500;
     color: #333;
     text-decoration: none;
@@ -716,15 +727,20 @@ a {
     border-radius: 8px;
     transition: background 0.2s ease, color 0.2s ease;
   }
-  
-  .nav-link:hover {
-    background: rgba(0,0,0,0.05);
-  }
+
+
+.nav-link:hover {
+background: rgba(0,0,0,0.05);
+}
   
   /* Active page */
   .nav-link.active {
-    background: rgba(252,164,43,0.18);
-    color: #000;
+    text-decoration: underline; /* THIS gives the simple line */
+    text-decoration-color: rgba(252, 164, 43);
+    text-underline-offset: 4px; /* distance from text */
+    text-decoration-thickness: 1.5px; /* thickness of the line */
+    color: 000; /* optional active color */
+    background: none;
   }
   
   /* Divider between nav and user info */
@@ -737,7 +753,7 @@ a {
   
   /* User name */
   .user-name {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: rgba(0,0,0,0.65);
     white-space: nowrap;
   }
@@ -747,16 +763,22 @@ a {
     background-color: var(--accent-color);
     color: white;
     border: none;
-    border-radius: 10px;
-    padding: 6px 14px;
+    border-radius: 14px; /*shape*/
+    padding: 12px 16px;/*made button little bigger */
     font-size: 0.85rem;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     transition: background 0.2s ease, transform 0.15s ease;
+    margin-left:16px;
+    margin-top: 12px; /*aligning with user name*/
   }
   
   .nav-btn:hover {
     background-color: var(--accent-color-light);
     transform: translateY(-1px);
   }
-  
+
+  .monaco-editor .margin,
+.monaco-editor .monaco-scrollable-element {
+padding-top: 0 !important;
+}
