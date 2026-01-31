@@ -10,7 +10,7 @@ body {
     text-align: center;
     margin: 0;
     align-items: center;
-    padding-top: 48px;
+    padding-top: 56px;
 }
 .side-menu .menu-toggle {
     background: none;
@@ -486,8 +486,8 @@ a {
 /* Floating run/stop controls */
 #editor-controls {
     position: absolute;
-    top: 10px;     /* small offset inside the editor */
-    left: 10px;    /* aligns with the editor's left edge */
+    top: 12px;     /* small offset inside the editor */
+    left: 24px;    /* aligns with the editor's left edge */
     display: flex;
     gap: 10px;
     z-index: 9999;
@@ -684,7 +684,7 @@ a {
 .top-nav {
     position: fixed;
     top: 0;
-    left: 140px; /* after sidebar */
+    left: 180Npx; /* after sidebar */
     right: 0;
     height: 56px;
   
@@ -758,5 +758,93 @@ a {
   .nav-btn:hover {
     background-color: var(--accent-color-light);
     transform: translateY(-1px);
+  }
+
+.side-menu {
+    position: fixed;
+    top: 56px;                      
+    left: 0;
+    width: 180px;                  
+    height: calc(100vh - 56px);
+    background: #f7f7f8;
+    border-right: 1px solid rgba(0,0,0,0.08);
+    padding: 8px;
+    z-index: 2000;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.files-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 2px;
+}
+
+.class-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 6px 4px 4px;
+  }
+  
+.file-item {
+    font-size: 0.82rem;
+    padding: 5px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+  
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  
+    color: #333;
+    transition: background 0.15s ease;
+}
+  
+.file-item:hover {
+    background: rgba(0,0,0,0.05);
+}
+  
+.file-item.active {
+    background: rgba(252,164,43,0.18);
+    font-weight: 500;
+}
+  
+.file-item i {
+    font-size: 0.8rem;
+    color: rgba(0,0,0,0.45);
+}
+
+.files-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+.files-list::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.18);
+    border-radius: 999px;
+}
+
+.page-bubble {
+    position: fixed;
+    top: 56px;          
+    left: 180px;
+    right: 0;
+    bottom: 0;
+  
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 0;
+    z-index: 1000;
+
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   
