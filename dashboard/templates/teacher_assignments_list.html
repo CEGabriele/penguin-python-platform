@@ -1,5 +1,4 @@
 {% load static %}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,7 +9,7 @@
 </head>
 <body>
     
-
+    {% include "navbar.html" %}
     <h1>{{request.user.get_short_name}}'s Posted Assignments</h1>
         {%if class_forms%}
             {% for class_obj, grouped_assignments in class_forms.items%}

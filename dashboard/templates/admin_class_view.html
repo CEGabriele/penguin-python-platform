@@ -1,5 +1,4 @@
 {% load static %}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,7 +11,7 @@
     {{student_form.media}}
 </head>
 <body>
-    
+    {% include "navbar.html" %}
 
     <h1>Class: {{ class_obj.name }}</h1>
     <p> Teacher: {{ class_obj.teacher.user.get_full_name }}</p>

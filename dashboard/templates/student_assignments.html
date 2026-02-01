@@ -1,5 +1,4 @@
 {% load static%}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,7 +8,7 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 </head>
 <body>
-    
+    {% include "navbar.html" %}
 
     <h1>{{request.user.get_short_name}}'s Assignments</h1>
     <div class="class-grid">

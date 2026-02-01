@@ -1,5 +1,5 @@
 {% load static %}
-{% include "navbar.html" %}
+
 
 <!DOCTYPE html>
 <html>
@@ -11,7 +11,7 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 </head>
 <body>
-
+{% include "navbar.html" %}
 
 <h1> Results for: {{assigned.template.name}}</h1>
 <p>Class: {{assigned.for_class.name}}</p>

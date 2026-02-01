@@ -1,5 +1,4 @@
 {% load static %}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,7 +11,7 @@
 </head>
 
 <body>
-   
+   {% include "navbar.html" %}
 
    <h1>{{class.name}}</h1>
    <p>{{class.day}} - {{class.time}}</p>

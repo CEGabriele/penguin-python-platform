@@ -1,5 +1,4 @@
 {% load static %}
-{% include "navbar.html" %}
 
 <!DOCTYPE html>
 <html>
@@ -12,7 +11,7 @@
 </head>
 <body>
     
-
+    {% include "navbar.html" %}
     <h1>{{student.user.get_full_name}}<h1>
     
     {%for class in student_files%}

@@ -1,5 +1,4 @@
 {%load static%}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,6 +7,7 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 <head>
 <body>
+    {% include "navbar.html" %}
     <div class = "container">
         <h1>Create Assignment</h1>
         <form method="POST" enctype = "multipart/form-data">

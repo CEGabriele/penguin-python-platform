@@ -9,7 +9,7 @@
    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
 </head>
-
+{% include "navbar.html" %}
 <h2>Assign "{{ assignment.title }}"</h2>
 
 <form method="POST">
