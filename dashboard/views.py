@@ -629,18 +629,30 @@ def student_class_view(request, class_code):
 @teacher_required
 def teacher_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code, teacher = request.user.teacher)
+    
     assigned_assignments = (
         AssignedToClass.objects
         .filter(for_class=class_obj)
         .select_related("assignment")
         .order_by("due_date")
     )
+    assigned_assignment_ids = set(
+        assigned_assignments.values_list("assignment_id", flat=True)
+    )
+
+    available_assignments = Assignment.objects.filter(
+        curriculum=class_obj.curriculum,
+        created_by=request.user.teacher
+    )
+
     students = class_obj.students.all()
 
     return render(request, "teacher_class_view.html", {
         "class": class_obj,
         "assigned_assignments": assigned_assignments,
-        "students": students,
+        "available_assignments": available_assignments,
+        "assigned_assignment_ids": assigned_assignment_ids,
+        "students": students
     })
     """
     curriculum = class_obj.curriculum

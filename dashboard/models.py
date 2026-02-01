@@ -204,14 +204,35 @@ class Assignment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=200)
     description = models.TextField()
+    curriculum = models.ForeignKey(
+        Curriculum,
+        on_delete=models.CASCADE,
+        related_name="assignments"
+    )
 
     def __str__(self) -> str:
         return self.title
     
 class AssignedToClass(models.Model):
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='assigned_classes')
-    for_class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(
+        Assignment,
+        on_delete=models.CASCADE,
+        related_name="assigned_instances"
+    )
+    for_class = models.ForeignKey(
+        Class,
+        on_delete=models.CASCADE,
+        related_name="assigned_assignments"
+    )
     due_date = models.DateField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["assignment", "for_class"],
+                name="unique_assignment_per_class"
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.assignment.title} assigned to {self.for_class.name}"

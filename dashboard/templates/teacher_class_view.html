@@ -83,7 +83,26 @@
        Create New Assignment
    </a>
 
-
+   <h3>Assign new</h3>
+   {% for assignment in available_assignments %}
+   <div class="assignment-card">
+     <strong>{{ assignment.title }}</strong>
+     <p>{{ assignment.description }}</p>
+ 
+     {% if assignment.id in assigned_assignment_ids %}
+       <span class="muted">Already assigned</span>
+     {% else %}
+       <form method="post"
+             action="{% url 'assign_assignment_to_class' assignment.id %}">
+         {% csrf_token %}
+         <input type="hidden" name="class_id" value="{{ class.id }}">
+         <input type="date" name="due_date" required>
+         <button>Assign</button>
+       </form>
+     {% endif %}
+   </div>
+   {% endfor %}
+ 
 </body>
 
 </html>
