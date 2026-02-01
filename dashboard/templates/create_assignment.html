@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-<head>
+</head>
 <body>
     {% include "navbar.html" %}
     <div class = "container">
@@ -18,6 +18,16 @@
             <label for="description">Description / Instructions:</label><br>
             <textarea id="description" name="description" rows="4" cols="50" required></textarea><br><br>
 
+            <label for="curriculum">Curriculum / Level:</label>
+            <select name="curriculum" id="curriculum" required>
+                <option value="">— Select a level —</option>
+                {% for curriculum in curricula %}
+                    <option value="{{ curriculum.id }}">
+                        {{ curriculum.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <br><br>
 
             <button type="submit">Create Assignment</button>
 

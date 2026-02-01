@@ -321,25 +321,35 @@ def teacher_assignments_list(request):
 def create_assignment(request):
     teacher = Teacher.objects.get(user=request.user)
 
+    curricula = Curriculum.objects.filter(
+        classes__teacher=teacher
+    ).distinct()
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        curriculum_id = request.POST.get("curriculum")
+
+        curriculum = get_object_or_404(Curriculum, id=curriculum_id)
 
         assignment = Assignment.objects.create(
             created_by=teacher,
+            curriculum=curriculum,
             title=title,
-            description=description
+            description=description,
         )
 
-        return redirect("teacher_assignment_detail", assignment_id=assignment.id)
+        return redirect(
+            "teacher_assignment_detail", assignment_id=assignment.id
+        )
 
-    return render(request, "create_assignment.html")
-
+    return render(request, "create_assignment.html", {"curricula": curricula
+    })
 @login_required
 @teacher_required
 def teacher_assignment_detail(request, assignment_id):
     assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
-    assigned_classes = assignment.assigned_classes.select_related("for_class")
+    assigned_classes = assignment.assigned_instances.select_related("for_class")
 
     return render(request, "teacher_assignment_detail.html", {
         "assignment": assignment,
