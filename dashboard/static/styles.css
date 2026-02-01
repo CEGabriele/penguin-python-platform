@@ -443,39 +443,31 @@ a {
     padding-top:0px;
 
 }
+/*adjusting label spacing*/
+#controls label.class-label {
+     position: relative;
 
-#meta-controls {
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-
-    margin-bottom: 12px;
-    margin-left: 0;
-
-    font-size: 0.8rem;
 }
 
 
-#meta-controls .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-#meta-controls label {
-    font-size: 0.7rem;
-    color: #666;
-}
-
-#meta-controls select,
-#meta-controls input {
-    height: 26px;
-    padding: 4px 8px;
+/* Class dropdown & Name input styling */
+#controls select#class,
+#controls input#name {
+    height: 20px;            /* same height for both */
+    /*padding: 4px 12px;*/
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.2);
-    font-size: 0.75rem;
+    font-size: 0.6rem;
+    margin-bottom:0px;
 }
 
+/* Name input shorter width */
+#controls input#name {
+    width: 110px;
+    max-width: 150px;    /* limit max width */
+     /* adjust % until it lines up with right side */
+    margin-bottom: 0px;
+}
 
 /* Save button styling to match */
 #saveBtn {

@@ -118,31 +118,38 @@
     <form method="post" id="editorForm">
         {% csrf_token %}
 
-        <div id="meta-controls">
+        <div id="controls">
+
+            <div id="editor-controls">
+                <button type="button" onclick="window.runCode()" class="icon-btn">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <button type="button" onclick="window.stopCode()" class="icon-btn">
+                    <i class="fa-solid fa-stop"></i>
+                </button>
+            </div>
+
             {% if not assigned %}
-            <div class="field">
-                <label for="class">Class:</label>
+                <label>Class:</label>
                 <select id="class">
                     {% for c in class_options %}
                         <option value="{{ c.id }}">{{ c.name }}</option>
                     {% endfor %}
                 </select>
-            </div>
+            {% else %}
+                <input type="hidden" id="class" value="{{ assigned.for_class.id }}">
             {% endif %}
-        
-            <div class="field">
-                <label for="name">Name:</label>
-                <input type="text" id="name" value="{{ code_name }}" required>
-            </div>
-        
+
+            <label>Name:</label>
+            <input type="text" id="name" value="{{ code_name }}" required>
+
             <span id="saveStatus"></span>
-        
+
             {% if assigned %}
-                <button type="button" id="submitBtn">Submit</button>
+                <button type="button" id="submitBtn">Submit Assignment</button>
                 <span id="submitStatus"></span>
             {% endif %}
         </div>
-        
 
         <textarea id="id_code" hidden>{{ initial_code }}</textarea>
     </form>
@@ -325,10 +332,10 @@ function toggleMenu() {
             const uploadId = item.dataset.uploadId;
 
             if (assignedId) {
-            // Assignment → reload editor with context
+            // 🔥 Assignment → reload editor with context
             window.location.href = `/dashboard/editor/?assigned_id=${assignedId}`;
             } else if (uploadId) {
-            //Classwork → load inline
+            // 📄 Classwork → load inline
             loadUpload(uploadId);
             }
   });
