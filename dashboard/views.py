@@ -15,6 +15,7 @@ from collections import defaultdict
 from django.db import connection
 from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
 from django.utils.text import slugify
+from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
 from django.views.decorators.http import require_GET
@@ -321,6 +322,18 @@ def teacher_assignments_list(request):
 def create_assignment(request):
     teacher = Teacher.objects.get(user=request.user)
 
+    class_id = request.GET.get("class")
+    selected_class = None
+    selected_curriculum = None
+
+    if class_id:
+        selected_class = get_object_or_404(
+            Class,
+            id=class_id,
+            teacher=teacher
+        )
+        selected_curriculum = selected_class.curriculum
+
     curricula = Curriculum.objects.filter(
         classes__teacher=teacher
     ).distinct()
@@ -338,12 +351,26 @@ def create_assignment(request):
             title=title,
             description=description,
         )
+        if selected_class:
+            due_date = request.POST.get("due_date")
+            if due_date:
+                AssignedToClass.objects.create(
+                    assignment=assignment,
+                    for_class=selected_class,
+                    due_date=due_date
+                )
+
+                return redirect(
+                    "teacher_class_view",
+                    class_code=selected_class.code
+                )
 
         return redirect(
             "teacher_assignment_detail", assignment_id=assignment.id
         )
 
-    return render(request, "create_assignment.html", {"curricula": curricula
+    return render(request, "create_assignment.html", {"curricula": curricula, "selected_curriculum": selected_curriculum,
+        "selected_class": selected_class
     })
 @login_required
 @teacher_required
@@ -385,11 +412,23 @@ def assign_assignment_to_class(request, assignment_id):
 @teacher_required
 def teacher_view_submissions(request, assigned_id):
     assigned = get_object_or_404(AssignedToClass, id=assigned_id, assignment__created_by__user=request.user)
-    submissions = StudentSubmission.objects.filter(assignment=assigned.assignment).select_related('student__user')
+    uploads = (
+        Uploads.objects
+        .filter(
+            assignment=assigned.assignment,
+            for_class=assigned.for_class
+        )
+        .select_related("person")
+        .order_by("person__last_name", "-last_edited")
+    )
+
+    submissions = defaultdict(list)
+    for upload in uploads:
+        submissions[upload.person].append(upload)
 
     return render(request, "teacher_view_submissions.html", {
         "assigned": assigned,
-        "submissions": submissions,
+        "submissions": dict(submissions),
     })
 
 
@@ -405,14 +444,6 @@ def submit_assignment(request, assigned_id):
     if assigned.for_class not in student.classes.all():
         return HttpResponse("Access denied", status=403)
 
-    submission, _ = StudentSubmission.objects.get_or_create(
-        student=student,
-        assignment=assigned.assignment,
-    )
-
-    if submission.submitted:
-        return JsonResponse({"error": "Already submitted"}, status=400)
-
     try:
         data = json.loads(request.body)
     except Exception:
@@ -427,25 +458,22 @@ def submit_assignment(request, assigned_id):
     if not filename.lower().endswith(".py"):
         filename += ".py"
 
-    label = slugify(filename[:-3]) or "assignment"
-    path = (
-        f"class-{assigned.for_class.id}/"
-        f"student-{student.id}/"
-        f"assignment-{assigned.id}/"
-        f"{label}.py"
-    )
-
-    upload = submission.upload or Uploads.objects.create(
-        person=student.user,
+    upload, _ = Uploads.objects.get_or_create(
+        person=request.user,
+        assignment=assigned.assignment,
         for_class=assigned.for_class,
-        display_name=filename,
+        defaults={"display_name": filename},
     )
 
-    upload.file.save(path, ContentFile(code), save=True)
+    upload.display_name = filename
+    upload.submitted = True
+    upload.submitted_at = timezone.now()
 
-    submission.upload = upload
-    submission.submitted = True
-    submission.save()
+    upload.file.save(
+        filename,
+        ContentFile(code),
+        save=True,
+    )
 
     return JsonResponse({"ok": True})
 

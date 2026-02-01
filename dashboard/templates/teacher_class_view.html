@@ -79,9 +79,10 @@
       {% endfor %}
    </ul>
 
-   <a class = "button" href="{% url 'create_assignment' %}">
-       Create New Assignment
-   </a>
+   <a class="button"
+   href="{% url 'create_assignment' %}?class={{ class.id }}">
+    Create New Assignment
+</a>
 
    <h3>Assign new</h3>
    {% for assignment in available_assignments %}

@@ -20,14 +20,28 @@
 
             <label for="curriculum">Curriculum / Level:</label>
             <select name="curriculum" id="curriculum" required>
-                <option value="">— Select a level —</option>
                 {% for curriculum in curricula %}
-                    <option value="{{ curriculum.id }}">
+                    <option value="{{ curriculum.id }}"
+                        {% if selected_curriculum and curriculum.id == selected_curriculum.id %}
+                            selected
+                        {% endif %}
+                    >
                         {{ curriculum.name }}
                     </option>
                 {% endfor %}
             </select>
+
             <br><br>
+
+            {% if selected_class %}
+                <hr>
+                <p>
+                    <strong>Assign to:</strong> {{ selected_class.name }}
+                </p>
+
+                <label for="due_date">Due date:</label>
+                <input type="date" name="due_date" required>
+            {% endif %}
 
             <button type="submit">Create Assignment</button>
 

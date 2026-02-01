@@ -22,27 +22,33 @@
     
     <hr>
     
-    {% if submissions %}
-        <ul>
-            {% for submission in submissions %}
-                <li>
-                    <strong>{{ submission.student.user.get_full_name }}</strong><br>
-                    Submitted at: {{ submission.submitted_at }}<br>
-    
-                    {% if submission.upload_id %}
-                        <a class = 'download-link' href="{% url 'download_file' submission.upload_id %}">
-                            Download
-                        </a>    
-                    {% else %}
-                        No file submitted
-                    {% endif %}
-                </li>
-                <br>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No submissions yet.</p>
-    {% endif %}
+    {% for student, uploads in submissions.items %}
+        <div class="submission-card">
+        <h3>{{ student.get_full_name }}</h3>
+
+        {% for upload in uploads %}
+        <p>
+            {{ upload.display_name }}
+            <br>
+            Last Edited - {{ upload.last_edited|date:"M j, P" }}
+            {% if upload.submitted%}
+                <br>    
+                Submitted - {{ upload.submitted_at|date:"M j, P" }}
+            {%endif%}
+            <br>
+            <a href="{% url 'editor_view' %}?upload_id={{ file.id }}">
+                Open in editor
+              </a>              
+            </a>
+            <span class="muted">
+            
+            </span>
+        </p>
+        {% endfor %}
+        </div>
+        {% empty %}
+            <p>No submissions yet.</p>
+        {% endfor %}
     
     <hr>
     
