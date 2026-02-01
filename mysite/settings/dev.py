@@ -58,3 +58,9 @@ from django.core.files.storage import FileSystemStorage
 class PrivateMediaStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
         super().__init__(location=str(MEDIA_ROOT), base_url=None, *args, **kwargs)
+
+
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_HSTS_SECONDS = 0

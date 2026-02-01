@@ -2,10 +2,18 @@
 
 <div class="top-nav">
         <div class="top-nav-right">
+          
+        {%if user.student%}
           <a href="{% url 'student_dashboard' %}" 
           class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
           Dashboard
         </a>
+        {% elif user.teacher%}
+          <a href="{% url 'teacher_dashboard' %}" 
+            class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+            Dashboard
+          </a>
+        {%endif %}
           <a href="{% url 'editor_view' %}" 
           class="nav-link {% if request.resolver_match.url_name == 'editor_view' %}active{% endif %}">
           Editor

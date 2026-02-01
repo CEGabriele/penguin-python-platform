@@ -1,5 +1,4 @@
 {% load static %}
-{% include "navbar.html" %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,8 +10,7 @@
 </head>
 
 <body>
-
-    
+    {% include "navbar.html" %}
 
     {% if classes %}
     <div class="class-grid">
@@ -95,7 +93,7 @@
                     <i class=" bi bi-cloud-arrow-up-fill upload-icon" title="Upload File"data-class-code="{{ class.class.code }}"></i>
                 </div>
                 <!-- Hidden upload form - Lily Added-->
-                <form id="uploadForm-{{ class.class.code }}" class="upload-form" method="post" enctype="multipart/form-data" style="display: none;">
+                <form id="uploadForm-{{ class.class.code }}" class="upload-form" method="post" enctype="multipart/form-data" action="{% url 'student_dashboard' %}" style="display: none;">
                     {% csrf_token %}
                     <input type="file" name="uploaded_file" id="fileInput-{{ class.class.code }}" />
                     <input type="hidden" name="class_code" value="{{ class.class.code }}">
