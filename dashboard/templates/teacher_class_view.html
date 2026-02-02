@@ -1,18 +1,10 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-   <title>{{class.name}} Page</title>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-   <link rel="stylesheet" href="{% static 'styles.css' %}">
-   <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
+{%extends "base.html"%}
+
+{% block title %}{{class.name}}{% endblock %}
+{% block extra_head%}
    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-</head>
-
-<body>
-   {% include "navbar.html" %}
-
+{% endblock%}
+{% block content %}
    <h1>{{class.name}}</h1>
    <p>{{class.day}} - {{class.time}}</p>
 
@@ -103,7 +95,5 @@
      {% endif %}
    </div>
    {% endfor %}
- 
-</body>
 
-</html>
+{%endblock%}

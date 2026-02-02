@@ -1,13 +1,9 @@
-{%load static%}
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-</head>
-<body>
-    {% include "navbar.html" %}
+{%extends "base.html"%}
+
+{% block title %}Create Assignment{% endblock %}
+
+{% block content %}
+
     <div class = "container">
         <h1>Create Assignment</h1>
         <form method="POST" enctype = "multipart/form-data">
@@ -40,11 +36,11 @@
                 </p>
 
                 <label for="due_date">Due date:</label>
-                <input type="date" name="due_date" required>
+                <input type="date" name="due_date" id = "due_date" required>
             {% endif %}
 
             <button type="submit">Create Assignment</button>
 
         
         </form>
-</body>
+{% endblock%}

@@ -1,17 +1,16 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-   <title>Assign to Class</title>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-   <link rel="stylesheet" href="{% static 'styles.css' %}">
-   <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
-   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-</head>
-{% include "navbar.html" %}
-<h2>Assign "{{ assignment.title }}"</h2>
+{% extends "base.html" %}
 
+{% block title %}Assign to Class{% endblock %}
+
+{% block extra_css%}
+   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+{% endblock %}
+{% block extra_head %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+{% endblock %}
+</head>
+
+{% block content %}
 <form method="POST">
     {% csrf_token %}
 
@@ -27,3 +26,4 @@
 
     <button type="submit">Assign</button>
 </form>
+{% block content%}

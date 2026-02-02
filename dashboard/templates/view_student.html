@@ -1,16 +1,8 @@
-{% load static %}
+{%extends "base.html"%}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-    <title> View Student </title>
-</head>
-<body>
-    
+{% block title %}View Assignment Submissions{% endblock %}
+
+{% block content %}
     {% include "navbar.html" %}
     <h1>{{student.user.get_full_name}}<h1>
     
@@ -62,6 +54,4 @@
             <p>No homework uploaded yet.</p>
         {%endif%}
     {%endfor%}
-
-</body>
-</html>
+{%endblock%}

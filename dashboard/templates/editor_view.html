@@ -1,14 +1,13 @@
+
+
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <!-- Icons -->
+
+    {% block extra_css%}
     <link rel="stylesheet" 
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="stylesheet" href="{% static 'styles.css' %}?v=14">
-
+    {% endblock %}
+    {% block extra_head%}
     <script>
         window.WORKER_URL = "{% static 'editor/worker.js' %}";
     </script>
@@ -25,14 +24,11 @@
     <!-- Monaco + Pyodide -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
-  
-</head>
+    {%endblock%}
 
-<body>
+    {% block title %}Code Editor{% endblock %}
 
-{% include "navbar.html" %}
-      
-
+{% block content %}
 <!-- SIDE MENU -->
 <div class="side-menu">
     {% for class_obj, uploads in files_by_class.items %}
@@ -165,6 +161,8 @@
     </div>
 
 </div>
+{%endblock%}
+{% block extra_js %}
 <script type="module" src="{% static 'editor/main.js' %}" defer></script>
 
 <script>
@@ -343,7 +341,4 @@ function toggleMenu() {
 
       });
   </script>
-  
-    
-</body>
-</html>
+{% endblock %}

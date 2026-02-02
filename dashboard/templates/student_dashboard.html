@@ -1,16 +1,9 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ student.user.get_short_name|default:student.user.username }}'s Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'styles.css' %}?v=12"> <!-- cache busting -->
-    <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-</head>
 
-<body>
-    {% include "navbar.html" %}
+{% block title %}{{ student.user.get_short_name|default:student.user.username }}'s Dashboard{% endblock %}
+
+{% block content %}
 
     {% if classes %}
     <div class="class-grid">
@@ -103,7 +96,8 @@
         {%endfor%}
     </div>
     {% endif %}
-    
+{%endblock%}
+{% block extra_js%}    
  <!-- Javascript to handle clicks on the icons -->   
     <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -128,8 +122,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-   
-</body>
-
-</html>
+{%endblock%}

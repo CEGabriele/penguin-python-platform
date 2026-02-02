@@ -1,13 +1,8 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
+{%extends "base.html"%}
 
-<head>
-   <title>{{class.name}} - {{class.day}}</title>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-   <link rel="stylesheet" href="{% static 'styles.css' %}">
-   <link rel = "stylesheet" href = "https://fonts.googleapis.com/css?family=Poppins">
-   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+{% block title %}View Assignment{% endblock %}
+
+{% block content %}
 </head>
 <body>
     {% include "navbar.html" %}
@@ -52,13 +47,5 @@
             {% endif %}
         </section>
     
-        <!-- Actions -->
-        <div class="page-actions">
-            <a href="{% url 'teacher_assignments' %}" class="btn btn-secondary">
-                ← Back to Assignments
-            </a>
-    
-        </div>
-    
     </div>    
-</body>
+{%endblock%}
