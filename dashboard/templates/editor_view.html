@@ -115,16 +115,12 @@
         {% csrf_token %}
 
         <div id="controls">
-
-            <div id="editor-controls">
-                <button type="button" onclick="window.runCode()" class="icon-btn">
-                    <i class="fa-solid fa-play"></i>
-                </button>
-                <button type="button" onclick="window.stopCode()" class="icon-btn">
-                    <i class="fa-solid fa-stop"></i>
-                </button>
-            </div>
-
+            <button type="button" onclick="window.runCode()" class="icon-btn">
+                <i class="fa-solid fa-play"></i>
+            </button>
+            <button type="button" onclick="window.stopCode()" class="icon-btn">
+                <i class="fa-solid fa-stop"></i>
+            </button>
             {% if not assigned %}
                 <label>Class:</label>
                 <select id="class">
@@ -145,7 +141,8 @@
                 <button type="button" id="submitBtn">Submit Assignment</button>
                 <span id="submitStatus"></span>
             {% endif %}
-        </div>
+
+            </div>
 
         <textarea id="id_code" hidden>{{ initial_code }}</textarea>
     </form>

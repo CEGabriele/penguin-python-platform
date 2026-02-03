@@ -10,7 +10,7 @@ body {
     text-align: center;
     margin: 0;
     align-items: center;
-    padding-top: 56px;
+    padding-top: 80px;
 }
 .side-menu .menu-toggle {
     background: none;
@@ -44,10 +44,9 @@ body {
 
 .class-grid{
     display: grid;
-    grid-template-columns: repeat(auto-fill, 350px); /* changed from auto-fit, minmax(300px, 1fr)*/
-    justify-content: center; /*added this line*/
+    grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
     gap: 20px;
-    padding: 20px 0;
+    padding: 20px 24px;
 }
 
 .class-card {
@@ -58,12 +57,12 @@ body {
     padding: 20px;
     transition: transform 0.2s;
     text-align: center;
-    width: 350px; /* Fixed sizing starting here and lines below */
-    height: 300px;
+    min-height: 300px;
     display:flex;
     flex-direction: column;
     justify-content: flex-start; /* changed from space-bewteen*/
     gap: 15px; /* added gap between elements */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 /*added so that i can change text color of h1 in class card*/
 .class-card h1 {
@@ -86,22 +85,6 @@ body {
     align-items: flex-start; /* aligns button to the left */
     margin-bottom: 10px;     /* optional spacing below */
 }
-/*adding some details for the play and pause buttons*/
-/* Icon buttons for run/stop */
-.icon-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px 10px;
-    font-size: 20px;       /* size of the icon */
-    color: #555;           /* icon color */
-    transition: color 0.2s;
-}
-
-.icon-btn:hover {
-    color: var(--accent-color);   /* match your theme */
-}
-
 .icon-btn i {
     pointer-events: none; /* make icon clicks count as button clicks */
 }
@@ -334,6 +317,7 @@ a {
 }
 
 .navbar {
+    height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -344,6 +328,13 @@ a {
     padding-inline: 3rem;
     box-shadow: 0 6px 12px rgba(0,0,0,0.25);
     transition: box-shadow 0.3s ease, transform 0.3s ease; /*smooth transition*/
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0 3rem;
+    
+    z-index: 1000; /* ensures navbar is on top */
 }
 
 .navbar-links {
@@ -429,20 +420,18 @@ a {
     border-bottom: 1px solid;
  }
     */
- #controls {
-    background: #ffffff !important;
+#controls {
     display: flex;
-    align-items: center; /* going to vertically center items */
-    gap:15px;
-    font-size:.85rem;
-    justify-content: flex-start; /* on the right side */
-    padding: .1px 24px; /*inner spacing*/
-    margin-left: 850px;
-    margin-top: 32px; /*spacing below*/
-    margin-bottom:-10px;
-    padding-top:0px;
+    align-items: center;
+    gap: 14px;
 
+    background: #ffffff;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    flex-wrap: wrap;
 }
+    
+
 /*adjusting label spacing*/
 #controls label.class-label {
      position: relative;
@@ -484,6 +473,7 @@ a {
     display: flex;
     flex-direction: row;
     overflow: hidden;
+    min-height: 0;
  }
  
  /* Make the editor area a positioned container */
@@ -491,16 +481,6 @@ a {
     margin-top:0;
     padding-top:0;
     position: relative;
-}
-
-/* Floating run/stop controls */
-#editor-controls {
-    position: absolute;
-    top: 10px;     /* small offset inside the editor */
-    left: 30px;    /* aligns with the editor's left edge */
-    display: flex;
-    gap: 10px;
-    z-index: 9999;
 }
 
 
@@ -592,22 +572,23 @@ a {
 
 .side-menu{
   position: fixed;
-  left: 0; top: 0;
+  left: 0; 
+  top: 56px;
   width: 140px;
   height: 100vh;
   z-index: 2000;
+  height: calc(100vh - 56px);
 }
 
 .page-bubble {
-    position: fixed;
-    top: calc(56px + 4vh);
-    right: 4vh;
-    bottom: 4vh;
-    left: 180px;
+    margin-left: 180px;
+    height: calc(100vh - 56px);
     padding: 32px;
     background: #fff;
     border-radius: 18px;
-    z-index: 1000;
+
+    display: flex;
+    flex-direction: column;
   }  
 
 

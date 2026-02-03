@@ -1,7 +1,6 @@
 // import js turtle
 
 window.WORKER_URL = "/static/editor/worker.js";
-console.log("FORCED WORKER_URL =", window.WORKER_URL);
 
 
 import turtleModule from './turtle.js';
@@ -111,6 +110,8 @@ window.console_input = function (promptText = "") {
     });
   });
 };
+
+
 
 function ensureTurtleCanvas() {
   const container = document.getElementById('graphics-container');
