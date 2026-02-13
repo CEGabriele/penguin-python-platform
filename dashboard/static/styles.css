@@ -6,7 +6,7 @@
 
 body {
     font-family: "Poppins", sans-serif;
-    background-color: #f5f5f5; /*testing*/
+    background-color: #eaf6ff;/* #f5f5f5 testing*/
     text-align: center;
     margin: 0;
     align-items: center;
@@ -29,6 +29,7 @@ body {
 
 .side-menu a, .side-menu button.logout-button {
     color: #61605f;
+    height: 24px;
     padding: 10px 15px;
     text-decoration: none;
     font-size: 1rem;
@@ -368,7 +369,19 @@ a {
     align-items: center;
     
 }
+.logout-icon-btn{
+    background: transparent !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border: none;
+    padding: 0;
 
+}
+/*this where i control size of logout button*/
+.logout-icon-btn img {
+    height: 65px;
+    width: auto;
+}
 /* Hover effects for all navbar links and buttons */
 .navbar a:hover,
 .navbar button:hover,
@@ -411,6 +424,7 @@ a {
     text-decoration: none;
     margin-left: auto; /*added this*/
 
+
 }
 
 .editor-container body , #editor-container .body {
@@ -430,16 +444,16 @@ a {
  }
     */
  #controls {
-    background: #ffffff !important;
+    background: transparent;
     display: flex;
     align-items: center; /* going to vertically center items */
-    gap:15px;
-    font-size:.85rem;
+    gap:20px;
+    font-size:1.1rem;
     justify-content: flex-start; /* on the right side */
     padding: .1px 24px; /*inner spacing*/
-    margin-left: 850px;
+    margin-left: -10px; /*move to left side*/
     margin-top: 32px; /*spacing below*/
-    margin-bottom:-10px;
+    margin-bottom:-5px;
     padding-top:0px;
 
 }
@@ -453,20 +467,25 @@ a {
 /* Class dropdown & Name input styling */
 #controls select#class,
 #controls input#name {
-    height: 20px;            /* same height for both */
+    height: 30px;            /* same height for both */
+    width: 110px;
     /*padding: 4px 12px;*/
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.2);
     font-size: 0.6rem;
     margin-bottom:0px;
+    background-color: #9ff4e4;
 }
 
 /* Name input shorter width */
 #controls input#name {
+    background-color: #9ff4e4;
     width: 110px;
     max-width: 150px;    /* limit max width */
      /* adjust % until it lines up with right side */
     margin-bottom: 0px;
+    padding: 12px 8px; 
+    
 }
 
 /* Save button styling to match */
@@ -496,11 +515,14 @@ a {
 /* Floating run/stop controls */
 #editor-controls {
     position: absolute;
-    top: 10px;     /* small offset inside the editor */
-    left: 30px;    /* aligns with the editor's left edge */
+    right: 40px;
     display: flex;
     gap: 10px;
     z-index: 9999;
+    margin-left: -10px; /*move to left side*/
+    margin-top: 32px; /*spacing below*/
+    margin-bottom:30px;
+    padding-top:0px;
 }
 
 
@@ -512,8 +534,8 @@ a {
     padding: 0;
     margin: 0;
     cursor: pointer;
-    font-size: 22px;               /* icon size */
-    color: #444;                   /* icon color */
+    font-size: 32px;               /* icon size */
+    color: #1f2a44;/* #444; */                  /* icon color */
 }
 
 .icon-btn:focus {
@@ -592,7 +614,8 @@ a {
 
 .side-menu{
   position: fixed;
-  left: 0; top: 0;
+  left: 0; 
+  top: calc(56px + 6vh); /* align with bubble(fix height) */
   width: 140px;
   height: 100vh;
   z-index: 2000;
@@ -600,12 +623,12 @@ a {
 
 .page-bubble {
     position: fixed;
-    top: calc(56px + 4vh);
-    right: 4vh;
-    bottom: 4vh;
+    top: calc(56px + 6vh);
+    right: 0; /* making it touch right side of screen*/
+    bottom: 0; /*change this to 0 to make it stick to the bottom */
     left: 180px;
     padding: 32px;
-    background: #fff;
+    background:#f4faff;/* #fff;*/
     border-radius: 18px;
     z-index: 1000;
   }  
@@ -694,19 +717,23 @@ a {
 
 .top-nav {
     position: fixed;
-    top: 20px;
-    left: 140px; /* after sidebar */
+    top: 0;
+    left: 0;
     right: 0;
-    height: 56px;
+
+    height: calc(56px + 20px); /* nav height + gap */
+    padding-top: 20px; 
+    padding-left: 16px;
+    padding-right: 40px;
   
-    background: transparent; /* removing white background */
+    background: #f4faff;
     /*border-bottom: 1px solid rgba(0,0,0,0.08);*/
     box-shadow: none; /* 0 4px 10px rgba(0,0,0,0.05);*/
   
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 40px;
+    padding: 0 15px;
   
     z-index: 1500;
   }
@@ -716,12 +743,29 @@ a {
     align-items: center;
     gap: 14px;
   }
-  
+  /*penguin logo on right side */
+  .logo {
+    display: flex;
+    align-items: center;
+    margin-right: auto;   /* line that makes it go to right*/
+    padding-left: 0px;
+}
+
+.logo img {
+    height:  100px; 
+    width: auto;
+    display: block;
+}
+/* hover effect for logo */
+.logo img:hover {
+    opacity: 0.85;
+}
+
   /* Nav links */
   .nav-link {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #333;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color:#7fb3d5; /* #333;*/
     text-decoration: none;
     padding: 6px 10px;
     border-radius: 8px;
@@ -732,6 +776,7 @@ a {
 .nav-link:hover {
 background: rgba(0,0,0,0.05);
 }
+
   
   /* Active page */
   .nav-link.active {
@@ -742,6 +787,34 @@ background: rgba(0,0,0,0.05);
     color: 000; /* optional active color */
     background: none;
   }
+  .nav-link.active {
+    position: relative;
+    background: linear-gradient(
+        135deg,
+        rgba(210, 240, 255, 0.9),
+        rgba(190, 225, 255, 0.7)
+    );
+    color: #1f4f75;
+    border-radius: 14px;
+
+    box-shadow:
+        
+        inset 0 0 10px rgba(255,255,255,0.8);
+
+    backdrop-filter: blur(6px);
+    text-decoration: none;
+}
+.nav-link.active::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.8);
+    pointer-events: none;
+}
+.nav-link:hover:not(.active) {
+    background: rgba(200, 230, 255, 0.4);
+}
   
   /* Divider between nav and user info */
   .nav-divider {
@@ -760,11 +833,10 @@ background: rgba(0,0,0,0.05);
   
   /* Logout button */
   .nav-btn {
-    background-color: var(--accent-color);
-    color: white;
+    color: none;
     border: none;
     border-radius: 14px; /*shape*/
-    padding: 12px 16px;/*made button little bigger */
+    padding: 4px 8px;/*made button little bigger */
     font-size: 0.85rem;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
