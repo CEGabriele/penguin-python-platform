@@ -933,7 +933,7 @@ def editor_view(request):
     # Sort classes by most recent file
     sorted_classes = sorted(
         grouped.items(),
-        key=lambda item: max(u.last_edited for u in item[1]),
+        key=lambda item: item[1][0].last_edited if item[1] else timezone.now(),
         reverse=True
     )
 
