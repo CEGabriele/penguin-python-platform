@@ -759,7 +759,39 @@ background: rgba(0,0,0,0.05);
     transform: translateY(-1px);
   }
 
-  .monaco-editor .margin,
+.monaco-editor .margin,
 .monaco-editor .monaco-scrollable-element {
 padding-top: 0 !important;
+}
+
+.class-group {
+    margin-bottom: 10px;
+}
+
+.class-title {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-weight: 500;
+}
+
+.files-list {
+    list-style: none;
+    padding-left: 20px;
+    margin: 5px 0;
+    display: none;
+}
+
+.class-group.open .files-list {
+    display: block;
+}
+
+.chevron {
+    transition: transform 0.2s ease;
+}
+
+.class-group.open .chevron {
+    transform: rotate(180deg);
 }

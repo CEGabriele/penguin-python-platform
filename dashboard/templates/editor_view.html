@@ -10,6 +10,11 @@
     {% block extra_head%}
     <script>
         window.WORKER_URL = "{% static 'editor/worker.js' %}";
+        function toggleFolder(titleElement) {
+            const group = titleElement.closest(".class-group");
+            group.classList.toggle("open");
+        }
+        
     </script>
     
     <script>
@@ -31,18 +36,22 @@
 {% block content %}
 <!-- SIDE MENU -->
 <div class="side-menu">
-    {% for class_obj, uploads in files_by_class.items %}
-        <div class="class-group">
-            <div class="class-title">
+    {% for class_obj, uploads in files_by_class %}
+        <div class="class-group" data-class-id = "{{class_obj.id}}">
+            <div class="class-title" onclick = "toggleFolder(this)">
                 
                 <i class="fa-solid fa-folder"></i>
-                {{ class_obj.name }}
+                <span>{{ class_obj.name }}</span>
+                <i class="fa-solid fa-chevron-down chevron"></i>
+
             </div>
 
             <ul class="files-list">
                 {% for file in uploads %}
                 <li
                 class="file-item {% if file.assignment %}assignment{% endif %}"
+                data-last-edited="{{ file.last_edited|date:'U' }}"
+            
                 {% if file.assigned_id %}
                     data-assigned-id="{{ file.assigned_id }}"
                 {% else %}
@@ -169,25 +178,70 @@ function getCsrfToken() {
     return m ? decodeURIComponent(m[1]) : "";
 }
 
+function moveFileToTop(uploadId, classId, lastEdited) {
+    const classGroup = document.querySelector(
+        `.class-group[data-class-id="${classId}"]`
+    );
+    if (!classGroup) return;
+
+    let fileItem = classGroup.querySelector(
+        `.file-item[data-upload-id="${uploadId}"]`
+    );
+    
+    const fileList = classGroup.querySelector(".files-list");
+    if (!fileItem) {
+        const nameInput = document.getElementById("name");
+        const filename = nameInput ? nameInput.value : "code.py";
+
+        fileItem = document.createElement("li");
+        fileItem.className = "file-item";
+        fileItem.dataset.uploadId = uploadId;
+        fileItem.dataset.lastEdited = lastEdited;
+
+        fileItem.innerHTML = `
+            <i class="fa-solid fa-file"></i>
+            <span class="file-name">${filename}</span>
+        `;
+
+        // Add click behavior
+        fileItem.addEventListener("click", () => {
+            document.querySelectorAll(".file-item")
+                .forEach(i => i.classList.remove("active"));
+            fileItem.classList.add("active");
+            loadUpload(uploadId);
+        });
+    }
+    // Update timestamp
+    fileItem.dataset.lastEdited = lastEdited;
+
+    // Move file to top of folder
+    fileList.prepend(fileItem);
+
+    // Move folder to top of sidebar
+    const sideMenu = document.querySelector(".side-menu");
+    sideMenu.prepend(classGroup);
+
+    // Keep folder open
+    classGroup.classList.add("open");
+}
+
+
 async function ajaxSave() {
-    const saveBtn = document.getElementById("saveBtn");
     const status = document.getElementById("saveStatus");
     const name = document.getElementById("name").value;
     const class_id = document.getElementById("class").value;
     const code = window.EditorAPI.getValue();
-
-    saveBtn.disabled = true;
+    
     status.textContent = "Saving...";
 
     try {
         const response = await fetch(window.location.href, {
             method: "POST",
             headers: {
-                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/json",
                 "X-CSRFToken": getCsrfToken(),
-                "Content-Type": "application/x-www-form-urlencoded",
             },
-            body: new URLSearchParams({
+            body: JSON.stringify({
                 name: name,
                 class_id: class_id,
                 code: code,
@@ -198,11 +252,13 @@ async function ajaxSave() {
         if (!response.ok || !data.ok) throw new Error("Save failed");
 
         status.textContent = "Saved!";
+        if (data.upload_id) {
+            moveFileToTop(data.upload_id, data.class_id, data.last_edited);
+        }
     } catch (e) {
         console.error(e);
         status.textContent = "Save failed. Try again.";
     } finally {
-        saveBtn.disabled = false;
         setTimeout(() => {
             if (status.textContent.startsWith("Saved")) {
                 status.textContent = "Saved ✓";
@@ -211,9 +267,6 @@ async function ajaxSave() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("saveBtn")?.addEventListener("click", ajaxSave);
-});
 {% if assigned %}
 async function submitAssignment() {
     const btn = document.getElementById("submitBtn");

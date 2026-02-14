@@ -1,6 +1,7 @@
 // import js turtle
 
 window.WORKER_URL = "/static/editor/worker.js";
+window.moveFileToTop = moveFileToTop;
 
 
 import turtleModule from './turtle.js';
@@ -324,6 +325,7 @@ function getCookie(name) {
 async function autosave() {
   if (!editor || !editor.getModel()) return;
   const { classSelect, nameInput, statusSpan } = getEls();
+  if (!classSelect || !statusSpan) return;
 
   const code = editor.getValue();
   const class_id = classSelect?.value;
@@ -345,13 +347,24 @@ async function autosave() {
       }),
     });
     if (response.ok) {
+      const data = await response.json();
+    
       statusSpan.textContent = "Autosaved";
       lastSavedCode = code;
+    
+      if (data.ok && data.upload_id && window.moveFileToTop) {
+        window.moveFileToTop(
+          data.upload_id,
+          data.class_id,
+          data.last_edited
+        );
+      }
     } else {
       statusSpan.textContent = "Save failed";
     }
   } catch (err) {
     statusSpan.textContent = "Network error";
+    console.error("Autosave error:", err);
   }
 
 

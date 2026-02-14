@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json, os
 import traceback
 from dashboard.services.ai_hw_review import get_ai_review
-from django.db.models import OuterRef, Exists, Count, Q
+from django.db.models import OuterRef, Exists, Count, Q, Max
 from collections import defaultdict
 from django.db import connection
 from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
@@ -853,7 +853,12 @@ def editor_view(request):
                 save=True,
             )
 
-            return JsonResponse({"ok": True, "autosaved": True})
+            return JsonResponse({
+                "ok": True,
+                "upload_id": upload.id,
+                "class_id": upload.for_class.id,
+                "last_edited": upload.last_edited.timestamp(),
+            })
         # CLASSWORK AUTOSAVE
         if not class_id:
             return JsonResponse(
@@ -869,10 +874,14 @@ def editor_view(request):
             display_name=name,
         )
 
-        label = slugify(name[:-3]) or "code"
         upload.file.save(name, ContentFile(code), save=True)
 
-        return JsonResponse({"ok": True, "autosaved": True})
+        return JsonResponse({
+            "ok": True,
+            "upload_id": upload.id,
+            "class_id": upload.for_class.id,
+            "last_edited": upload.last_edited.timestamp(),
+        })
 
 
     # Load file by upload_id (editor)
@@ -910,20 +919,23 @@ def editor_view(request):
             .select_related("for_class", "assignment")
             .order_by("-last_edited")
     )
-
-    assigned_lookup = {}  # (can remove entirely if unused)
+   
+    grouped = defaultdict(list)
 
     for upload in uploads:
-        # attach assigned_id for template use
-        upload.assigned_id = (
-            assigned_lookup.get(upload.assignment_id)
-            if upload.assignment_id
-            else None
-        )
-
         if upload.for_class:
-            files_by_class[upload.for_class].append(upload)
+            grouped[upload.for_class].append(upload)
 
+    # Sort uploads inside each class (most recent first)
+    for class_obj in grouped:
+        grouped[class_obj].sort(key=lambda x: x.last_edited, reverse=True)
+
+    # Sort classes by most recent file
+    sorted_classes = sorted(
+        grouped.items(),
+        key=lambda item: max(u.last_edited for u in item[1]),
+        reverse=True
+    )
 
     return render(request, "editor_view.html", {
         "user": user,
@@ -932,7 +944,7 @@ def editor_view(request):
         "code_name": code_name,
         "selected_class_id": selected_class_id,
         "assigned": assigned,
-        "files_by_class": dict(files_by_class),
+        "files_by_class": sorted_classes,
     })
 @login_required
 def load_upload(request, pk):
