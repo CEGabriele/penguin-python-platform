@@ -827,18 +827,19 @@ def editor_view(request):
             assignment=assigned.assignment
         ).first()
 
-        if upload and upload.file:
+        if upload:
             if upload.person != user:
                 is_readonly = True
 
-        elif hasattr(user, "student") and upload.submitted:
-            is_readonly = True
+            elif hasattr(user, "student") and upload.submitted:
+                is_readonly = True
 
-            try:
-                upload.file.open("rb")
-                initial_code = force_str(upload.file.read(), errors="ignore")
-            except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
-                initial_code = ""
+            elif upload.file:
+                try:
+                    upload.file.open("rb")
+                    initial_code = force_str(upload.file.read(), errors="ignore")
+                except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
+                    initial_code = ""
 
             code_name = upload.display_name
             selected_class_id = str(assigned.for_class.id)
