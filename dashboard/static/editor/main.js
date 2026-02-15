@@ -43,6 +43,10 @@ require(['vs/editor/editor.main'], function () {
   });
   lastSavedCode = editor.getValue();
 
+  if (window.IS_READONLY) {
+    editor.updateOptions({ readOnly: true });
+  }
+
 
   const editor_container = document.getElementById('editor');
   const graphics_container = document.getElementById('graphics-container');
@@ -58,6 +62,7 @@ require(['vs/editor/editor.main'], function () {
   editor.onDidChangeModelContent(onEditorChange);
   setInterval(autosave, 60000); // periodic autosave every minute
 });
+
 
 
 // writes to the console
@@ -304,6 +309,7 @@ window.stopCode = stopCode;
 window.EditorAPI = {
   getValue: () => editor?.getValue?.() ?? '',
   setValue: (v) => editor?.setValue?.(v ?? ''),
+  setReadOnly: (state) => editor?.updateOptions({ readOnly: state }),
 };
 
 
@@ -323,6 +329,7 @@ function getCookie(name) {
 }
 
 async function autosave() {
+  if (window.IS_READONLY) return;
   if (!editor || !editor.getModel()) return;
   const { classSelect, nameInput, statusSpan } = getEls();
   if (!classSelect || !statusSpan) return;

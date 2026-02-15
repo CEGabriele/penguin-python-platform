@@ -436,14 +436,19 @@ def teacher_view_submissions(request, assigned_id):
 @student_required
 def submit_assignment(request, assigned_id):
     if request.method != "POST":
-        return HttpResponseBadRequest("Invalid method")
+        return JsonResponse({"ok": False}, status=400)
 
     assigned = get_object_or_404(AssignedToClass, id=assigned_id)
     student = request.user.student
 
     if assigned.for_class not in student.classes.all():
-        return HttpResponse("Access denied", status=403)
+        return JsonResponse({"ok": False}, status=403)
 
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({"ok": False}, status=400)
+    
     try:
         data = json.loads(request.body)
     except Exception:
@@ -462,7 +467,6 @@ def submit_assignment(request, assigned_id):
         person=request.user,
         assignment=assigned.assignment,
         for_class=assigned.for_class,
-        defaults={"display_name": filename},
     )
 
     upload.display_name = filename
@@ -656,9 +660,20 @@ def student_class_view(request, class_code):
     }
     """
     assigned_assignments = AssignedToClass.objects.filter(for_class = class_obj).select_related('assignment').order_by('due_date')
+    submitted_ids = set(
+        Uploads.objects
+        .filter(
+            person=request.user,
+            for_class=class_obj,
+            submitted=True,
+            assignment__isnull=False,
+        )
+        .values_list("assignment_id", flat=True)
+    )
     return render(request, 'student_class_view.html', {
         'class': class_obj,
-        'assigned_assignments': assigned_assignments
+        'assigned_assignments': assigned_assignments,
+        'submitted_ids': submitted_ids
     })
 
     #return render(request, 'student_class_view.html', context)
@@ -804,14 +819,21 @@ def editor_view(request):
     initial_code = ""
     code_name = ""
     selected_class_id = None
+    is_readonly = False
 
-    if assigned and hasattr(user, "student"):
+    if assigned:
         upload = Uploads.objects.filter (
             person=user,
             assignment=assigned.assignment
         ).first()
 
         if upload and upload.file:
+            if upload.person != user:
+                is_readonly = True
+
+        elif hasattr(user, "student") and upload.submitted:
+            is_readonly = True
+
             try:
                 upload.file.open("rb")
                 initial_code = force_str(upload.file.read(), errors="ignore")
@@ -897,6 +919,14 @@ def editor_view(request):
             or user.is_superuser
         ):
             return HttpResponse("Access denied", status=403)
+        
+        if upload:
+            if upload.person != user:
+                is_readonly = True
+
+            elif hasattr(user, "student") and upload.submitted:
+                is_readonly = True
+
 
         selected_class_id = str(upload.for_class.id)
         try:
@@ -949,6 +979,7 @@ def editor_view(request):
         "selected_class_id": selected_class_id,
         "assigned": assigned,
         "files_by_class": sorted_classes,
+        "is_readonly": is_readonly
     })
 @login_required
 def load_upload(request, pk):

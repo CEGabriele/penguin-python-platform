@@ -28,7 +28,7 @@
                 Submitted - {{ upload.submitted_at|date:"M j, P" }}
             {%endif%}
             <br>
-            <a href="{% url 'editor_view' %}?upload_id={{ file.id }}">
+            <a href="{% url 'editor_view' %}?upload_id={{ upload.id }}">
                 Open in editor
               </a>              
             </a>

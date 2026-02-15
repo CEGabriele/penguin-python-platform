@@ -147,8 +147,12 @@
             <span id="saveStatus"></span>
 
             {% if assigned %}
-                <button type="button" id="submitBtn">Submit Assignment</button>
-                <span id="submitStatus"></span>
+                {% if is_submitted %}
+                    <span class="submitted-badge">Assignment Submitted ✓</span>
+                {% else %}
+                    <button type="button" id="submitBtn">Submit Assignment</button>
+                    <span id="submitStatus"></span>
+                {% endif %}
             {% endif %}
 
             </div>
@@ -169,6 +173,23 @@
 </div>
 {%endblock%}
 {% block extra_js %}
+
+
+<script>
+    window.IS_READONLY = {{ is_readonly|yesno:"true,false" }};
+</script>
+
+
+{% if is_submitted %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.EditorAPI?.setReadOnly) {
+        window.EditorAPI.setReadOnly(true);
+    }
+});
+</script>
+{% endif %}
+
 <script type="module" src="{% static 'editor/main.js' %}" defer></script>
 
 <script>
@@ -227,6 +248,10 @@ function moveFileToTop(uploadId, classId, lastEdited) {
 
 
 async function ajaxSave() {
+    {% if is_submitted %}
+    return;
+    {% endif %}
+
     const status = document.getElementById("saveStatus");
     const name = document.getElementById("name").value;
     const class_id = document.getElementById("class").value;
@@ -300,7 +325,6 @@ async function submitAssignment() {
     } catch (err) {
         console.error(err);
         status.textContent = "Submission failed";
-    } finally {
         btn.disabled = false;
     }
 }
