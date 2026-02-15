@@ -814,11 +814,12 @@ def editor_view(request):
         if upload and upload.file:
             try:
                 upload.file.open("rb")
-                initial_code = upload.file.read().decode("utf-8")
-                code_name = upload.display_name
-                selected_class_id = str(assigned.for_class.id)
-            except Exception:
-                pass
+                initial_code = force_str(upload.file.read(), errors="ignore")
+            except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
+                initial_code = ""
+
+            code_name = upload.display_name
+            selected_class_id = str(assigned.for_class.id)
 
     # JSON AUTOSAVE (editor autosave)
     if request.method == "POST" and is_json:
@@ -898,8 +899,11 @@ def editor_view(request):
             return HttpResponse("Access denied", status=403)
 
         selected_class_id = str(upload.for_class.id)
-        upload.file.open("rb")
-        initial_code = force_str(upload.file.read(), errors="ignore")
+        try:
+            upload.file.open("rb")
+            initial_code = force_str(upload.file.read(), errors="ignore")
+        except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
+            initial_code = ""
         code_name = upload.display_name or upload.file.name.split("/")[-1]
         selected_class_id = str(upload.for_class.id)
 
@@ -916,7 +920,7 @@ def editor_view(request):
     uploads = (
         Uploads.objects
             .filter(person=request.user)
-            .select_related("for_class", "assignment")
+            .select_related("for_class")
             .order_by("-last_edited")
     )
    
@@ -960,8 +964,12 @@ def load_upload(request, pk):
     ):
         return JsonResponse({"ok": False}, status=403)
 
-    upload.file.open("rb")
-    code = force_str(upload.file.read(), errors="ignore")
+    try:
+        upload.file.open("rb")
+        code = force_str(upload.file.read(), errors="ignore")
+    except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
+        return JsonResponse({"ok": False, "error": "File missing"}, status=404)
+
 
     return JsonResponse({
         "ok": True,
