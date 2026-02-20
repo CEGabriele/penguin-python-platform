@@ -1,12 +1,17 @@
-
-
+{% load static %}
 <div class="top-nav">
+  <!-- LOGO ON THE LEFT -->
+    <div class="logo">
+        <a href="{% url 'student_dashboard' %}">
+            <img src="{% static 'images/logo.png' %}" >
+        </a>
+    </div>
         <div class="top-nav-right">
           
         {%if user.student%}
           <a href="{% url 'student_dashboard' %}" 
           class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
-          Dashboard
+          Class
         </a>
         {% elif user.teacher%}
           <a href="{% url 'teacher_dashboard' %}" 
@@ -16,7 +21,7 @@
         {%endif %}
           <a href="{% url 'editor_view' %}" 
           class="nav-link {% if request.resolver_match.url_name == 'editor_view' %}active{% endif %}">
-          Editor
+          Code
         </a>
       
           {% if user.teacher.is_admin %}
@@ -34,7 +39,9 @@
       
           <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <button type="submit" class="nav-btn">Logout</button>
+            <button type="submit" class="nav-btn logout-icon-btn">
+    <img src="{% static 'images/logoutbutton.png' %}" alt="Logout">
+</button>
           </form>
         </div>
     </div>      
