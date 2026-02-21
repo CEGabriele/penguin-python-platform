@@ -2,6 +2,7 @@
 :root {
     --accent-color: rgba(252, 164, 43);
     --accent-color-light: rgba(253, 182, 85);
+    --nav-height: 76px;
 }
 
 body {
@@ -611,21 +612,20 @@ a {
   left: 0; 
   top: calc(56px + 6vh); /* align with bubble(fix height) */
   left: 0; 
-  top: 56px;
+  top: var(--nav-height) + 10px;
   width: 140px;
   height: 100vh;
   z-index: 2000;
-  height: calc(100vh - 56px);
+  height: calc(100vh - var(--nav-height));
 }
 
 .page-bubble {
     position: fixed;
-    top: calc(56px + 6vh);
+    top: var(--nav-height);
     right: 0; /* making it touch right side of screen*/
     bottom: 0; /*change this to 0 to make it stick to the bottom */
     left: 180px;
-    margin-left: 180px;
-    height: calc(100vh - 56px);
+    height: calc(100vh - var(--nav-height));
     padding: 32px;
     background:#f4faff;/* #fff;*/
     border-radius: 18px;
@@ -722,7 +722,7 @@ a {
     left: 0;
     right: 0;
 
-    height: calc(56px + 20px); /* nav height + gap */
+    height: var(--nav-height);
     padding-top: 20px; 
     padding-left: 16px;
     padding-right: 40px;
