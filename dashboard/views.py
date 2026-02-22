@@ -455,7 +455,9 @@ def submit_assignment(request, assigned_id):
         return HttpResponseBadRequest("Invalid JSON")
 
     code = data.get("code", "").strip()
-    filename = data.get("name", "assignment.py")
+    name = (data.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "Missing file name"}, status=400)
 
     if not code:
         return JsonResponse({"error": "No code submitted"}, status=400)
@@ -852,7 +854,9 @@ def editor_view(request):
             return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
 
         code = data.get("code", "")
-        name = data.get("name", "code.py")
+        name = (data.get("name") or "").strip()
+        if not name:
+            return JsonResponse({"ok": False, "error": "Missing file name"}, status=400)
 
         class_id = data.get("class_id")
 

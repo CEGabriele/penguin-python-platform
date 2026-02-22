@@ -336,8 +336,15 @@ async function autosave() {
 
   const code = editor.getValue();
   const class_id = classSelect?.value;
-  const name = nameInput?.value || "autosave";
+  const rawName = nameInput?.value?.trim() || "";
 
+  if (!rawName) {
+    statusSpan.textContent = "Please enter a file name to save the file";
+    nameInput?.focus();
+    return;
+  }
+
+const name = rawName;
   if (code === lastSavedCode || !class_id) return;
 
   try {
@@ -379,7 +386,7 @@ async function autosave() {
 
 function onEditorChange() {
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(autosave, 2000);
+  autosaveTimer = setTimeout(autosave, 60000);
 }
 
 function getEls() {
