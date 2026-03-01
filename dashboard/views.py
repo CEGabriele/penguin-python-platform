@@ -190,26 +190,34 @@ def admin_dashboard(request):
 @login_required
 @teacher_required
 def admin_class_view(request, class_id):
-    if request.user.teacher.is_admin:
-        teacher = Teacher.objects.get(user = request.user)
-        class_obj = get_object_or_404(Class, id=class_id)
-        student_form = ClassStudentUpdateForm(request.POST or None, instance = class_obj)
+    if not request.user.teacher.is_admin:
+        return redirect('teacher_dashboard')
 
-        if request.method and student_form.is_valid():
+    teacher = request.user.teacher
+    class_obj = get_object_or_404(Class, id=class_id)
+
+    if request.method == "POST":
+        student_form = ClassStudentUpdateForm(request.POST, instance=class_obj)
+        if student_form.is_valid():
             students = student_form.cleaned_data['students']
 
-            for student in class_obj.students.all():
-                student.classes.remove(class_obj)
+            class_obj.students.clear()  # cleaner than manual remove loop
 
             for student in students:
                 student.classes.add(class_obj)
-            
-            return redirect('admin_class_view', class_id = class_obj.id)
-
-        return render(request, 'admin_class_view.html', {'class_obj': class_obj, 'student_form': student_form, 'teacher': teacher})
+            return redirect('admin_class_view', class_id=class_obj.id)
     else:
-        return redirect('teacher_dashboard')
-    
+        student_form = ClassStudentUpdateForm(instance=class_obj)
+
+    return render(
+        request,
+        'admin_class_view.html',
+        {
+            'class_obj': class_obj,
+            'student_form': student_form,
+            'teacher': teacher
+        }
+    )
 
 
 @login_required
