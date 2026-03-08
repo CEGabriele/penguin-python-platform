@@ -68,7 +68,7 @@ require(['vs/editor/editor.main'], function () {
   updateHeight();
   editor.onDidContentSizeChange(updateHeight);
   editor.onDidChangeModelContent(onEditorChange);
-  setInterval(autosave, 6000); // periodic autosave every minute
+  setInterval(autosave, 60000); // periodic autosave every minute
 });
 
 
