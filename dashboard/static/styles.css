@@ -560,6 +560,7 @@ a {
     font-family:monospace;
     font-size:14px;
     border-radius:10px;
+    text-align: left;
  }
  
 #userInput, .userInput{
