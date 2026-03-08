@@ -26,5 +26,9 @@ urlpatterns = [
     path('assign_assignment_to_class/<int:assignment_id>/', assign_assignment_to_class, name='assign_assignment_to_class'),
     path("assignment/<int:assigned_id>/submit/",submit_assignment,name="submit_assignment"),
     path("editor/load-upload/<int:pk>/", load_upload, name="load_upload"),
-
+    path("editor/projects/", editor_projects),
+    path("editor/create-project/", create_editor_project),
+    path("editor/project/<int:project_id>/file/<path:file_path>/",editor_project_file),
+    path("editor/project/<int:project_id>/create-file/",create_project_file),
+    path("editor/project/<int:project_id>/files/", get_project_files),
 ]

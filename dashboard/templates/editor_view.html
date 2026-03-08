@@ -36,36 +36,22 @@
 {% block content %}
 <!-- SIDE MENU -->
 <div class="side-menu">
-    {% for class_obj, uploads in files_by_class %}
-        <div class="class-group" data-class-id = "{{class_obj.id}}">
-            <div class="class-title" onclick = "toggleFolder(this)">
-                
-                <i class="fa-solid fa-folder"></i>
-                <span>{{ class_obj.name }}</span>
-                <i class="fa-solid fa-chevron-down chevron"></i>
+    <div class="project-section">
 
-            </div>
+        <div class="project-header">
+            <span>Projects</span>
+            <button id="newProjectBtn" class="icon-btn">
+                <i class="fa-solid fa-plus"></i>
+            </button>
 
-            <ul class="files-list">
-                {% for file in uploads %}
-                <li
-                class="file-item {% if file.assignment %}assignment{% endif %}"
-                data-last-edited="{{ file.last_edited|date:'U' }}"
-            
-                {% if file.assigned_id %}
-                    data-assigned-id="{{ file.assigned_id }}"
-                {% else %}
-                    data-upload-id="{{ file.id }}"
-                {% endif %}
-            >
-                    <i class="fa-solid fa-file"></i>
-                    <span class="file-name">{{ file.display_name }}</span>
-
-                </li>
-                {% endfor %}
-            </ul>
+            <button id="newFileBtn" class="icon-btn" title="New File">
+                <i class="fa-solid fa-file-circle-plus"></i>
+            </button>
         </div>
-    {% endfor %}
+    
+        <div id="projectTree"></div>
+    
+    </div>
         <!--
         {% if user.teacher %}
             <a href="{% url 'teacher_dashboard' %}">
@@ -158,6 +144,9 @@
             </div>
 
         <textarea id="id_code" hidden>{{ initial_code }}</textarea>
+        <input type="hidden" id="project_id" value="{{ project_id|default:'' }}">
+        <input type="hidden" id="current_file_path" value="main.py">
+
     </form>
     <div id="main">
         <div id="editor"></div>
@@ -413,6 +402,174 @@ function toggleMenu() {
   });
 });
 
-      });
+    });
+    async function loadProjects() {
+
+        const res = await fetch("/dashboard/editor/projects/");
+        const data = await res.json();
+    
+        const tree = document.getElementById("projectTree");
+        tree.innerHTML = "";
+    
+        let firstProject = null;
+    
+        data.projects.forEach(project => {
+    
+            if(!firstProject){
+                firstProject = project;
+            }
+    
+            const projectDiv = document.createElement("div");
+            projectDiv.className = "project";
+    
+            const title = document.createElement("div");
+            title.className = "project-title";
+            title.innerHTML = `
+                <i class="fa-solid fa-folder"></i>
+                ${project.name}
+            `;
+            title.onclick = () => {
+                let mainFile = project.files.find(f => f === "main.py");
+            
+                if (!mainFile) {
+                    mainFile = project.files[0];
+                }
+            
+                if (mainFile) {
+                    openFile(project.id, mainFile);
+                }
+            };
+    
+            const filesDiv = document.createElement("div");
+            filesDiv.className = "project-files";
+    
+            project.files.forEach(file => {
+    
+                const f = document.createElement("div");
+                f.className = "project-file";
+                f.innerHTML = `
+                    <i class="fa-solid fa-file"></i>
+                    ${file}
+                `;
+    
+                f.onclick = () => openFile(project.id, file);
+    
+                filesDiv.appendChild(f);
+            });
+    
+            projectDiv.appendChild(title);
+            projectDiv.appendChild(filesDiv);
+    
+            tree.appendChild(projectDiv);
+        });
+        if (firstProject && firstProject.files.length) {
+
+            let mainFile = firstProject.files.find(f => f === "main.py");
+        
+            if (!mainFile) {
+                mainFile = firstProject.files[0];
+            }
+        
+            openFile(firstProject.id, mainFile);
+        }
+    }
+    async function openFile(pid, filePath) {
+        const res = await fetch(
+            `/dashboard/editor/project/${pid}/file/${filePath}/`
+        );
+    
+        const data = await res.json();
+    
+        if (data.ok) {
+            window.EditorAPI.setValue(data.code || "");
+    
+            window.EditorProject.setProjectId(pid);
+            window.EditorProject.setCurrentFile(filePath);
+            window.EditorProject.resetLastSavedCode(data.code || "");
+            window.EditorProject.clearAutosaveTimer();
+    
+            document.getElementById("project_id").value = pid;
+            document.getElementById("current_file_path").value = filePath;
+            document.getElementById("name").value = filePath;
+        }
+    }
+
+    document
+.getElementById("newProjectBtn")
+.addEventListener("click", async () => {
+
+    const name = prompt("Project name:");
+
+    if(!name) return;
+
+    const res = await fetch("/dashboard/editor/create-project/", {
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "X-CSRFToken":getCsrfToken()
+        },
+        body:JSON.stringify({name})
+    });
+
+    const data = await res.json();
+
+    if(data.ok){
+        loadProjects();
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadProjects();
+});
+
+document.getElementById("newFileBtn").addEventListener("click", async () => {
+    let pid = document.getElementById("project_id").value || null;
+
+    if (pid === "" || pid === "None") {
+        pid = null;
+    }
+
+    if(!pid){
+        alert("Open a project first");
+        return;
+    }
+    let filename = prompt("New file name (example: card.py)");
+
+    if(!filename) return;
+
+    if(!filename.endsWith(".py")){
+        filename += ".py";
+    }
+
+    const res = await fetch(
+        `/dashboard/editor/project/${pid}/create-file/`,
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({
+                path: filename
+            })
+        }
+    );
+
+    const data = await res.json();
+
+    if(data.ok){
+
+        loadProjects();
+
+        // open the new file
+        openFile(pid, filename);
+
+    }else{
+
+        alert("Could not create file");
+
+    }
+
+});
   </script>
 {% endblock %}

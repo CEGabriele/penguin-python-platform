@@ -456,11 +456,6 @@ def submit_assignment(request, assigned_id):
         data = json.loads(request.body)
     except Exception:
         return JsonResponse({"ok": False}, status=400)
-    
-    try:
-        data = json.loads(request.body)
-    except Exception:
-        return HttpResponseBadRequest("Invalid JSON")
 
     code = data.get("code", "").strip()
     name = (data.get("name") or "").strip()
@@ -469,7 +464,7 @@ def submit_assignment(request, assigned_id):
 
     if not code:
         return JsonResponse({"error": "No code submitted"}, status=400)
-
+    filename = name
     if not filename.lower().endswith(".py"):
         filename += ".py"
 
@@ -830,8 +825,42 @@ def editor_view(request):
     code_name = ""
     selected_class_id = None
     is_readonly = False
+    project = None
 
     if assigned:
+        project, _ = CodeProject.objects.get_or_create(
+            owner=user,
+            assignment=assigned.assignment,
+            for_class=assigned.for_class,
+            defaults={"name": assigned.assignment.title}
+        )
+
+        main_file, created = ProjectFile.objects.get_or_create(
+            project=project,
+            path="main.py",
+        )
+
+        if created or not main_file.file:
+            default_code = """# Write your Python code here
+
+print("Hello World!")
+"""
+            main_file.file.save(
+                "main.py",
+                ContentFile(default_code.encode()),
+                save=True
+            )
+        
+        try:
+            main_file.file.open("rb")
+            initial_code = force_str(main_file.file.read(), errors="ignore")
+        except Exception:
+            initial_code = ""
+        
+        code_name = main_file.path
+        selected_class_id = str(assigned.for_class.id)
+
+        """
         upload = Uploads.objects.filter (
             person=user,
             assignment=assigned.assignment
@@ -853,7 +882,9 @@ def editor_view(request):
 
             code_name = upload.display_name
             selected_class_id = str(assigned.for_class.id)
-
+    """
+    else:
+        project = None
     # JSON AUTOSAVE (editor autosave)
     if request.method == "POST" and is_json:
         try:
@@ -862,6 +893,39 @@ def editor_view(request):
             return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
 
         code = data.get("code", "")
+        path = data.get("path", "main.py")
+        project_id = data.get("project_id")
+        if not project_id:
+            return JsonResponse({"ok": False, "error": "Missing project_id"}, status=400)
+
+        if not project_id:
+            return JsonResponse({"ok": False, "error": "Missing project_id"}, status=400)
+
+        project = get_object_or_404(CodeProject, id=project_id)
+        if project.owner != user:
+            return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+        
+        project_file, _ = ProjectFile.objects.get_or_create(
+            project=project,
+            path=path,
+        )
+
+        project_file.file.save(
+            path,
+            ContentFile(code.encode()),
+            save=True
+        )
+        project.last_edited = timezone.now()
+        project.save(update_fields=["last_edited"])
+
+        return JsonResponse({
+            "ok": True,
+            "project_id": project.id if project else "",
+            "path": project_file.path,
+            "last_edited": project_file.last_edited.timestamp()
+        })
+
+        """
         name = (data.get("name") or "").strip()
         if not name:
             return JsonResponse({"ok": False, "error": "Missing file name"}, status=400)
@@ -918,7 +982,7 @@ def editor_view(request):
             "class_id": upload.for_class.id,
             "last_edited": upload.last_edited.timestamp(),
         })
-
+    """
 
     # Load file by upload_id (editor)
     upload_id = request.GET.get("upload_id")
@@ -958,8 +1022,6 @@ def editor_view(request):
     else:
         class_options = []
 
-    files_by_class = defaultdict(list)
-
     uploads = (
         Uploads.objects
             .filter(person=request.user)
@@ -992,7 +1054,8 @@ def editor_view(request):
         "selected_class_id": selected_class_id,
         "assigned": assigned,
         "files_by_class": sorted_classes,
-        "is_readonly": is_readonly
+        "is_readonly": is_readonly,
+        "project_id": project.id if project else "",
     })
 @login_required
 def load_upload(request, pk):
@@ -1020,4 +1083,161 @@ def load_upload(request, pk):
         "code": code,
         "name": upload.display_name,
         "class_id": upload.for_class_id,
+    })
+
+
+def get_or_create_editor_project(user, for_class=None, assignment=None):
+
+    DEFAULT_CODE = """# Write your Python code here
+
+print("Hello World!")
+"""
+
+    project_name = "Classwork"
+    if assignment:
+        project_name = assignment.title
+    project, _ = CodeProject.objects.get_or_create(
+        owner=user,
+        for_class=for_class,
+        assignment = assignment,
+        defaults={"name": project_name}
+    )
+    main_file, created = ProjectFile.objects.get_or_create(
+        project=project,
+        path="main.py",
+    )
+
+    if created or not main_file.file:
+        main_file.file.save("main.py", ContentFile(DEFAULT_CODE), save=True)
+    return project
+
+def get_project_files(request, project_id):
+    project = get_object_or_404(CodeProject, id=project_id)
+
+    if project.owner != request.user:
+        return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+    files = {}
+    for pf in project.files.order_by("path"):
+        try:
+            pf.file.open("rb")
+            files[pf.path] = force_str(pf.file.read(), errors="ignore")
+        except:
+            files[pf.path] = ""
+
+    return JsonResponse({"ok": True, "files": files})
+
+@login_required
+def editor_projects(request):
+
+    projects = CodeProject.objects.filter(owner=request.user)
+
+    result = []
+
+    for project in projects:
+
+        files = list(
+            project.files.values_list("path", flat=True)
+        )
+
+        result.append({
+            "id": project.id,
+            "name": project.name,
+            "files": files
+        })
+
+    return JsonResponse({
+        "projects": result
+    })
+
+@login_required
+def create_editor_project(request):
+
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    data = json.loads(request.body)
+
+    name = data.get("name")
+
+    if not name:
+        return JsonResponse({"ok": False})
+
+    project = CodeProject.objects.create(
+        owner=request.user,
+        name=name
+    )
+
+    default_code = """# New project
+
+print("Hello world")
+"""
+
+    ProjectFile.objects.create(
+        project=project,
+        path="main.py",
+        file=ContentFile(default_code.encode(), name="main.py")
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "project_id": project.id
+    })
+
+@login_required
+def editor_project_file(request, project_id, file_path):
+
+    project = get_object_or_404(
+        CodeProject,
+        id=project_id,
+        owner=request.user
+    )
+
+    pf = get_object_or_404(
+        ProjectFile,
+        project=project,
+        path=file_path
+    )
+
+    try:
+        pf.file.open("rb")
+        code = force_str(pf.file.read(), errors="ignore")
+    except Exception:
+        code = ""
+
+    return JsonResponse({
+        "ok": True,
+        "code": code
+    })
+
+@login_required
+def create_project_file(request, project_id):
+
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    data = json.loads(request.body)
+
+    path = data.get("path")
+
+    if not path:
+        return JsonResponse({"ok": False})
+
+    project = get_object_or_404(
+        CodeProject,
+        id=project_id,
+        owner=request.user
+    )
+
+    file, created = ProjectFile.objects.get_or_create(
+        project=project,
+        path=path
+    )
+
+    if created:
+        file.file.save(path, ContentFile(b""), save=True)
+
+    return JsonResponse({
+        "ok": True,
+        "created": created
     })

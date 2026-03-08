@@ -887,3 +887,40 @@ padding-top: 0 !important;
 .class-group.open .chevron {
     transform: rotate(180deg);
 }
+
+.project-section{
+    padding:10px;
+}
+
+.project-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:600;
+    margin-bottom:8px;
+}
+
+.project{
+    margin-bottom:6px;
+}
+
+.project-title{
+    cursor:pointer;
+    padding:4px;
+}
+
+.project-files{
+    margin-left:15px;
+}
+
+.project-file{
+    cursor:pointer;
+    padding:3px;
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+
+.project-file:hover{
+    background:#2a2a2a;
+}

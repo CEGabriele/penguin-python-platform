@@ -236,4 +236,56 @@ class AssignedToClass(models.Model):
 
     def __str__(self) -> str:
         return f"{self.assignment.title} assigned to {self.for_class.name}"
+
+class CodeProject(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="code_projects")
+    for_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null = True)
+    assignment = models.ForeignKey(
+        "Assignment",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="projects",
+    )
+
+    created_at = models.DateTimeField(auto_now_add = True)
+    last_edited = models.DateTimeField(auto_now = True)
+
+    name = models.CharField(max_length = 200, blank = True, null = True)
+
+    is_template = models.BooleanField(default=False)
+
+    submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "for_class", "assignment"],
+                name="unique_user_class_assignment_project"
+            )
+        ]
+    def __str__(self):
+        return f"{self.name} ({self.owner})"
+
+
+def project_file_path(instance, filename):
+    project = instance.project
+    return f"projects/user_{project.owner.id}/project_{project.id}/{instance.path}"
     
+class ProjectFile(models.Model):
+    project = models.ForeignKey(CodeProject, related_name="files", on_delete=models.CASCADE)
+    path = models.CharField(max_length=300)
+    file = models.FileField(storage = MediaRootS3Boto3Storage(), upload_to=project_file_path)
+    last_edited = models.DateTimeField(auto_now = True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint (
+                fields = ["project", "path"],
+                name = "unique_file_path_per_project"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.project.name} - {self.path}"

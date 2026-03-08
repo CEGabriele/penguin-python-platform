@@ -213,7 +213,7 @@ async function ensurePyodide() {
 
 // ---------------- MESSAGE HANDLER ----------------
 self.onmessage = async (event) => {
-  const { type, code, value, usesPygame, usesTurtle } = event.data || {};
+  const { type, code, value, usesPygame, usesTurtle, files, entry } = event.data || {};
   try {
     if (type === 'input_response') {
       await ensurePyodide();
@@ -232,15 +232,46 @@ if '_input_response' in globals():
       pyodide.runPython(`_input_abort()`);
       return;
     }
-
-    if (type === 'run') {
+    if (type === "run_project") {
       await ensurePyodide();
-      const wrapped = autoWrapAsync(code);
+    
+      const projectFiles = files || {};
+      const entryFile = entry || "main.py";
+    
       try {
-        await pyodide.runPythonAsync(wrapped);
+    
+        // clear previous files (important)
+        try {
+          const entries = pyodide.FS.readdir(".");
+          for (const f of entries) {
+            if (f!== "." && f!== ".." && f.endsWith(".py")) {
+              try { pyodide.FS.unlink(f); } catch {}
+            }
+          }
+        } catch {}
+    
+        // write project files
+        for (const [path, content] of Object.entries(projectFiles)) {
+          pyodide.FS.writeFile(path, content || "");
+        }
+    
+        // determine module name
+        const moduleName = entryFile.replace(".py", "");
+    
+        // run the entry module
+        await pyodide.runPythonAsync(`
+import sys, importlib
+
+sys.path.append(".")
+importlib.invalidate_caches()
+
+import ${moduleName}
+`);
+    
       } catch (e) {
         safePost({ type: "error", error: "[Python error] " + e.toString() });
       }
+    
       safePost({ type: "done" });
       return;
     }

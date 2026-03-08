@@ -23,6 +23,8 @@ let lastRunUsedPygame = false;
 let lastRunUsedTurtle = false;
 let lastSavedCode = "";
 let autosaveTimer;
+let projectId = null;
+let currentFilePath = "main.py";
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -43,6 +45,12 @@ require(['vs/editor/editor.main'], function () {
   });
   lastSavedCode = editor.getValue();
 
+  projectId = document.getElementById("project_id")?.value || null;
+  if (!projectId || projectId === "None") {
+    projectId = null;
+  }
+  currentFilePath = document.getElementById("current_file_path")?.value || "main.py";
+
   if (window.IS_READONLY) {
     editor.updateOptions({ readOnly: true });
   }
@@ -60,7 +68,7 @@ require(['vs/editor/editor.main'], function () {
   updateHeight();
   editor.onDidContentSizeChange(updateHeight);
   editor.onDidChangeModelContent(onEditorChange);
-  setInterval(autosave, 60000); // periodic autosave every minute
+  setInterval(autosave, 6000); // periodic autosave every minute
 });
 
 
@@ -248,9 +256,31 @@ async function runCode() {
     try { abortController.abort(); } catch {}
     abortController = null;
   }
+
+  let files = {
+    [currentFilePath]: rawCode
+  };
+  
+  if (projectId && projectId !== "None") {
+    try {
+      const response = await fetch(`/dashboard/editor/project/${projectId}/files/`);
+      const data = await response.json();
+  
+      if (data.ok && data.files) {
+        files = data.files;
+  
+        // override with editor contents
+        files[currentFilePath] = rawCode;
+      }
+    } catch (err) {
+      console.warn("Failed loading project files:", err);
+    }
+  }
+  
   worker.postMessage({
-    type: 'run',
-    code: rawCode,
+    type: "run_project",
+    files: files,
+    entry: currentFilePath,
     usesPygame,
     usesTurtle
   });
@@ -312,6 +342,23 @@ window.EditorAPI = {
   setReadOnly: (state) => editor?.updateOptions({ readOnly: state }),
 };
 
+window.EditorProject = {
+  getProjectId: () => projectId,
+  setProjectId: (id) => {
+    projectId = id || null;
+  },
+  getCurrentFile: () => currentFilePath,
+  setCurrentFile: (path) => {
+    currentFilePath = path || "main.py";
+  },
+  resetLastSavedCode: (code) => {
+    lastSavedCode = code ?? "";
+  },
+  clearAutosaveTimer: () => {
+    clearTimeout(autosaveTimer);
+  }
+};
+
 
 function getCookie(name) {
   let cookieValue = null;
@@ -331,21 +378,13 @@ function getCookie(name) {
 async function autosave() {
   if (window.IS_READONLY) return;
   if (!editor || !editor.getModel()) return;
-  const { classSelect, nameInput, statusSpan } = getEls();
-  if (!classSelect || !statusSpan) return;
+  const { statusSpan } = getEls();
+  if (!statusSpan) return;
 
   const code = editor.getValue();
-  const class_id = classSelect?.value;
-  const rawName = nameInput?.value?.trim() || "";
+  if (!projectId) return;
 
-  if (!rawName) {
-    statusSpan.textContent = "Please enter a file name to save the file";
-    nameInput?.focus();
-    return;
-  }
-
-const name = rawName;
-  if (code === lastSavedCode || !class_id) return;
+  if (code === lastSavedCode) return;
 
   try {
     const response = await fetch(window.location.href, {
@@ -355,9 +394,9 @@ const name = rawName;
         "X-CSRFToken": getCookie("csrftoken"),
       },
       body: JSON.stringify({
+        project_id: projectId,
+        path: currentFilePath,
         code: code,
-        class_id: class_id,
-        name: name,
       }),
     });
     if (response.ok) {
@@ -365,14 +404,6 @@ const name = rawName;
     
       statusSpan.textContent = "Autosaved";
       lastSavedCode = code;
-    
-      if (data.ok && data.upload_id && window.moveFileToTop) {
-        window.moveFileToTop(
-          data.upload_id,
-          data.class_id,
-          data.last_edited
-        );
-      }
     } else {
       statusSpan.textContent = "Save failed";
     }
@@ -386,7 +417,7 @@ const name = rawName;
 
 function onEditorChange() {
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(autosave, 60000);
+  autosaveTimer = setTimeout(autosave, 600);
 }
 
 function getEls() {
