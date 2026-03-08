@@ -37,7 +37,7 @@
                             <span class="muted">
                                 — due {{ assigned.due_date|date:"M j, Y" }}
                             </span>
-                            <a href="{% url 'teacher_class_view' assigned.for_class.id %}">
+                            <a href="{% url 'teacher_class_view' assigned.for_class.code %}">
                                 View Class
                         </li>
                     {% endfor %}

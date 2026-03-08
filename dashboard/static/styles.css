@@ -435,19 +435,15 @@ a {
     border-bottom: 1px solid;
  }
     */
- #controls {
-    background: transparent;
+#controls {
     display: flex;
-    align-items: center; /* going to vertically center items */
-    gap:20px;
-    font-size:1.1rem;
-    justify-content: flex-start; /* on the right side */
-    padding: .1px 24px; /*inner spacing*/
-    margin-left: -10px; /*move to left side*/
-    margin-top: 32px; /*spacing below*/
-    margin-bottom:-5px;
-    padding-top:0px;
+    align-items: center;
+    gap: 12px;
 
+    padding: 6px 12px;
+    margin: 6px 0 8px 0;
+
+    font-size: 0.9rem;
 }
     
 
@@ -498,6 +494,7 @@ a {
     flex-direction: row;
     overflow: hidden;
     min-height: 0;
+    gap: 8px;
  }
  
  /* Make the editor area a positioned container */
@@ -531,6 +528,10 @@ a {
     cursor: pointer;
     font-size: 32px;               /* icon size */
     color: #1f2a44;/* #444; */                  /* icon color */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
 }
 
 .icon-btn:focus {
@@ -545,19 +546,20 @@ a {
     border-right: 1px solid #444;
     text-align: left;
     position: relative;   /* ← add this */
+    border-radius: 10px;
+    overflow: hidden;
+    border:1px solid rgba(0,0,0,0.08);
 }
 
- #console, .console {
-    width: 40%;
-    background: #111;
-    color: white;
-    padding: 10px;
-    overflow-y: auto;
-    font-family: monospace;
-    font-size: 14px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    text-align: left;
+#console, .console {
+    width:35%;
+    background:#1e1e1e;
+    color:#eaeaea;
+    padding:12px;
+    overflow-y:auto;
+    font-family:monospace;
+    font-size:14px;
+    border-radius:10px;
  }
  
 #userInput, .userInput{
@@ -609,14 +611,15 @@ a {
 
 .side-menu{
   position: fixed;
+  top: var(--nav-height);
   left: 0; 
-  top: calc(56px + 6vh); /* align with bubble(fix height) */
-  left: 0; 
-  top: var(--nav-height) + 10px;
-  width: 140px;
-  height: 100vh;
-  z-index: 2000;
+  width: 180px;
   height: calc(100vh - var(--nav-height));
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+  padding: 12px 10px;
+  overflow-y: auto;
 }
 
 .page-bubble {
@@ -626,9 +629,8 @@ a {
     bottom: 0; /*change this to 0 to make it stick to the bottom */
     left: 180px;
     height: calc(100vh - var(--nav-height));
-    padding: 32px;
+    padding: 16px 18px;
     background:#f4faff;/* #fff;*/
-    border-radius: 18px;
 
     display: flex;
     flex-direction: column;
@@ -889,15 +891,25 @@ padding-top: 0 !important;
 }
 
 .project-section{
-    padding:10px;
+    padding:6px;
 }
 
 .project-header{
     display:flex;
-    justify-content:space-between;
     align-items:center;
     font-weight:600;
-    margin-bottom:8px;
+    margin-bottom:4px;
+}
+
+.project-header span{
+    font-weight: 600;
+    margin-right: auto;
+}
+
+.project-header .icon-btn{
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
 }
 
 .project{
@@ -906,21 +918,33 @@ padding-top: 0 !important;
 
 .project-title{
     cursor:pointer;
-    padding:4px;
+    padding:6px 8px;
+    border-radius:6px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.project-title:hover{
+    background:#eef6ff;
 }
 
 .project-files{
-    margin-left:15px;
+    margin-left:18px;
+    margin-top:4px;
 }
 
 .project-file{
     cursor:pointer;
-    padding:3px;
+    padding:5px 8px;
+    border-radius:6px;
     display:flex;
     gap:6px;
     align-items:center;
+    font-size:0.9rem;
 }
 
 .project-file:hover{
-    background:#2a2a2a;
+    background:#f4faff;
 }
