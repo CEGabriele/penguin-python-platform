@@ -43,10 +43,6 @@
             <button id="newProjectBtn" class="icon-btn">
                 <i class="fa-solid fa-plus"></i>
             </button>
-
-            <button id="newFileBtn" class="icon-btn" title="New File">
-                <i class="fa-solid fa-file-circle-plus"></i>
-            </button>
         </div>
     
         <div id="projectTree"></div>
@@ -425,10 +421,29 @@ function toggleMenu() {
             const title = document.createElement("div");
             title.className = "project-title";
             title.innerHTML = `
-                <i class="fa-solid fa-folder"></i>
-                ${project.name}
+                <span class="project-name">
+                    <i class="fa-solid fa-chevron-right project-arrow"></i>
+                    <i class="fa-solid fa-folder"></i>
+                    ${project.name}
+                </span>
+            
+                <button class="icon-btn new-file-btn" data-project="${project.id}">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
             `;
-            title.onclick = () => {
+            title.querySelector(".new-file-btn").onclick = (e) => {
+
+                // prevent clicking the button from triggering the project open
+                e.stopPropagation();
+            
+                createFile(project.id);
+            };
+
+            title.onclick = (e) => {
+                if(e.target.closest(".new-file-btn")) return;
+            
+                projectDiv.classList.toggle("open");
+            
                 let mainFile = project.files.find(f => f === "main.py");
             
                 if (!mainFile) {
@@ -439,6 +454,7 @@ function toggleMenu() {
                     openFile(project.id, mainFile);
                 }
             };
+            
     
             const filesDiv = document.createElement("div");
             filesDiv.className = "project-files";
@@ -452,13 +468,33 @@ function toggleMenu() {
                     ${file}
                 `;
     
-                f.onclick = () => openFile(project.id, file);
+                f.onclick = () => {
+                    
+                    document.querySelectorAll(".project-file")
+                    .forEach(i => i.classList.remove("active"));
+
+                    f.classList.add("active");
+
+                    openFile(project.id, file);
+                }
     
                 filesDiv.appendChild(f);
             });
     
             projectDiv.appendChild(title);
             projectDiv.appendChild(filesDiv);
+
+            const newRow = document.createElement("div");
+
+        newRow.className = "project-file new-file-row";
+        newRow.innerHTML = `
+            <i class="fa-solid fa-plus"></i>
+            New file
+        `;
+
+        newRow.onclick = () => createFile(project.id);
+
+        filesDiv.appendChild(newRow);
     
             tree.appendChild(projectDiv);
         });
@@ -471,9 +507,15 @@ function toggleMenu() {
             }
         
             openFile(firstProject.id, mainFile);
+            setTimeout(() => {
+                const firstFile = document.querySelector(".project-file");
+                if(firstFile) firstFile.classList.add("active");
+            }, 50);
         }
     }
     async function openFile(pid, filePath) {
+        document.querySelectorAll(".project-file")
+
         const res = await fetch(
             `/dashboard/editor/project/${pid}/file/${filePath}/`
         );
@@ -494,82 +536,61 @@ function toggleMenu() {
         }
     }
 
-    document
-.getElementById("newProjectBtn")
-.addEventListener("click", async () => {
+    async function  createFile(pid){
+        let filename = prompt("New file name:");
 
-    const name = prompt("Project name:");
+        if(!filename) return;
 
-    if(!name) return;
+        if(!filename.endsWith(".py")){
+            filename += ".py";
+        }
 
-    const res = await fetch("/dashboard/editor/create-project/", {
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-            "X-CSRFToken":getCsrfToken()
-        },
-        body:JSON.stringify({name})
-    });
-
-    const data = await res.json();
-
-    if(data.ok){
-        loadProjects();
-    }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    loadProjects();
-});
-
-document.getElementById("newFileBtn").addEventListener("click", async () => {
-    let pid = document.getElementById("project_id").value || null;
-
-    if (pid === "" || pid === "None") {
-        pid = null;
-    }
-
-    if(!pid){
-        alert("Open a project first");
-        return;
-    }
-    let filename = prompt("New file name (example: card.py)");
-
-    if(!filename) return;
-
-    if(!filename.endsWith(".py")){
-        filename += ".py";
-    }
-
-    const res = await fetch(
-        `/dashboard/editor/project/${pid}/create-file/`,
-        {
+        const res = await fetch(`/dashboard/editor/project/${pid}/create-file/`,{
             method:"POST",
             headers:{
                 "Content-Type":"application/json",
                 "X-CSRFToken":getCsrfToken()
             },
-            body:JSON.stringify({
-                path: filename
-            })
+            body:JSON.stringify({path:filename})
+        });
+
+        const data = await res.json();
+
+        if(data.ok){
+            loadProjects();
+            openFile(pid, filename);
+        } else {
+            alert("Could not create file");
         }
-    );
-
-    const data = await res.json();
-
-    if(data.ok){
-
-        loadProjects();
-
-        // open the new file
-        openFile(pid, filename);
-
-    }else{
-
-        alert("Could not create file");
-
     }
 
-});
+    document
+    .getElementById("newProjectBtn")
+    .addEventListener("click", async () => {
+
+        const name = prompt("Project name:");
+
+        if(!name) return;
+
+        const res = await fetch("/dashboard/editor/create-project/", {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({name})
+        });
+
+        const data = await res.json();
+
+        if(data.ok){
+            loadProjects();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadProjects();
+    });
+
   </script>
 {% endblock %}

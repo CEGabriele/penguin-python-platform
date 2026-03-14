@@ -925,6 +925,7 @@ padding-top: 0 !important;
     display:flex;
     align-items:center;
     gap:6px;
+    justify-content: space-between;
 }
 
 .project-title:hover{
@@ -934,6 +935,9 @@ padding-top: 0 !important;
 .project-files{
     margin-left:18px;
     margin-top:4px;
+    border-left:1px solid rgba(0,0,0,0.08);
+    padding-left:6px;
+
 }
 
 .project-file{
@@ -947,5 +951,69 @@ padding-top: 0 !important;
 }
 
 .project-file:hover{
+    background:#eef6ff;
+    transform:translateX(2px);
+    
+}
+
+.project-name{
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+.project-title .icon-btn{
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+}
+
+.project-file.active{
+    background: rgba(252,164,43,0.18);
+    border-radius:6px;
+    font-weight:500;
+}
+
+.project-file.active i{
+    color: rgba(252,164,43,0.9);
+}
+
+.project-title{
+    cursor:pointer;
+    padding:6px 8px;
+    border-radius:6px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.project-title:hover{
+    background:#eef6ff;
+}
+
+.new-file-row{
+    color:#888;
+    font-style:italic;
+}
+
+.new-file-row:hover{
     background:#f4faff;
+}
+
+.project-arrow{
+    font-size:12px;
+    margin-right:4px;
+    transition:transform 0.2s ease;
+}
+
+.project.open .project-arrow{
+    transform:rotate(90deg);
+}
+
+.project-files{
+    display:none;
+}
+
+.project.open .project-files{
+    display:block;
 }
