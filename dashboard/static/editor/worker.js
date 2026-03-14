@@ -13,6 +13,9 @@ try {
 
 let pyodide = null;
 let frameTimer = null;
+let pygameLoaded = false;
+let lastProjectFiles = {};
+let pyodideReady = false
 
 const _origPostMessage = self.postMessage.bind(self);
 self.safePost = (msg) => {
@@ -207,6 +210,7 @@ async function ensurePyodide() {
       home: (...args) => safePost({ type: "turtle_call", method: "home", args }),
     });
     
+    pyodideReady = true;
     safePost({ type: "ready" });
   }
 }
@@ -232,29 +236,38 @@ if '_input_response' in globals():
       pyodide.runPython(`_input_abort()`);
       return;
     }
+    if (type === "ping_ready") {
+      if (pyodideReady) {
+        safePost({ type: "ready" });
+      }
+      return;
+    }
+    
     if (type === "run_project") {
       await ensurePyodide();
-    
+
+      if (usesPygame && !pygameLoaded) {
+        await pyodide.loadPackage("pygame-ce");
+        pygameLoaded = true;
+      }
+      
       const projectFiles = files || {};
       const entryFile = entry || "main.py";
-    
+      
       try {
-    
-        // clear previous files (important)
-        try {
-          const entries = pyodide.FS.readdir(".");
-          for (const f of entries) {
-            if (f!== "." && f!== ".." && f.endsWith(".py")) {
-              try { pyodide.FS.unlink(f); } catch {}
-            }
-          }
-        } catch {}
-    
-        // write project files
         for (const [path, content] of Object.entries(projectFiles)) {
-          pyodide.FS.writeFile(path, content || "");
+          if (lastProjectFiles[path] !== content) {
+            pyodide.FS.writeFile(path, content || "");
+          }
         }
-    
+      
+        for (const oldPath of Object.keys(lastProjectFiles)) {
+          if (!(oldPath in projectFiles)) {
+            try { pyodide.FS.unlink(oldPath); } catch {}
+          }
+        }
+      
+        lastProjectFiles = { ...projectFiles };      
         // determine module name
         const moduleName = entryFile.replace(".py", "");
     
@@ -265,8 +278,13 @@ import sys, importlib
 sys.path.append(".")
 importlib.invalidate_caches()
 
-import ${moduleName}
-`);
+module_name = ${JSON.stringify(moduleName)}
+if module_name in sys.modules:
+    del sys.modules[module_name]
+
+importlib.import_module(module_name)
+        `);
+        
     
       } catch (e) {
         safePost({ type: "error", error: "[Python error] " + e.toString() });
@@ -279,3 +297,4 @@ import ${moduleName}
     safePost({ type: "error", error: err?.toString?.() || String(err) });
   }
 };
+ensurePyodide();

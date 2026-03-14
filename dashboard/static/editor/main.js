@@ -25,6 +25,8 @@ let lastSavedCode = "";
 let autosaveTimer;
 let projectId = null;
 let currentFilePath = "main.py";
+let cachedProjectFiles = null;
+let cachedProjectId = null;
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -143,14 +145,16 @@ function ensureTurtleCanvas() {
   return canvas;
 }
 
-function initWorker(){
-  if (worker) worker.terminate();
-  worker = new Worker(window.WORKER_URL, {type: 'classic'});
-  
-  worker.onmessage = (e) => {
+let workerReady = false;
+
+function attachWorkerHandlers(w) {
+  w.onmessage = (e) => {
+    console.log("worker message:", e.data);
     const message = e.data;
     switch (message.type) {
       case 'ready':
+        workerReady = true;
+        window.sharedPyWorkerReady = true;
         break;
       case 'stdout':
         console_write(message.data);
@@ -160,23 +164,23 @@ function initWorker(){
         (async () => {
           try {
             const inputValue = await window.console_input(promptText);
-            worker.postMessage({ type: 'input_response', value: inputValue });
+            w.postMessage({ type: 'input_response', value: inputValue });
           } catch {
-            worker.postMessage({ type: 'input_abort'});
+            w.postMessage({ type: 'input_abort' });
           }
         })();
         break;
       }
       case 'turtle_call': {
         try {
-          const {method, args} = message;
+          const { method, args } = message;
           if (typeof turtleModule[method] === 'function') {
             turtleModule[method](...args);
-          } 
+          }
         } catch (e) {
           console.warn('turtle_call error:', e);
         }
-        break
+        break;
       }
       case 'done':
         codeRunning = false;
@@ -189,7 +193,51 @@ function initWorker(){
   };
 }
 
+function initWorker() {
+  workerReady = false;
+
+  if (window.sharedPyWorker) {
+    worker = window.sharedPyWorker;
+    attachWorkerHandlers(worker);
+    workerReady = !!window.sharedPyWorkerReady;
+    worker.postMessage({ type: "ping_ready" });
+    return;
+  }
+
+  worker = new Worker(window.WORKER_URL, { type: 'classic' });
+  window.sharedPyWorker = worker;
+  window.sharedPyWorkerReady = false;
+  attachWorkerHandlers(worker);
+  worker.postMessage({ type: "ping_ready" });
+
+}
+
+
 initWorker();
+
+async function loadProjectFilesIfNeeded() {
+  if (!projectId || projectId === "None") {
+    cachedProjectFiles = {};
+    cachedProjectId = null;
+    return {};
+  }
+
+  if (cachedProjectId === projectId && cachedProjectFiles) {
+    return { ...cachedProjectFiles };
+  }
+
+  const response = await fetch(`/dashboard/editor/project/${projectId}/files/`);
+  const data = await response.json();
+
+  if (data.ok && data.files) {
+    cachedProjectFiles = data.files;
+    cachedProjectId = projectId;
+    return { ...cachedProjectFiles };
+  }
+
+  return {};
+}
+
 
 
 // runs when run button is pressed
@@ -197,6 +245,11 @@ async function runCode() {
   if (!editor) return;
   // make sure everything is ready
   if (codeRunning) return alert('Code is already running.');
+  if (!workerReady) {
+    alert("Python is still loading. Try again in a moment.");
+    return;
+  }
+  
 
   codeRunning = true;
   inputInProgress = false;
@@ -226,22 +279,6 @@ async function runCode() {
   if (pygameCanvas) pygameCanvas.style.display = usesPygame ? 'inline-block' : 'none';
   if (turtleCanvas) turtleCanvas.style.display = usesTurtle ? 'inline-block' : 'none';
 
-  // load pygame before running
-  if (usesPygame) {
-    await pyodide.loadPackage('pygame-ce');
-
-    // SDL things
-    window.Module = pyodide._module;
-    Module.canvas = pygameCanvas;
-    pygameCanvas.style.background = '#111';
-
-    // keep editor focused for now so pygame doesn't grab it
-    pygameCanvas.setAttribute('tabindex', '-1');
-    pygameCanvas.addEventListener('focus', (e) => {
-        e.preventDefault();
-        editor?.focus();
-    });
-  }
 
   // turtle setup if using
   if (usesTurtle) {
@@ -263,19 +300,13 @@ async function runCode() {
   
   if (projectId && projectId !== "None") {
     try {
-      const response = await fetch(`/dashboard/editor/project/${projectId}/files/`);
-      const data = await response.json();
-  
-      if (data.ok && data.files) {
-        files = data.files;
-  
-        // override with editor contents
-        files[currentFilePath] = rawCode;
-      }
+      files = await loadProjectFilesIfNeeded();
+      files[currentFilePath] = rawCode;
     } catch (err) {
       console.warn("Failed loading project files:", err);
     }
   }
+  
   
   worker.postMessage({
     type: "run_project",
@@ -321,10 +352,6 @@ async function stopCode() {
   inputInProgress = false;
   codeRunning = false;
 
-  if (worker) {
-    worker.terminate();
-    initWorker();
-  }
   clearTurtleCanvasIfVisible();
   hideGraphics();
 
@@ -346,6 +373,8 @@ window.EditorProject = {
   getProjectId: () => projectId,
   setProjectId: (id) => {
     projectId = id || null;
+    cachedProjectId = null;
+    cachedProjectFiles = null;
   },
   getCurrentFile: () => currentFilePath,
   setCurrentFile: (path) => {
