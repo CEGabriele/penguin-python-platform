@@ -399,7 +399,20 @@ function toggleMenu() {
 });
 
     });
+
+    function getOpenProjects() {
+        const open = new Set();
+    
+        document.querySelectorAll(".project.open").forEach(p => {
+            const name = p.querySelector(".project-name")?.textContent.trim();
+            if (name) open.add(name);
+        });
+    
+        return open;
+    }
+
     async function loadProjects() {
+        const openProjects = getOpenProjects();
 
         const res = await fetch("/dashboard/editor/projects/");
         const data = await res.json();
@@ -417,6 +430,10 @@ function toggleMenu() {
     
             const projectDiv = document.createElement("div");
             projectDiv.className = "project";
+
+            if (openProjects.has(project.name)) {
+                projectDiv.classList.add("open");
+            }
     
             const title = document.createElement("div");
             title.className = "project-title";
@@ -464,11 +481,37 @@ function toggleMenu() {
                 const f = document.createElement("div");
                 f.className = "project-file";
                 f.innerHTML = `
-                    <i class="fa-solid fa-file"></i>
-                    ${file}
+                    <span class="file-left">
+                        <i class="fa-solid fa-file"></i>
+                        ${file}
+                    </span>
+
+                    <div class="file-menu">
+                        <button class="menu-btn">⋯</button>
+
+                        <div class="menu-dropdown">
+                            <button onclick="renameFile(${project.id}, '${file}')">Rename</button>
+                            <button onclick="deleteFile(${project.id}, '${file}')">Delete</button>
+                        </div>
+                    </div>
                 `;
+
+                const menuBtn = f.querySelector(".menu-btn");
+                const fileMenu = f.querySelector(".file-menu");
+
+                menuBtn.onclick = (e) => {
+                    e.stopPropagation();
+
+                    document.querySelectorAll(".file-menu")
+                        .forEach(m => m.classList.remove("open"));
+
+                    fileMenu.classList.toggle("open");
+                };
+
     
-                f.onclick = () => {
+                f.onclick = (e) => {
+
+                    if (e.target.closest(".file-menu")) return;
                     
                     document.querySelectorAll(".project-file")
                     .forEach(i => i.classList.remove("active"));
@@ -590,6 +633,58 @@ function toggleMenu() {
 
     document.addEventListener("DOMContentLoaded", () => {
         loadProjects();
+    });
+
+    async function renameFile(projectId, oldPath){
+        const newName = prompt("New file name:", oldPath);
+
+        if(!newName || newName === oldPath) return;
+
+        const res = await fetch(`/dashboard/editor/project/${projectId}/rename-file/`, {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({old_path:oldPath, new_path:newName})
+        });
+
+        const data = await res.json();
+
+        if(data.ok){
+            loadProjects();
+            openFile(projectId, newName);
+        } else {
+            alert("Could not rename file");
+        }
+    }
+
+    async function deleteFile(projectId, path){
+        if(!confirm(`Are you sure you want to delete ${path}? This cannot be undone.`)){
+            return;
+        }
+
+        const res = await fetch(`/dashboard/editor/project/${projectId}/delete-file/`, {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({path})
+        });
+
+        const data = await res.json();
+
+        if(data.ok){
+            loadProjects();
+        } else {
+            alert("Could not delete file");
+        }
+    }
+
+    document.addEventListener("click", () => {
+        document.querySelectorAll(".file-menu")
+            .forEach(m => m.classList.remove("open"));
     });
 
   </script>

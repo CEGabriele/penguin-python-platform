@@ -1222,6 +1222,9 @@ def create_project_file(request, project_id):
 
     if not path:
         return JsonResponse({"ok": False})
+    
+    if not path.endswith(".py"):
+        path += ".py"
 
     project = get_object_or_404(
         CodeProject,
@@ -1241,3 +1244,38 @@ def create_project_file(request, project_id):
         "ok": True,
         "created": created
     })
+
+@login_required
+@csrf_exempt
+def rename_file(request, pid):
+    data = json.loads(request.body)
+
+    oldPath = data.get("old_path")
+    newPath = data.get("new_path")
+
+    if not newPath.endswith(".py"):
+        newPath += ".py"
+
+
+    project = get_object_or_404(CodeProject, id=pid, owner=request.user)
+    file = get_object_or_404(ProjectFile, project=project, path=oldPath)
+
+    
+
+    file.path = newPath
+    file.file.name = newPath
+    file.save()
+
+    return JsonResponse({"ok": True})
+
+@login_required
+@csrf_exempt
+def delete_file(request, pid):
+    data = json.loads(request.body)
+
+    path = data.get("path")
+
+    project = get_object_or_404(CodeProject, id=pid, owner=request.user)
+    file = get_object_or_404(ProjectFile, project=project, path=path)
+    file.delete()
+    return JsonResponse({"ok": True})
