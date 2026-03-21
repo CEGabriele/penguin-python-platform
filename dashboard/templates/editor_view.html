@@ -600,7 +600,7 @@ function toggleMenu() {
         const data = await res.json();
 
         if(data.ok){
-            loadProjects();
+            await loadProjects();
             openFile(pid, filename);
         } else {
             alert("Could not create file");
@@ -652,7 +652,7 @@ function toggleMenu() {
         const data = await res.json();
 
         if(data.ok){
-            loadProjects();
+            await loadProjects();
             openFile(projectId, newName);
         } else {
             alert("Could not rename file");

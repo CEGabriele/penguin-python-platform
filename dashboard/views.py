@@ -1247,7 +1247,7 @@ def create_project_file(request, project_id):
 
 @login_required
 @csrf_exempt
-def rename_file(request, pid):
+def rename_file(request, project_id):
     data = json.loads(request.body)
 
     oldPath = data.get("old_path")
@@ -1257,25 +1257,36 @@ def rename_file(request, pid):
         newPath += ".py"
 
 
-    project = get_object_or_404(CodeProject, id=pid, owner=request.user)
-    file = get_object_or_404(ProjectFile, project=project, path=oldPath)
+    project = get_object_or_404(CodeProject, id=project_id, owner=request.user)
+    old_file = get_object_or_404(ProjectFile, project=project, path=oldPath)
 
-    
+    if ProjectFile.objects.filter(project=project, path=newPath).exists():
+        return JsonResponse({"ok": False, "error": "File already exists"})
+    try:
+        old_file.file.open("rb")
+        content = old_file.file.read()
+    except Exception:
+        content = b""
 
-    file.path = newPath
-    file.file.name = newPath
-    file.save()
+    new_file = ProjectFile.objects.create(
+        project=project,
+        path=newPath,
+    )
+
+    new_file.file.save(newPath, ContentFile(content), save=True)
+
+    old_file.file.delete(save=False)
+    old_file.delete()
 
     return JsonResponse({"ok": True})
-
 @login_required
 @csrf_exempt
-def delete_file(request, pid):
+def delete_file(request, project_id):
     data = json.loads(request.body)
 
     path = data.get("path")
 
-    project = get_object_or_404(CodeProject, id=pid, owner=request.user)
+    project = get_object_or_404(CodeProject, id=project_id, owner=request.user)
     file = get_object_or_404(ProjectFile, project=project, path=path)
     file.delete()
     return JsonResponse({"ok": True})
