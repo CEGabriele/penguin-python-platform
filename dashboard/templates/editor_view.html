@@ -431,6 +431,51 @@ function toggleMenu() {
             const projectDiv = document.createElement("div");
             projectDiv.className = "project";
 
+            projectDiv.addEventListener("dragover", (e) => {
+                e.preventDefault();
+            });
+
+            projectDiv.addEventListener("dragenter", () => {
+                projectDiv.classList.add("drag-over");
+            });
+            
+            projectDiv.addEventListener("dragleave", () => {
+                projectDiv.classList.remove("drag-over");
+            });
+            
+            projectDiv.addEventListener("drop", () => {
+                projectDiv.classList.remove("drag-over");
+            });
+
+            projectDiv.addEventListener("drop", async (e) => {
+                e.preventDefault();
+            
+                const path = e.dataTransfer.getData("path");
+                const fromProjectId = e.dataTransfer.getData("fromProjectId");
+                const toProjectId = project.id;
+            
+                if (!path || fromProjectId == toProjectId) return;
+            
+                const draggingEl = document.querySelector(".dragging");
+                if (!draggingEl) return;
+            
+                const res = await moveFile(fromProjectId, toProjectId, path);
+                if (!res) return;
+            
+                const targetFilesDiv = projectDiv.querySelector(".project-files");
+            
+                const newRow = targetFilesDiv.querySelector(".new-file-row");
+
+                if (newRow) {
+                    targetFilesDiv.insertBefore(draggingEl, newRow);
+                } else {
+                    targetFilesDiv.appendChild(draggingEl);
+                }
+            
+                draggingEl.dataset.projectId = toProjectId;
+                draggingEl.classList.remove("dragging");
+            });
+
             if (openProjects.has(project.name)) {
                 projectDiv.classList.add("open");
             }
@@ -480,6 +525,22 @@ function toggleMenu() {
     
                 const f = document.createElement("div");
                 f.className = "project-file";
+                f.draggable = true;
+
+                f.dataset.path = file
+                f.dataset.projectId = project.id;
+
+                f.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("path", f.dataset.path);
+                    e.dataTransfer.setData("fromProjectId", f.dataset.projectId);
+
+                    f.classList.add("dragging");
+                });
+
+                f.addEventListener("dragend", () => {
+                    f.classList.remove("dragging");
+                });
+                
                 f.innerHTML = `
                     <span class="file-left">
                         <i class="fa-solid fa-file"></i>
@@ -686,6 +747,30 @@ function toggleMenu() {
         document.querySelectorAll(".file-menu")
             .forEach(m => m.classList.remove("open"));
     });
+
+    async function moveFile(fromProjectId, toProjectId, path) {
+        const res = await fetch(`/dashboard/editor/move-file/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify({
+                from_project: fromProjectId,
+                to_project: toProjectId,
+                path: path
+            })
+        });
+    
+        const data = await res.json();
+    
+        if (!data.ok) {
+            alert(data.error || "Move failed");
+            return false;
+        }
+    
+        return true;
+    }
 
   </script>
 {% endblock %}

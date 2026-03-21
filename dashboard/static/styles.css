@@ -1077,3 +1077,7 @@ padding-top: 0 !important;
 .file-menu.open .menu-dropdown{
     display:flex;
 }
+
+.project.drag-over {
+    background: rgba(252,164,43,0.15);
+}

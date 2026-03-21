@@ -1290,3 +1290,24 @@ def delete_file(request, project_id):
     file = get_object_or_404(ProjectFile, project=project, path=path)
     file.delete()
     return JsonResponse({"ok": True})
+
+@login_required
+@csrf_exempt
+def move_file(request):
+    data = json.loads(request.body)
+    from_project_id = data.get("from_project")
+    to_project_id = data.get("to_project")
+    path = data.get("path")
+
+    from_project = get_object_or_404(CodeProject, id=from_project_id, owner=request.user)
+    to_project = get_object_or_404(CodeProject, id=to_project_id, owner=request.user)
+
+    file = get_object_or_404(ProjectFile, project=from_project, path=path)
+
+    if ProjectFile.objects.filter(project=to_project, path=path).exists():
+        return JsonResponse({"ok": False, "error": "File already exists in target project"})
+    
+    file.project = to_project
+    file.save()
+
+    return JsonResponse({"ok": True})
