@@ -31,6 +31,7 @@ urlpatterns = [
     path("editor/project/<int:project_id>/file/<path:file_path>/",editor_project_file),
     path("editor/project/<int:project_id>/create-file/",create_project_file),
     path("editor/project/<int:project_id>/files/", get_project_files),
+    path("editor/project/<int:project_id>/teacher-files/", get_project_files_for_teacher, name="teacher_project_files"),
     path("editor/project/<int:project_id>/rename-file/", rename_file),
     path("editor/project/<int:project_id>/delete-file/", delete_file),
     path("editor/move-file/", move_file, name="move_file"),

@@ -5,95 +5,76 @@
    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 {% endblock%}
 {% block content %}
-   <h1>{{class.name}}</h1>
-   <p>{{class.day}} - {{class.time}}</p>
-
-   <!---
-   <div class = "class-feed">
-      <h1>Class Materials</h1>
-      <h2>Available Homework Templates</h2>
-      {% for template in homework_templates %}
-         <div class = "feed-card">
-            <h4>{{template.name}}</h4>
-            <p>{{template.description}}</p>
-
-            <div id = "assign-section-{{template.id}}">
-               <button hx-get="{% url 'get_homework_due_date_form' class.id template.id %}" hx-target="#assign-section-{{template.id}}" hx-swap = "outerHTML"> 
-                  Assign to Class
-               </button>
-            </div>
-         </div>
-      {% empty %}
-         <li>No homework templates available.</li>
-      {% endfor %}
-
-
-   </div>
--->
-   
-   <div class = 'class-info'>
-      <h1>Class Info</h1>
-      <h2>Students</h2>
-      <div class="student-grid">
-         {% for student in students%}
-             <div class = "student-card">
-                  <a href="{% url 'view_student' student.user.username%}" class = "button"> {{student.user.get_full_name|default:student.user.username}}</a>
-             </div>
-         {%endfor%}
-     </div>
-   <!--
-   <h2>Assigned Assignments</h2>
-     {% for assignment in assigned_homeworks%}
-         <div class = "assignment-card">    
-            <h3>{{assignment.template.name}}</h3>
-            <p>Due {{ assignment.due_date}}</p>
-            <a href = "{% url 'responses_view' assignment.id%}" class = "button">View assignment details</a>
-         </div>
-      {%endfor%}
-   </div>
-   -->
-   <ul>
-      {% for assigned in assigned_assignments %}
-          <li>
-              <strong>{{ assigned.assignment.title }}</strong><br>
-              Due: {{ assigned.due_date }}<br>
+   <div class="class-page">
       
-              <a href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
-                  Assignment Details
-              </a>
-              |
-              <a href="{% url 'teacher_view_submissions' assigned.id %}">
-                  View Submissions
-              </a>
-          </li>
-      {% empty %}
-          <li>No assignments assigned yet.</li>
-      {% endfor %}
-   </ul>
+      <div class="class-page-header">
+         <h1>{{class.name}}</h1>
+         <p>{{class.day}} - {{class.time}}</p>
+         <a class="button" href="{% url 'create_assignment' %}?class={{ class.id }}">
+            Create New Assignment
+         </a>
+      </div>
+      
+      <div class = 'class-section'>
+         <h2>Students</h2>
+         <div class="student-grid">
+            {% for student in students%}
+               <div class = "student-card">
+                     <a href="{% url 'view_student' student.user.username%}" class = "button"> {{student.user.get_full_name|default:student.user.username}}</a>
+               </div>
+            {%empty%}
+               <p>No students enrolled yet.</p>
+            {%endfor%}
+         </div>
+      </div>
+      <div class = 'class-section'>
+         <h2>Assigned Assignments</h2>
+         <div class="assignment-list">
+               {% for assigned in assigned_assignments %}
+                  <div class="assignment-card teacher-assignment-card">
+                     <div class="assignment-top">
+                           <div>
+                              <h3>{{ assigned.assignment.title }}</h3>
+                              <p class="muted">Due {{ assigned.due_date }}</p>
+                           </div>
+                           <div class="assignment-actions">
+                              <a class="button small-btn" href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
+                                 Assignment Details
+                              </a>
+                              <a class="button small-btn" href="{% url 'teacher_view_submissions' assigned.id %}">
+                                 View Submissions
+                              </a>
+                           </div>
+                     </div>
+                  </div>
+               {% empty %}
+                  <p>No assignments assigned yet.</p>
+               {% endfor %}
+         </div>
+      </div>
 
-   <a class="button"
-   href="{% url 'create_assignment' %}?class={{ class.id }}">
-    Create New Assignment
-</a>
-
-   <h3>Assign new</h3>
-   {% for assignment in available_assignments %}
-   <div class="assignment-card">
-     <strong>{{ assignment.title }}</strong>
-     <p>{{ assignment.description }}</p>
- 
-     {% if assignment.id in assigned_assignment_ids %}
-       <span class="muted">Already assigned</span>
-     {% else %}
-       <form method="post"
-             action="{% url 'assign_assignment_to_class' assignment.id %}">
-         {% csrf_token %}
-         <input type="hidden" name="class_id" value="{{ class.id }}">
-         <input type="date" name="due_date" required>
-         <button>Assign</button>
-       </form>
-     {% endif %}
+      
+      <div class = 'class-section'>
+         <h3>Assign new</h3>
+         {% for assignment in available_assignments %}
+         <div class="assignment-card">
+         <strong>{{ assignment.title }}</strong>
+         <p>{{ assignment.description }}</p>
+      
+         {% if assignment.id in assigned_assignment_ids %}
+            <span class="muted">Already assigned</span>
+         {% else %}
+            <form method="post"
+                  action="{% url 'assign_assignment_to_class' assignment.id %}">
+               {% csrf_token %}
+               <input type="hidden" name="class_id" value="{{ class.id }}">
+               <input type="date" name="due_date" required>
+               <button>Assign</button>
+            </form>
+         {% endif %}
+         </div>
+         {% endfor %}
+      </div>
    </div>
-   {% endfor %}
 
 {%endblock%}

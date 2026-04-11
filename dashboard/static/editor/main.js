@@ -1,7 +1,6 @@
 // import js turtle
 
 window.WORKER_URL = "/static/editor/worker.js";
-window.moveFileToTop = moveFileToTop;
 
 
 import turtleModule from './turtle.js';
@@ -27,6 +26,7 @@ let projectId = null;
 let currentFilePath = "main.py";
 let cachedProjectFiles = null;
 let cachedProjectId = null;
+let statusSpan = document.getElementById("saveStatus");
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -407,8 +407,6 @@ function getCookie(name) {
 async function autosave() {
   if (window.IS_READONLY) return;
   if (!editor || !editor.getModel()) return;
-  const { statusSpan } = getEls();
-  if (!statusSpan) return;
 
   const code = editor.getValue();
   if (!projectId) return;
@@ -447,12 +445,4 @@ async function autosave() {
 function onEditorChange() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(autosave, 600);
-}
-
-function getEls() {
-  return {
-    classSelect: document.getElementById("class"),
-    nameInput: document.getElementById("name"),
-    statusSpan: document.getElementById("saveStatus"),
-  };
 }

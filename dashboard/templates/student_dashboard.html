@@ -15,111 +15,44 @@
                         View Class Page
                     </a>
                 </div>
-                <!-- Optional: icons at the bottom -->
-                {% comment %}
-                <div class = "file-section">
-                    <h2>My Files</h2>
-                    <h4>Classwork</h4>
-                    {% if class.cw_files%}
-                    <div class = "file-grid">
-                        {%for file in class.cw_files%}
-                        <div class = "file-card">
-                            <div class='file-icon'>
-                                <i class="bi bi-file-earmark-code"></i>
-                            </div>
-                            <div class = 'file-details'>
-                                <p class = "file-name">{{ file.display_name }}</p>
-                                <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                                <a class = 'download-link' href="{% url 'download_file' file.id %}">
-                                    Download
-                                </a>
-                                <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ file.id }}">Open in Editor</a>
-                            </div>
-                        </div>
-                        
-                        {%endfor%}
-                    </div>
-                    {%else%}
-                    <p>No classwork uploaded yet.</p>
-                    {%endif%}
+                <div class = "dashboard-section">
+                    <h3> Upcoming Assignment </h3>
+                        {% if class.upcoming_assignments%}
+                            <div class="assignment-list compact">
+                                {% for assigned in class.upcoming_assignments %}
+                                <div class="assignment-card student-assignment-preview">
+                                    <div>
+                                        <strong>{{ assigned.assignment.title }}</strong><br>
+                                        <span class="upload-date">Due {{ assigned.due_date }}</span>
+                                    </div>
 
-                    <h4>Homework</h4>
-                    {% if class.hw_files%}
-                    <div class="file-grid">
-                        {%for file in class.hw_files%}
-                            <div class = "file-card">
-                                <div class='file-icon'>
-                                    <i class="bi bi-file-earmark-code"></i>
-                                </div>
-                                <div class = 'file-details'>
-                                    <p class = "file-name">{{ file.display_name |cut:"student_files/"}}</p>
-                                    <p class = "upload-date">Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                                    <a class = 'download-link' href="{% url 'download_file' file.id %}">
-                                        Download
+                                    <a class="download-link"
+                                       href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
+                                        Open
                                     </a>
-                                    <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ file.id }}">Open in Editor</a>
                                 </div>
-                            </div>
-                        {%endfor%}
-                    </div>
-                    {%else%}
-                    <p>No homework uploaded yet.</p>
-                    {%endif%}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="muted">No upcoming assignments 🎉</p>
+                    {% endif %}
                 </div>
 
-                <div class = "upload-section">
-
-                    <h2>Upload Files</h2>
-                    
-                    <div class = "upload-block">
-                        <h4>Upload Classwork Files</h4>
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token%}
-                            {{class.cw_form.as_p}}
-                            <button type="submit" name="upload_cw">Upload</button>
-                        </form>
-                    </div>
-                </div>
-                {% endcomment %}
-                <div class="card-icons">
-                    <i class="bi bi-folder-fill my-files-icon" title="My Files"></i>
-                    <i class=" bi bi-cloud-arrow-up-fill upload-icon" title="Upload File"data-class-code="{{ class.class.code }}"></i>
-                </div>
-                <!-- Hidden upload form - Lily Added-->
-                <form id="uploadForm-{{ class.class.code }}" class="upload-form" method="post" enctype="multipart/form-data" action="{% url 'student_dashboard' %}" style="display: none;">
+                <form id="uploadForm-{{ class.class.code }}"
+                      class="upload-form"
+                      method="post"
+                      enctype="multipart/form-data"
+                      action="{% url 'student_dashboard' %}"
+                      style="display: none;">
                     {% csrf_token %}
                     <input type="file" name="uploaded_file" id="fileInput-{{ class.class.code }}" />
                     <input type="hidden" name="class_code" value="{{ class.class.code }}">
                     <button type="submit">Upload</button>
                 </form>
             </div>
-        {%endfor%}
+        {% endfor %}
     </div>
-    {% endif %}
-{%endblock%}
-{% block extra_js%}    
- <!-- Javascript to handle clicks on the icons -->   
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // When upload icon is clicked, trigger the hidden file input
-    document.querySelectorAll('.upload-icon').forEach(icon => {
-        icon.addEventListener('click', function() {
-            const classCode = this.dataset.classCode;
-            const fileInput = document.getElementById('fileInput-' + classCode);
-            if (fileInput) {
-                fileInput.click();  // Opens the file picker
-            }
-        });
-    });
+</div>
+{% endif %}
 
-    // Automatically submit the form when a file is selected
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        input.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                this.form.submit();
-            }
-        });
-    });
-});
-</script>
-{%endblock%}
+{% endblock %}

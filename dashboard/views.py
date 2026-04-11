@@ -51,42 +51,45 @@ def _related_or_none(obj, attr: str):
 def student_dashboard(request):
     student = Student.objects.get(user = request.user) 
     user = request.user
-
-    hw_files = user.uploads_set.filter(assignment__isnull=False)
-    cw_files = user.uploads_set.filter(assignment__isnull=True)
-    
-    if request.method == 'POST' and 'uploaded_file' in request.FILES:
-            uploaded_file = request.FILES["uploaded_file"]
-            class_code = request.POST.get("class_code")
-
-            class_obj = get_object_or_404(Class, code=class_code)
-
-            Uploads.objects.create(
-                person=user,
-                for_class=class_obj,
-                file=uploaded_file,
-                display_name=uploaded_file.name,
-            )
-
-            return redirect("student_dashboard")
-
     
     classes = []
-    
+
     for section in student.classes.all():
-        class_uploads = Uploads.objects.filter(
-            person=user,
-            for_class=section,
+        class_projects = CodeProject.objects.filter(
+            owner=user,
+            for_class=section
         ).order_by("-last_edited")
 
-        hw_files = class_uploads.filter(assignment__isnull=False)
-        cw_files = class_uploads.filter(assignment__isnull=True)
+        hw_projects = class_projects.filter(assignment__isnull=False)
+        cw_projects = class_projects.filter(assignment__isnull=True)
+
+        assigned_assignments = (
+            AssignedToClass.objects
+            .filter(for_class=section)
+            .select_related("assignment")
+            .order_by("due_date")
+        )
+
+        submitted_ids = set(
+            CodeProject.objects.filter(
+                owner=user,
+                for_class=section,
+                submitted=True,
+                assignment__isnull=False
+            ).values_list("assignment_id", flat=True)
+        )
+
+        upcoming_assignments = [
+            assigned for assigned in assigned_assignments
+            if assigned.assignment_id not in submitted_ids
+        ]
 
         classes.append({
             'class': section,
-            'hw_files': hw_files,
-            'cw_files': cw_files,
-                        })
+            'hw_projects': hw_projects,
+            'cw_projects': cw_projects,
+            'upcoming_assignments': upcoming_assignments,
+        })
 
 
     return render(request, 'student_dashboard.html', {
@@ -104,21 +107,40 @@ def teacher_dashboard(request):
 
     for section in classes:
         student_info = []
+
         for student in section.students.all():
-            last_hw_file = student.latest_assignment_file(section)
-            last_cw_file = student.latest_classwork_file(section)
+
+            latest_hw_project = (
+                CodeProject.objects
+                .filter(
+                    owner=student.user,
+                    for_class=section,
+                    assignment__isnull=False
+                )
+                .order_by("-last_edited")
+                .first()
+            )
+
+            latest_cw_project = (
+                CodeProject.objects
+                .filter(
+                    owner=student.user,
+                    for_class=section,
+                    assignment__isnull=True
+                )
+                .order_by("-last_edited")
+                .first()
+            )
 
             student_info.append({
                 'student': student,
-                'last_hw_file': last_hw_file,
-                'last_cw_file': last_cw_file,
+                'last_hw_project': latest_hw_project,
+                'last_cw_project': latest_cw_project,
             })
-
         class_info.append({
-            'class': section,
-            'students': student_info
+        'class': section,
+        'students': student_info
         })
-
             
     return render(request, 'teacher_dashboard.html', {
         'teacher': teacher,
@@ -229,22 +251,39 @@ def view_student(request, username):
 
     classes = student.classes.filter(teacher = teacher)
 
-    student_files = []
+    student_projects = []
     for section in classes:
-        hw_files = student.user.uploads_set.filter(
-            for_class=section,
-            assignment__isnull=False,
+        hw_projects = (
+            CodeProject.objects
+            .filter(
+                owner=student.user,
+                for_class=section,
+                assignment__isnull=False
+            )
+            .order_by("-last_edited")
         )
 
-        cw_files = student.user.uploads_set.filter(
-            for_class=section,
-            assignment__isnull=True,
+        cw_projects = (
+            CodeProject.objects
+            .filter(
+                owner=student.user,
+                for_class=section,
+                assignment__isnull=True
+            )
+            .order_by("-last_edited")
         )
 
-        student_files.append({'class': section, 'hw_files': hw_files, 'cw_files': cw_files}) 
-    return render(request, 'view_student.html', {'student': student, 'teacher': teacher, 'student_files': student_files, 'teacher': teacher})
+        student_projects.append({
+            "class": section,
+            "hw_projects": hw_projects,
+            "cw_projects": cw_projects,
+        })
 
-
+    return render(request, "view_student.html", {
+        "student": student,
+        "teacher": teacher,
+        "student_projects": student_projects,
+    })
 @login_required
 def download_file_view(request, file_id):
 
@@ -420,19 +459,26 @@ def assign_assignment_to_class(request, assignment_id):
 @teacher_required
 def teacher_view_submissions(request, assigned_id):
     assigned = get_object_or_404(AssignedToClass, id=assigned_id, assignment__created_by__user=request.user)
-    uploads = (
-        Uploads.objects
+    projects = (
+        CodeProject.objects
         .filter(
             assignment=assigned.assignment,
             for_class=assigned.for_class
         )
-        .select_related("person")
-        .order_by("person__last_name", "-last_edited")
+        .select_related("owner")
     )
 
     submissions = defaultdict(list)
-    for upload in uploads:
-        submissions[upload.person].append(upload)
+
+    students = assigned.for_class.students.all()
+
+    projects_by_student = defaultdict(list)
+
+    for project in projects:
+        projects_by_student[project.owner].append(project)
+
+    for student in students:
+        submissions[student.user] = projects_by_student.get(student.user, [])
 
     return render(request, "teacher_view_submissions.html", {
         "assigned": assigned,
@@ -452,37 +498,17 @@ def submit_assignment(request, assigned_id):
     if assigned.for_class not in student.classes.all():
         return JsonResponse({"ok": False}, status=403)
 
-    try:
-        data = json.loads(request.body)
-    except Exception:
-        return JsonResponse({"ok": False}, status=400)
-
-    code = data.get("code", "").strip()
-    name = (data.get("name") or "").strip()
-    if not name:
-        return JsonResponse({"ok": False, "error": "Missing file name"}, status=400)
-
-    if not code:
-        return JsonResponse({"error": "No code submitted"}, status=400)
-    filename = name
-    if not filename.lower().endswith(".py"):
-        filename += ".py"
-
-    upload, _ = Uploads.objects.get_or_create(
-        person=request.user,
+    project = get_object_or_404(
+        CodeProject,
+        owner=request.user,
         assignment=assigned.assignment,
-        for_class=assigned.for_class,
+        for_class=assigned.for_class
     )
 
-    upload.display_name = filename
-    upload.submitted = True
-    upload.submitted_at = timezone.now()
+    project.submitted = True
+    project.submitted_at = timezone.now()
+    project.save()
 
-    upload.file.save(
-        filename,
-        ContentFile(code),
-        save=True,
-    )
 
     return JsonResponse({"ok": True})
 
@@ -666,12 +692,11 @@ def student_class_view(request, class_code):
     """
     assigned_assignments = AssignedToClass.objects.filter(for_class = class_obj).select_related('assignment').order_by('due_date')
     submitted_ids = set(
-        Uploads.objects
-        .filter(
-            person=request.user,
-            for_class=class_obj,
-            submitted=True,
-            assignment__isnull=False,
+        CodeProject.objects.filter(
+            owner=request.user,
+            for_class = class_obj,
+            submitted = True,
+            assignment__isnull=False
         )
         .values_list("assignment_id", flat=True)
     )
@@ -810,6 +835,7 @@ def editor_view(request):
 
     assigned_id = request.GET.get("assigned_id")
     assigned = None
+    project_id = request.GET.get("project_id")
 
     # Assignment context (if present)
     if assigned_id:
@@ -827,29 +853,44 @@ def editor_view(request):
     is_readonly = False
     project = None
 
-    if assigned:
-        project, _ = CodeProject.objects.get_or_create(
-            owner=user,
-            assignment=assigned.assignment,
+    if project_id:
+        project = get_object_or_404(CodeProject, id=project_id)
+
+        if hasattr(request.user, "teacher"):
+            if project.for_class.teacher != request.user.teacher:
+                print("access denied: teacher does not match project class teacher")
+                return HttpResponse("Access denied", status=403)
+            is_readonly = True
+        else:
+            if project.owner != request.user:
+                return HttpResponse("Access denied", status=403)
+
+        main_file = project.files.filter(path="main.py").first()
+        if not main_file:
+            main_file = project.files.first()
+
+        if main_file:
+            try:
+                main_file.file.open("rb")
+                initial_code = force_str(main_file.file.read(), errors="ignore")
+            except:
+                initial_code = ""
+
+            code_name = main_file.path
+
+        if project.submitted:
+            is_readonly = True
+
+    elif assigned:
+        project = get_or_create_editor_project(
+            user=user,
             for_class=assigned.for_class,
-            defaults={"name": assigned.assignment.title}
+            assignment=assigned.assignment
         )
 
-        main_file, created = ProjectFile.objects.get_or_create(
-            project=project,
-            path="main.py",
-        )
+        ensure_main_file(project)
 
-        if created or not main_file.file:
-            default_code = """# Write your Python code here
-
-print("Hello World!")
-"""
-            main_file.file.save(
-                "main.py",
-                ContentFile(default_code.encode()),
-                save=True
-            )
+        main_file = project.files.filter(path="main.py").first()
         
         try:
             main_file.file.open("rb")
@@ -895,9 +936,6 @@ print("Hello World!")
         code = data.get("code", "")
         path = data.get("path", "main.py")
         project_id = data.get("project_id")
-        if not project_id:
-            return JsonResponse({"ok": False, "error": "Missing project_id"}, status=400)
-
         if not project_id:
             return JsonResponse({"ok": False, "error": "Missing project_id"}, status=400)
 
@@ -984,35 +1022,6 @@ print("Hello World!")
         })
     """
 
-    # Load file by upload_id (editor)
-    upload_id = request.GET.get("upload_id")
-
-    if upload_id and not assigned:
-        upload = get_object_or_404(Uploads, id=upload_id)
-
-        if not (
-            upload.person == user
-            or (hasattr(user, "teacher") and upload.for_class and upload.for_class.teacher == user.teacher)
-            or user.is_superuser
-        ):
-            return HttpResponse("Access denied", status=403)
-        
-        if upload:
-            if upload.person != user:
-                is_readonly = True
-
-            elif hasattr(user, "student") and upload.submitted:
-                is_readonly = True
-
-
-        selected_class_id = str(upload.for_class.id)
-        try:
-            upload.file.open("rb")
-            initial_code = force_str(upload.file.read(), errors="ignore")
-        except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
-            initial_code = ""
-        code_name = upload.display_name or upload.file.name.split("/")[-1]
-        selected_class_id = str(upload.for_class.id)
 
     # Class dropdown options
     if hasattr(user, "teacher"):
@@ -1022,40 +1031,28 @@ print("Hello World!")
     else:
         class_options = []
 
-    uploads = (
-        Uploads.objects
-            .filter(person=request.user)
-            .select_related("for_class")
-            .order_by("-last_edited")
-    )
-   
+    projects = CodeProject.objects.filter(owner=request.user).select_related("for_class")
+
     grouped = defaultdict(list)
 
-    for upload in uploads:
-        if upload.for_class:
-            grouped[upload.for_class].append(upload)
+    for p in projects:
+        if p.for_class:
+            grouped[p.for_class].append(p)
 
-    # Sort uploads inside each class (most recent first)
-    for class_obj in grouped:
-        grouped[class_obj].sort(key=lambda x: x.last_edited, reverse=True)
-
-    # Sort classes by most recent file
     sorted_classes = sorted(
         grouped.items(),
-        key=lambda item: item[1][0].last_edited if item[1] else timezone.now(),
+        key=lambda item: max([proj.last_edited for proj in item[1]]) if item[1] else timezone.now(),
         reverse=True
     )
 
     return render(request, "editor_view.html", {
         "user": user,
-        "class_options": class_options,
         "initial_code": initial_code,
         "code_name": code_name,
-        "selected_class_id": selected_class_id,
         "assigned": assigned,
-        "files_by_class": sorted_classes,
         "is_readonly": is_readonly,
         "project_id": project.id if project else "",
+        "is_submitted": project.submitted if project else False,
     })
 @login_required
 def load_upload(request, pk):
@@ -1129,25 +1126,41 @@ def get_project_files(request, project_id):
 
 @login_required
 def editor_projects(request):
+    if hasattr(request.user, "teacher"):
+        user_classes = request.user.teacher.classes.all().order_by("name")
+    elif hasattr(request.user, "student"):
+        user_classes = request.user.student.classes.all().order_by("name")
+    else:
+        user_classes = Class.objects.none()
 
-    projects = CodeProject.objects.filter(owner=request.user)
+    projects = (
+        CodeProject.objects
+        .filter(owner=request.user, for_class__in=user_classes)
+        .select_related("for_class")
+        .prefetch_related("files")
+        .order_by("name")
+    )
 
-    result = []
+    projects_by_class_id = defaultdict(list)
 
     for project in projects:
-
-        files = list(
-            project.files.values_list("path", flat=True)
-        )
-
-        result.append({
+        projects_by_class_id[project.for_class_id].append({
             "id": project.id,
-            "name": project.name,
-            "files": files
+            "name": project.name or "Untitled Project",
+            "files": list(project.files.values_list("path", flat=True)),
+            "assignment_id": project.assignment_id,
+        })
+
+    result = []
+    for class_obj in user_classes:
+        result.append({
+            "id": class_obj.id,
+            "name": class_obj.name,
+            "projects": projects_by_class_id[class_obj.id],
         })
 
     return JsonResponse({
-        "projects": result
+        "classes": result
     })
 
 @login_required
@@ -1163,26 +1176,40 @@ def create_editor_project(request):
     if not name:
         return JsonResponse({"ok": False})
 
+    class_id = data.get("class_id")
+
+    if not class_id:
+        return JsonResponse({"ok": False, "error": "Missing class_id"})
+
+    class_obj = get_object_or_404(Class, id=class_id)
+
     project = CodeProject.objects.create(
-        owner=request.user,
-        name=name
+    owner=request.user,
+    name=name,
+    for_class=class_obj,
+    assignment=None
     )
 
-    default_code = """# New project
-
-print("Hello world")
-"""
-
-    ProjectFile.objects.create(
-        project=project,
-        path="main.py",
-        file=ContentFile(default_code.encode(), name="main.py")
-    )
+    ensure_main_file(project)
 
     return JsonResponse({
         "ok": True,
         "project_id": project.id
     })
+
+def ensure_main_file(project):
+    DEFAULT_CODE = """# Write your Python code here
+
+print("Hello World!")
+"""
+
+    main_file, created = ProjectFile.objects.get_or_create(
+        project=project,
+        path="main.py",
+    )
+
+    if created or not main_file.file:
+        main_file.file.save("main.py", ContentFile(DEFAULT_CODE), save=True)
 
 @login_required
 def editor_project_file(request, project_id, file_path):
@@ -1311,3 +1338,26 @@ def move_file(request):
     file.save()
 
     return JsonResponse({"ok": True})
+
+@login_required
+@teacher_required
+def get_project_files_for_teacher(request, project_id):
+    project = get_object_or_404(CodeProject, id=project_id)
+
+    if project.for_class.teacher != request.user.teacher:
+        return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+    files = {}
+
+    for pf in project.files.all():
+        try:
+            pf.file.open("rb")
+            files[pf.path] = force_str(pf.file.read(), errors="ignore")
+        except:
+            files[pf.path] = ""
+
+    return JsonResponse({
+        "ok": True,
+        "project_name": project.name,
+        "files": files
+    })

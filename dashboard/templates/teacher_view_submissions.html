@@ -12,35 +12,111 @@
         <strong>Due date:</strong> {{ assigned.due_date }}
     </p>
     
-    <hr>
     
-    {% for student, uploads in submissions.items %}
-        <div class="submission-card">
-        <h3>{{ student.get_full_name }}</h3>
+    {% for student, projects in submissions.items %}
+<div class="submission-card">
 
-        {% for upload in uploads %}
-        <p>
-            {{ upload.display_name }}
-            <br>
-            Last Edited - {{ upload.last_edited|date:"M j, P" }}
-            {% if upload.submitted%}
-                <br>    
-                Submitted - {{ upload.submitted_at|date:"M j, P" }}
-            {%endif%}
-            <br>
-            <a href="{% url 'editor_view' %}?upload_id={{ upload.id }}">
-                Open in editor
-              </a>              
-            </a>
-            <span class="muted">
-            
-            </span>
-        </p>
-        {% endfor %}
+    <!-- 🔽 Clickable header -->
+    <div class="student-header" onclick="toggleStudent('{{ student.id }}')">
+        <h3>{{ student.get_full_name }}</h3>
+        <span class="chevron">▼</span>
+    </div>
+
+    <!-- 🔽 Hidden content -->
+    <div id="student-{{ student.id }}" class="student-content">
+
+        {% if not projects %}
+            <p style="color:#888; font-style: italic;">
+                No work started yet
+            </p>
+        {% endif %}
+
+        {% for project in projects %}
+        <div class="project-row">
+            <strong>{{ project.name|default:"Project" }}</strong><br>
+
+            Last Edited - {{ project.last_edited|date:"M j, P" }}
+
+            {% if project.submitted %}
+                <br>
+                Submitted - {{ project.submitted_at|date:"M j, P" }}
+            {% endif %}
+
+            <br><br>
+
+            <button class="view-btn"
+                onclick="openProject({{ project.id }}, '{{ student.id }}')">
+                View Code
+            </button>
+
+            <!-- 🔥 Per-project viewer -->
+            <div id="viewer-{{ project.id }}" class="projectViewer" style="display:none;">
+                <div class="project-viewer-body">
+                    <div id="fileList-{{ project.id }}"></div>
+                    <pre id="fileContent-{{ project.id }}"></pre>
+                </div>
+            </div>
         </div>
-        {% empty %}
-            <p>No submissions yet.</p>
         {% endfor %}
-    
-    <hr>
+
+    </div>
+</div>
+{% endfor %}
 {%endblock%}
+{% block extra_js %}
+<script>
+    async function openProject(projectId, studentId) {
+        const res = await fetch(
+            `/dashboard/editor/project/${projectId}/teacher-files/`
+        );
+    
+        const data = await res.json();
+    
+        if (!data.ok) {
+            alert("Failed to load project");
+            return;
+        }
+    
+        const viewer = document.getElementById(`viewer-${projectId}`);
+        const fileList = document.getElementById(`fileList-${projectId}`);
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+    
+        viewer.style.display = "block";
+        fileList.innerHTML = "";
+        fileContent.textContent = "";
+    
+        const files = data.files;
+    
+        Object.keys(files).forEach(path => {
+            const item = document.createElement("div");
+            item.textContent = path;
+            item.className = "file-item-view";
+    
+            item.onclick = () => {
+                document.querySelectorAll(`#fileList-${projectId} .file-item-view`)
+                    .forEach(el => el.classList.remove("active"));
+    
+                item.classList.add("active");
+                fileContent.textContent = files[path];
+            };
+    
+            fileList.appendChild(item);
+        });
+    
+        // Auto-open main.py
+        let firstFile = Object.keys(files).find(f => f === "main.py");
+        if (!firstFile) firstFile = Object.keys(files)[0];
+    
+        if (firstFile) {
+            fileContent.textContent = files[firstFile];
+        }
+    }
+</script>
+
+    <script>
+        function toggleStudent(studentId) {
+            const el = document.getElementById(`student-${studentId}`);
+            el.style.display = el.style.display === "block" ? "none" : "block";
+        }
+        </script>
+{% endblock %}

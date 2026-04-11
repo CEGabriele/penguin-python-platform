@@ -6,64 +6,38 @@
 {% block content %}
 
    {% include "navbar.html" %}
-  <h1>{{class.name}} - {{class.day}}</h1>
-  <h3>{{class.teacher}}</h3>
-
-  <h3>Assignments</h3>
-  <div class = "class-grid">
-   {% for assigned in assigned_assignments %}
-      <div class="assignment-card">
-         <strong>{{ assigned.assignment.title }}</strong><br>
-         Due: {{ assigned.due_date }}<br>
-
-         {% if assigned.assignment.id in submitted_ids %}
-               ✅ Submitted
-         {% else %}
-               ❌ Not submitted
-         {% endif %}
-
-         <br>
-         <a href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
-            Open Assignment
-        </a>
+   <div class="class-page">
+      <div class="class-page-header">
+         <h1>{{class.name}}</h1>
+         <p>{{class.day}} - {{class.time}}</p>
+         <p>{{class.teacher}}</p>
       </div>
-   {% empty %}
-      <li>No assignments yet.</li>
-   {% endfor %}
-   </div>
-<!---
-   <br>
-   {% if general_materials.assignments%}
-      <h4>Assignments</h4>
-      {% for assignment in general_materials.assignments %}
-         <div class = "assignment-card">
-            <h3>{{assignment.template.name}}</h3>
-            <p>Due {{ assignment.due_date}}</p>
-            <a href = "{% url 'student_form_view' assignment.id%}" class = "button">View form details</a>
-         </div>
-      {% endfor %}
-   {% endif %}
 
-   {% for week, data in sorted_weeks.items %}
-      <h3>Week {{ week }}</h3>
-      {% if data.assignments %}
-         <h4>Assignments</h4>
-         <ul>
-            {% for assignment in data.assignments %}
-            <div class = "assignment-card">
-               <h3>{{assignment.template.name}}</h3>
-               <p>Due {{ assignment.due_date}}</p>
-               <a href = "{% url 'student_form_view' assignment.id%}" class = "button">View form details</a>
+      <div class="class-section">
+         <h3>Assignments</h3>
+
+         <div class = "class-grid">
+         {% for assigned in assigned_assignments %}
+            <div class="assignment-card">
+               <strong>{{ assigned.assignment.title }}</strong><br>
+               Due: {{ assigned.due_date }}<br>
+
+               {% if assigned.assignment.id in submitted_ids %}
+                     ✅ Submitted
+               {% else %}
+                     ❌ Not submitted
+               {% endif %}
+
+               <br>
+               <a href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
+                  Open Assignment
+            </a>
             </div>
-            {% endfor %}
-         </ul>
-      {% endif %}
-      
-   {% endfor %}
-
-   {% if not sorted_weeks and not general_materials.materials and not general_materials.assignments %}
-      <p>No materials or assignments available for this class.</p>
-   {% endif %}
--->
+         {% empty %}
+            <li>No assignments yet.</li>
+         {% endfor %}
+         </div>
+      </div>
+   </div>
 
 {% endblock %}

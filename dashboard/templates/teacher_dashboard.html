@@ -1,70 +1,77 @@
-{%extends "base.html"%}
+{% extends "base.html" %}
 
-{% block title %}{{ teacher.user.get_short_name|default:teacher.user.username }}'s Dashboard{% endblock %}
+{% block title %}
+    {{ teacher.user.get_short_name|default:teacher.user.username }}'s Dashboard
+{% endblock %}
 
 {% block content %}
 
+{% if classes %}
+<div class="class-grid">
+    {% for class in classes %}
+        <div class="class-card">
+            <h2>{{ class.class.name }}</h2>
 
-    {% if classes%}
+            <a class="button" href="{% url 'teacher_class_view' class.class.code %}">
+                View Class Page
+            </a>
 
-    <div class="class-grid">
+            <div class="student-grid">
+                {% for student in class.students %}
+                    <div class="student-card">
+                        <h4>
+                            {{ student.student.user.get_full_name|default:student.student.user.username }}
+                        </h4>
 
-        {%for class in classes%}
-            <div class="class-card">
-                <h2>{{class.class.name}} </h2>
-                <a  class="button" href="{% url 'teacher_class_view' class.class.code %}">
-                    View Class Page
-                </a>
-                <div class="student-grid">
-                    {% for student in class.students%}
-                        <div class = "student-card">
-                                <h4> {{student.student.user.get_full_name|default:student.student.user.username}}</h4>
-                                <a href="{% url 'view_student' student.student.user.username%}" class="button"> View Student</a>
-                            <h5>Classwork</h5>
-                            {%if student.last_cw_file%}
-                                <div class = "file-card">
-                                    
-                                    <div class='file-icon'>
-                                        <i class="bi bi-file-earmark-code"></i>
-                                    </div>
-                                    <div class='file-details'>
-                                        <p class = "file-name">{{ student.last_cw_file.display_name |cut:"student_files/"}}</p>
-                                        <p class = "upload-date"> Uploaded {{student.last_cw_file.uploaded_at | date:"n/j/y"}}</p>
-                                        <a  class = "download-link" href="{% url 'download_file' student.last_cw_file.id %}">Download</a>
-                                        <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ student.last_cw_file.id }}">Open in Editor</a>
-                                    </div>
-                                   
-                                    
+                        <a href="{% url 'view_student' student.student.user.username %}" class="button">
+                            View Student
+                        </a>
+
+                        <h5>Classwork</h5>
+                        {% if student.last_cw_project %}
+                            <div class="file-card">
+                                <div class="file-icon">
+                                    <i class="bi bi-file-earmark-code"></i>
                                 </div>
-                            {%else%}
-                                <p>No files found</p>
-                            {%endif%}
-                            <h5>Homework</h5>
-                            {%if student.last_hw_file%}
-                                <div class = "file-card">
-
-                                    <div class='file-icon'>
-                                        <i class="bi bi-file-earmark-code"></i>
-                                    </div>
-                                    <div class='file-details'>
-                                        <p class = "file-name">{{ student.last_hw_file.display_name |cut:"student_files/"}}</p>
-                                        <p class = "upload-date"> Uploaded {{student.last_hw_file.uploaded_at | date:"n/j/y"}}</p>
-                                        <a class = "download-link" href="{% url 'download_file' student.last_hw_file.id %}">Download</a>
-                                        <a class = "download-link" href="{% url 'editor_view' %}?upload_id={{ student.last_hw_file.id }}">Open in Editor</a>
-                                    </div>
+                                <div class="file-details">
+                                    <p class="file-name">
+                                        {{ student.last_cw_project.name|default:"Classwork Project" }}
+                                    </p>
+                                    <p class="upload-date">
+                                        Edited {{ student.last_cw_project.last_edited|date:"n/j/y" }}
+                                    </p>
                                 </div>
-                            {%else%}
-                                <p>No files found</p>
-                            {%endif%}
-                        </div>
-                    {%endfor%}
-                </div>
+                            </div>
+                        {% else %}
+                            <p>No classwork found</p>
+                        {% endif %}
+
+                        <h5>Homework</h5>
+                        {% if student.last_hw_project %}
+                            <div class="file-card">
+                                <div class="file-icon">
+                                    <i class="bi bi-file-earmark-code"></i>
+                                </div>
+                                <div class="file-details">
+                                    <p class="file-name">
+                                        {{ student.last_hw_project.name|default:"Homework Project" }}
+                                    </p>
+                                    <p class="upload-date">
+                                        Edited {{ student.last_hw_project.last_edited|date:"n/j/y" }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p>No homework found</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             </div>
-        {%endfor%}
-        
-    </div>
-    {%else%}
+        </div>
+    {% endfor %}
+</div>
+{% else %}
     <p>No classes have been created yet.</p>
-    {%endif%}
+{% endif %}
 
-{%endblock%}
+{% endblock %}

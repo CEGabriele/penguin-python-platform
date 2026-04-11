@@ -614,13 +614,14 @@ a {
   position: fixed;
   top: var(--nav-height);
   left: 0; 
-  width: 180px;
+  width: 200px;
   height: calc(100vh - var(--nav-height));
   background: #ffffff;
   border-right: 1px solid rgba(0,0,0,0.08);
   box-shadow: 2px 0 8px rgba(0,0,0,0.05);
   padding: 12px 10px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-bubble {
@@ -628,7 +629,7 @@ a {
     top: var(--nav-height);
     right: 0; /* making it touch right side of screen*/
     bottom: 0; /*change this to 0 to make it stick to the bottom */
-    left: 180px;
+    left: 200px;
     height: calc(100vh - var(--nav-height));
     padding: 16px 18px;
     background:#f4faff;/* #fff;*/
@@ -666,7 +667,7 @@ a {
 
 /* Individual file */
 .file-item{
-  width: 100%;
+  width: 90%;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -863,13 +864,19 @@ padding-top: 0 !important;
     margin-bottom: 10px;
 }
 
-.class-title {
+.class-header {
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 8px 10px;
     font-weight: 500;
+}
+
+.class-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .files-list {
@@ -933,7 +940,7 @@ padding-top: 0 !important;
 }
 
 .project-files{
-    margin-left:18px;
+    margin-left:10px;
     margin-top:4px;
     border-left:1px solid rgba(0,0,0,0.08);
     padding-left:6px;
@@ -948,6 +955,9 @@ padding-top: 0 !important;
     gap:6px;
     align-items:center;
     font-size:0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    
 }
 
 .project-file:hover{
@@ -1080,4 +1090,287 @@ padding-top: 0 !important;
 
 .project.drag-over {
     background: rgba(252,164,43,0.15);
+}
+
+/* ===== Submission Cards ===== */
+.submission-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+.submission-card h3 {
+    margin-bottom: 12px;
+    color: #1f2a44;
+}
+
+/* Project row */
+.project-row {
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+/* View button */
+.view-btn {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+/* ===== Project Viewer ===== */
+#projectViewer {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+/* Layout */
+.project-viewer-body {
+    display: flex;
+    height: 400px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.file-item-view {
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.file-item-view:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.file-item-view.active {
+    background: rgba(252,164,43,0.18);
+    font-weight: 500;
+}
+
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.student-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.projectViewer {
+    margin-top: 10px;
+}
+
+[id^="fileList-"] {
+    width: 220px;
+    background: #f4faff;
+    border-right: 1px solid rgba(0,0,0,0.08);
+    padding: 8px;
+    overflow-y: auto;
+}
+
+[id^="fileContent-"] {
+    flex: 1;
+    background: #1e1e1e;
+    color: #eaeaea;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 14px;
+    overflow: auto;
+}
+
+.class-header .icon-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+}
+
+.class-group {
+    margin-bottom: 8px;
+}
+
+
+.class-projects {
+    display: none;
+    margin-left: 8px;
+    padding-left: 6px;
+    border-left: 1px solid rgba(0,0,0,0.08);
+}
+
+.class-group.open .class-projects {
+    display: block;
+}
+
+.class-arrow {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.class-group.open .class-arrow {
+    transform: rotate(90deg);
+}
+
+.class-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.class-header:hover {
+    background: #eef6ff;
+}
+
+.class-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.class-header .icon-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+}
+
+.class-header:hover{
+    background:#eef6ff;
+    transform:translateX(2px);
+    
+}
+
+.class-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    text-align: left;
+}
+
+.class-page-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.class-hero h1 {
+    margin: 0 0 8px 0;
+    color: #1f2a44;
+}
+
+.class-hero p {
+    margin: 0 0 16px 0;
+    color: #666;
+    font-size: 1rem;
+}
+
+.class-section {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.class-section h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #1f2a44;
+}
+
+.assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.teacher-assignment-card {
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: none;
+    margin-bottom: 0;
+}
+
+.teacher-assignment-card h3 {
+    margin: 0 0 8px 0;
+    color: #1f2a44;
+}
+
+.assignment-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.small-btn {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+}
+
+.assign-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.assign-form input[type="date"] {
+    padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: white;
+}
+
+.student-link {
+    width: 100%;
+    text-align: center;
+}
+
+.muted {
+    color: #777;
+    font-style: italic;
+}
+
+.dashboard-section {
+    margin-top: 14px;
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.dashboard-section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #1f2a44;
 }

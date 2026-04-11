@@ -39,10 +39,7 @@
     <div class="project-section">
 
         <div class="project-header">
-            <span>Projects</span>
-            <button id="newProjectBtn" class="icon-btn">
-                <i class="fa-solid fa-plus"></i>
-            </button>
+            <span>Projects By Class</span>
         </div>
     
         <div id="projectTree"></div>
@@ -112,21 +109,8 @@
             <button type="button" onclick="window.stopCode()" class="icon-btn">
                 <i class="fa-solid fa-stop"></i>
             </button>
-            {% if not assigned %}
-                <label>Class:</label>
-                <select id="class">
-                    {% for c in class_options %}
-                        <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-            {% else %}
-                <input type="hidden" id="class" value="{{ assigned.for_class.id }}">
-            {% endif %}
 
-            <label>Name:</label>
-            <input type="text" id="name" value="{{ code_name }}" required>
-
-            <span id="saveStatus"></span>
+            <span id="save"></span>
 
             {% if assigned %}
                 {% if is_submitted %}
@@ -184,52 +168,6 @@ function getCsrfToken() {
     return m ? decodeURIComponent(m[1]) : "";
 }
 
-function moveFileToTop(uploadId, classId, lastEdited) {
-    const classGroup = document.querySelector(
-        `.class-group[data-class-id="${classId}"]`
-    );
-    if (!classGroup) return;
-
-    let fileItem = classGroup.querySelector(
-        `.file-item[data-upload-id="${uploadId}"]`
-    );
-    
-    const fileList = classGroup.querySelector(".files-list");
-    if (!fileItem) {
-        const nameInput = document.getElementById("name");
-        const filename = nameInput ? nameInput.value : "code.py";
-
-        fileItem = document.createElement("li");
-        fileItem.className = "file-item";
-        fileItem.dataset.uploadId = uploadId;
-        fileItem.dataset.lastEdited = lastEdited;
-
-        fileItem.innerHTML = `
-            <i class="fa-solid fa-file"></i>
-            <span class="file-name">${filename}</span>
-        `;
-
-        // Add click behavior
-        fileItem.addEventListener("click", () => {
-            document.querySelectorAll(".file-item")
-                .forEach(i => i.classList.remove("active"));
-            fileItem.classList.add("active");
-            loadUpload(uploadId);
-        });
-    }
-    // Update timestamp
-    fileItem.dataset.lastEdited = lastEdited;
-
-    // Move file to top of folder
-    fileList.prepend(fileItem);
-
-    // Move folder to top of sidebar
-    const sideMenu = document.querySelector(".side-menu");
-    sideMenu.prepend(classGroup);
-
-    // Keep folder open
-    classGroup.classList.add("open");
-}
 
 
 async function ajaxSave() {
@@ -238,10 +176,15 @@ async function ajaxSave() {
     {% endif %}
 
     const status = document.getElementById("saveStatus");
-    const name = document.getElementById("name").value;
-    const class_id = document.getElementById("class").value;
     const code = window.EditorAPI.getValue();
-    
+    const projectId = document.getElementById("project_id").value;
+    const path = document.getElementById("current_file_path").value || "main.py";
+
+    if (!projectId) {
+        status.textContent = "No project selected";
+        return;
+    }
+
     status.textContent = "Saving...";
 
     try {
@@ -252,19 +195,16 @@ async function ajaxSave() {
                 "X-CSRFToken": getCsrfToken(),
             },
             body: JSON.stringify({
-                name: name,
-                class_id: class_id,
+                project_id: projectId,
+                path: path,
                 code: code,
             }),
         });
 
         const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error("Save failed");
+        if (!response.ok || !data.ok) throw new Error(data.error || "Save failed");
 
         status.textContent = "Saved!";
-        if (data.upload_id) {
-            moveFileToTop(data.upload_id, data.class_id, data.last_edited);
-        }
     } catch (e) {
         console.error(e);
         status.textContent = "Save failed. Try again.";
@@ -281,12 +221,22 @@ async function ajaxSave() {
 async function submitAssignment() {
     const btn = document.getElementById("submitBtn");
     const status = document.getElementById("submitStatus");
+    const projectIdEl = document.getElementById("project_id");
 
-    const code = window.EditorAPI.getValue();
-    const name = document.getElementById("name").value;
+    if (!projectIdEl) {
+        status.textContent = "Project not found";
+        return;
+    }
+
+    const projectId = projectIdEl.value;
+
+    if (!projectId) {
+        status.textContent = "No project selected";
+        return;
+    }
 
     btn.disabled = true;
-    status.textContent = "Submitting…";
+    status.textContent = "Submitting...";
 
     try {
         const response = await fetch(
@@ -297,13 +247,15 @@ async function submitAssignment() {
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCsrfToken(),
                 },
-                body: JSON.stringify({ code, name }),
+                body: JSON.stringify({
+                    project_id: projectId
+                })
             }
         );
 
         const data = await response.json();
         if (!response.ok || !data.ok) {
-            throw new Error("Submission failed");
+            throw new Error(data.error || "Submission failed");
         }
 
         status.textContent = "Submitted!";
@@ -341,64 +293,7 @@ function toggleMenu() {
 </script>
 
 <script>
-    const LOAD_UPLOAD_BASE = "{% url 'load_upload' 0 %}".replace("/0/", "/");
-  
-    async function loadUpload(uploadId) {
-      const res = await fetch(`${LOAD_UPLOAD_BASE}${uploadId}/`, {
-        headers: { "X-Requested-With": "XMLHttpRequest" }
-      });
-  
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Load failed:", res.status, text.slice(0, 200));
-        alert(`Failed to load file (HTTP ${res.status}). Check console.`);
-        return;
-      }
-  
-      const data = await res.json();
-      if (!data.ok) {
-        alert("Failed to load file (server returned ok=false)");
-        return;
-      }
-  
-      // Load code into Monaco
-      if (!window.EditorAPI?.setValue) {
-        alert("Editor not ready yet (EditorAPI.setValue missing).");
-        return;
-      }
-      window.EditorAPI.setValue(data.code || "");
-  
-      // Update name field
-      document.getElementById("name").value = data.name || "";
-  
-      // Update class dropdown (if editable)
-      const classEl = document.getElementById("class");
-      if (classEl && classEl.tagName === "SELECT" && data.class_id) {
-        classEl.value = String(data.class_id);
-      }
-    }
-  
-    document.addEventListener("DOMContentLoaded", () => {
-                document.querySelectorAll(".file-item").forEach(item => {
-        item.addEventListener("click", () => {
-            document.querySelectorAll(".file-item")
-            .forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
-
-            const assignedId = item.dataset.assignedId;
-            const uploadId = item.dataset.uploadId;
-
-            if (assignedId) {
-            // 🔥 Assignment → reload editor with context
-            window.location.href = `/dashboard/editor/?assigned_id=${assignedId}`;
-            } else if (uploadId) {
-            // 📄 Classwork → load inline
-            loadUpload(uploadId);
-            }
-  });
-});
-
-    });
+    
 
     function getOpenProjects() {
         const open = new Set();
@@ -413,7 +308,7 @@ function toggleMenu() {
 
     async function loadProjects() {
         const openProjects = getOpenProjects();
-
+    
         const res = await fetch("/dashboard/editor/projects/");
         const data = await res.json();
     
@@ -422,208 +317,218 @@ function toggleMenu() {
     
         let firstProject = null;
     
-        data.projects.forEach(project => {
+        data.classes.forEach(cls => {
+            const classDiv = document.createElement("div");
+            classDiv.className = "class-group open";
+            classDiv.dataset.classId = cls.id;
     
-            if(!firstProject){
-                firstProject = project;
-            }
-    
-            const projectDiv = document.createElement("div");
-            projectDiv.className = "project";
-
-            projectDiv.addEventListener("dragover", (e) => {
-                e.preventDefault();
-            });
-
-            projectDiv.addEventListener("dragenter", () => {
-                projectDiv.classList.add("drag-over");
-            });
-            
-            projectDiv.addEventListener("dragleave", () => {
-                projectDiv.classList.remove("drag-over");
-            });
-            
-            projectDiv.addEventListener("drop", () => {
-                projectDiv.classList.remove("drag-over");
-            });
-
-            projectDiv.addEventListener("drop", async (e) => {
-                e.preventDefault();
-            
-                const path = e.dataTransfer.getData("path");
-                const fromProjectId = e.dataTransfer.getData("fromProjectId");
-                const toProjectId = project.id;
-            
-                if (!path || fromProjectId == toProjectId) return;
-            
-                const draggingEl = document.querySelector(".dragging");
-                if (!draggingEl) return;
-            
-                const res = await moveFile(fromProjectId, toProjectId, path);
-                if (!res) return;
-            
-                const targetFilesDiv = projectDiv.querySelector(".project-files");
-            
-                const newRow = targetFilesDiv.querySelector(".new-file-row");
-
-                if (newRow) {
-                    targetFilesDiv.insertBefore(draggingEl, newRow);
-                } else {
-                    targetFilesDiv.appendChild(draggingEl);
-                }
-            
-                draggingEl.dataset.projectId = toProjectId;
-                draggingEl.classList.remove("dragging");
-            });
-
-            if (openProjects.has(project.name)) {
-                projectDiv.classList.add("open");
-            }
-    
-            const title = document.createElement("div");
-            title.className = "project-title";
-            title.innerHTML = `
-                <span class="project-name">
-                    <i class="fa-solid fa-chevron-right project-arrow"></i>
-                    <i class="fa-solid fa-folder"></i>
-                    ${project.name}
+            const classHeader = document.createElement("div");
+            classHeader.className = "class-header";
+            classHeader.innerHTML = `
+                <span class="class-name">
+                    <i class="fa-solid fa-chevron-right class-arrow"></i>
+                    ${cls.name}
                 </span>
-            
-                <button class="icon-btn new-file-btn" data-project="${project.id}">
+                <button class="icon-btn class-new-project-btn">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             `;
-            title.querySelector(".new-file-btn").onclick = (e) => {
-
-                // prevent clicking the button from triggering the project open
+    
+            classHeader.querySelector(".class-new-project-btn").onclick = (e) => {
                 e.stopPropagation();
-            
-                createFile(project.id);
+                createProject(cls.id, cls.name);
             };
-
-            title.onclick = (e) => {
-                if(e.target.closest(".new-file-btn")) return;
-            
-                projectDiv.classList.toggle("open");
-            
-                let mainFile = project.files.find(f => f === "main.py");
-            
-                if (!mainFile) {
-                    mainFile = project.files[0];
-                }
-            
-                if (mainFile) {
-                    openFile(project.id, mainFile);
-                }
+    
+            classHeader.onclick = (e) => {
+                if (e.target.closest(".class-new-project-btn")) return;
+                classDiv.classList.toggle("open");
             };
-            
     
-            const filesDiv = document.createElement("div");
-            filesDiv.className = "project-files";
+            const classProjects = document.createElement("div");
+            classProjects.className = "class-projects";
     
-            project.files.forEach(file => {
+            cls.projects.forEach(project => {
+                if (!firstProject) {
+                    firstProject = project;
+                }
     
-                const f = document.createElement("div");
-                f.className = "project-file";
-                f.draggable = true;
-
-                f.dataset.path = file
-                f.dataset.projectId = project.id;
-
-                f.addEventListener("dragstart", (e) => {
-                    e.dataTransfer.setData("path", f.dataset.path);
-                    e.dataTransfer.setData("fromProjectId", f.dataset.projectId);
-
-                    f.classList.add("dragging");
+                const projectDiv = document.createElement("div");
+                projectDiv.className = "project";
+    
+                if (openProjects.has(project.name)) {
+                    projectDiv.classList.add("open");
+                }
+    
+                projectDiv.addEventListener("dragover", (e) => {
+                    e.preventDefault();
                 });
-
-                f.addEventListener("dragend", () => {
-                    f.classList.remove("dragging");
+    
+                projectDiv.addEventListener("dragenter", () => {
+                    projectDiv.classList.add("drag-over");
                 });
-                
-                f.innerHTML = `
-                    <span class="file-left">
-                        <i class="fa-solid fa-file"></i>
-                        ${file}
+    
+                projectDiv.addEventListener("dragleave", () => {
+                    projectDiv.classList.remove("drag-over");
+                });
+    
+                projectDiv.addEventListener("drop", async (e) => {
+                    e.preventDefault();
+                    projectDiv.classList.remove("drag-over");
+    
+                    const path = e.dataTransfer.getData("path");
+                    const fromProjectId = e.dataTransfer.getData("fromProjectId");
+                    const toProjectId = String(project.id);
+    
+                    if (!path || fromProjectId === toProjectId) return;
+    
+                    const draggingEl = document.querySelector(".dragging");
+                    if (!draggingEl) return;
+    
+                    const ok = await moveFile(fromProjectId, toProjectId, path);
+                    if (!ok) return;
+    
+                    const targetFilesDiv = projectDiv.querySelector(".project-files");
+                    const newRow = targetFilesDiv.querySelector(".new-file-row");
+    
+                    if (newRow) {
+                        targetFilesDiv.insertBefore(draggingEl, newRow);
+                    } else {
+                        targetFilesDiv.appendChild(draggingEl);
+                    }
+    
+                    draggingEl.dataset.projectId = toProjectId;
+                    draggingEl.classList.remove("dragging");
+                });
+    
+                const title = document.createElement("div");
+                title.className = "project-title";
+                title.innerHTML = `
+                    <span class="project-name">
+                        <i class="fa-solid fa-chevron-right project-arrow"></i>
+                        <i class="fa-solid fa-folder"></i>
+                        ${project.name}
                     </span>
-
-                    <div class="file-menu">
-                        <button class="menu-btn">⋯</button>
-
-                        <div class="menu-dropdown">
-                            <button onclick="renameFile(${project.id}, '${file}')">Rename</button>
-                            <button onclick="deleteFile(${project.id}, '${file}')">Delete</button>
-                        </div>
-                    </div>
+                    <button class="icon-btn new-file-btn" data-project="${project.id}">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                 `;
-
-                const menuBtn = f.querySelector(".menu-btn");
-                const fileMenu = f.querySelector(".file-menu");
-
-                menuBtn.onclick = (e) => {
+    
+                title.querySelector(".new-file-btn").onclick = (e) => {
                     e.stopPropagation();
-
-                    document.querySelectorAll(".file-menu")
-                        .forEach(m => m.classList.remove("open"));
-
-                    fileMenu.classList.toggle("open");
+                    createFile(project.id);
                 };
-
     
-                f.onclick = (e) => {
-
-                    if (e.target.closest(".file-menu")) return;
-                    
-                    document.querySelectorAll(".project-file")
-                    .forEach(i => i.classList.remove("active"));
-
-                    f.classList.add("active");
-
-                    openFile(project.id, file);
-                }
+                title.onclick = (e) => {
+                    if (e.target.closest(".new-file-btn")) return;
     
-                filesDiv.appendChild(f);
+                    projectDiv.classList.toggle("open");
+    
+                    let mainFile = project.files.find(f => f === "main.py");
+                    if (!mainFile) {
+                        mainFile = project.files[0];
+                    }
+    
+                    if (mainFile) {
+                        openFile(project.id, mainFile);
+                    }
+                };
+    
+                const filesDiv = document.createElement("div");
+                filesDiv.className = "project-files";
+    
+                project.files.forEach(file => {
+                    const f = document.createElement("div");
+                    f.className = "project-file";
+                    f.draggable = true;
+                    f.dataset.path = file;
+                    f.dataset.projectId = project.id;
+    
+                    f.addEventListener("dragstart", (e) => {
+                        e.dataTransfer.setData("path", f.dataset.path);
+                        e.dataTransfer.setData("fromProjectId", String(f.dataset.projectId));
+                        f.classList.add("dragging");
+                    });
+    
+                    f.addEventListener("dragend", () => {
+                        f.classList.remove("dragging");
+                    });
+    
+                    f.innerHTML = `
+                        <span class="file-left">
+                            <i class="fa-solid fa-file"></i>
+                            ${file}
+                        </span>
+                        <div class="file-menu">
+                            <button class="menu-btn">⋯</button>
+                            <div class="menu-dropdown">
+                                <button onclick="renameFile(${project.id}, '${file}')">Rename</button>
+                                <button onclick="deleteFile(${project.id}, '${file}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+    
+                    const menuBtn = f.querySelector(".menu-btn");
+                    const fileMenu = f.querySelector(".file-menu");
+    
+                    menuBtn.onclick = (e) => {
+                        e.stopPropagation();
+    
+                        document.querySelectorAll(".file-menu")
+                            .forEach(m => m.classList.remove("open"));
+    
+                        fileMenu.classList.toggle("open");
+                    };
+    
+                    f.onclick = (e) => {
+                        if (e.target.closest(".file-menu")) return;
+    
+                        document.querySelectorAll(".project-file")
+                            .forEach(i => i.classList.remove("active"));
+    
+                        f.classList.add("active");
+                        openFile(project.id, file);
+                    };
+    
+                    filesDiv.appendChild(f);
+                });
+    
+                const newRow = document.createElement("div");
+                newRow.className = "project-file new-file-row";
+                newRow.innerHTML = `
+                    <i class="fa-solid fa-plus"></i>
+                    New file
+                `;
+                newRow.onclick = () => createFile(project.id);
+    
+                filesDiv.appendChild(newRow);
+    
+                projectDiv.appendChild(title);
+                projectDiv.appendChild(filesDiv);
+                classProjects.appendChild(projectDiv);
             });
     
-            projectDiv.appendChild(title);
-            projectDiv.appendChild(filesDiv);
-
-            const newRow = document.createElement("div");
-
-        newRow.className = "project-file new-file-row";
-        newRow.innerHTML = `
-            <i class="fa-solid fa-plus"></i>
-            New file
-        `;
-
-        newRow.onclick = () => createFile(project.id);
-
-        filesDiv.appendChild(newRow);
-    
-            tree.appendChild(projectDiv);
+            classDiv.appendChild(classHeader);
+            classDiv.appendChild(classProjects);
+            tree.appendChild(classDiv);
         });
+    
         if (firstProject && firstProject.files.length) {
-
             let mainFile = firstProject.files.find(f => f === "main.py");
-        
             if (!mainFile) {
                 mainFile = firstProject.files[0];
             }
-        
+    
             openFile(firstProject.id, mainFile);
+    
             setTimeout(() => {
                 const firstFile = document.querySelector(".project-file");
-                if(firstFile) firstFile.classList.add("active");
+                if (firstFile) firstFile.classList.add("active");
             }, 50);
         }
     }
-    async function openFile(pid, filePath) {
-        document.querySelectorAll(".project-file")
 
-        const res = await fetch(
-            `/dashboard/editor/project/${pid}/file/${filePath}/`
-        );
-    
+    async function openFile(pid, filePath) {
+        const res = await fetch(`/dashboard/editor/project/${pid}/file/${filePath}/`);
         const data = await res.json();
     
         if (data.ok) {
@@ -634,9 +539,13 @@ function toggleMenu() {
             window.EditorProject.resetLastSavedCode(data.code || "");
             window.EditorProject.clearAutosaveTimer();
     
-            document.getElementById("project_id").value = pid;
-            document.getElementById("current_file_path").value = filePath;
-            document.getElementById("name").value = filePath;
+            const projectIdInput = document.getElementById("project_id");
+            const currentFilePathInput = document.getElementById("current_file_path");
+            const nameInput = document.getElementById("name");
+    
+            if (projectIdInput) projectIdInput.value = pid;
+            if (currentFilePathInput) currentFilePathInput.value = filePath;
+            if (nameInput) nameInput.value = filePath;
         }
     }
 
@@ -668,29 +577,32 @@ function toggleMenu() {
         }
     }
 
-    document
-    .getElementById("newProjectBtn")
-    .addEventListener("click", async () => {
-
-        const name = prompt("Project name:");
-
-        if(!name) return;
-
+    async function createProject(classId, className) {
+        const name = prompt(`New project name for ${className}:`);
+        if (!name) return;
+    
         const res = await fetch("/dashboard/editor/create-project/", {
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "X-CSRFToken":getCsrfToken()
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
             },
-            body:JSON.stringify({name})
+            body: JSON.stringify({
+                name,
+                class_id: classId
+            })
         });
-
+    
         const data = await res.json();
-
-        if(data.ok){
-            loadProjects();
+    
+        if (data.ok) {
+            await loadProjects();
+            openFile(data.project_id, "main.py");
+        } else {
+            alert(data.error || "Could not create project");
         }
-    });
+    }
+
 
     document.addEventListener("DOMContentLoaded", () => {
         loadProjects();
