@@ -125,7 +125,7 @@
 
         <textarea id="id_code" hidden>{{ initial_code }}</textarea>
         <input type="hidden" id="project_id" value="{{ project_id|default:'' }}">
-        <input type="hidden" id="current_file_path" value="main.py">
+        <input type="hidden" id="current_file_path" value="{{ code_name|default:'main.py' }}">
 
     </form>
     <div id="main">
@@ -306,6 +306,14 @@ function toggleMenu() {
         return open;
     }
 
+    function goToProject(projectId, filePath=null) {
+        let url = `/dashboard/editor/?project_id=${projectId}`;
+        if (filePath) {
+            url += `&file=${encodeURIComponent(filePath)}`;
+        }
+        window.location.href = url;
+    }
+
     async function loadProjects() {
         const openProjects = getOpenProjects();
     
@@ -420,17 +428,13 @@ function toggleMenu() {
     
                 title.onclick = (e) => {
                     if (e.target.closest(".new-file-btn")) return;
-    
-                    projectDiv.classList.toggle("open");
-    
+                
                     let mainFile = project.files.find(f => f === "main.py");
                     if (!mainFile) {
-                        mainFile = project.files[0];
+                        mainFile = project.files[0] || null;
                     }
-    
-                    if (mainFile) {
-                        openFile(project.id, mainFile);
-                    }
+                
+                    goToProject(project.id, mainFile);
                 };
     
                 const filesDiv = document.createElement("div");
@@ -481,12 +485,7 @@ function toggleMenu() {
     
                     f.onclick = (e) => {
                         if (e.target.closest(".file-menu")) return;
-    
-                        document.querySelectorAll(".project-file")
-                            .forEach(i => i.classList.remove("active"));
-    
-                        f.classList.add("active");
-                        openFile(project.id, file);
+                        goToProject(project.id, file);
                     };
     
                     filesDiv.appendChild(f);
@@ -512,19 +511,6 @@ function toggleMenu() {
             tree.appendChild(classDiv);
         });
     
-        if (firstProject && firstProject.files.length) {
-            let mainFile = firstProject.files.find(f => f === "main.py");
-            if (!mainFile) {
-                mainFile = firstProject.files[0];
-            }
-    
-            openFile(firstProject.id, mainFile);
-    
-            setTimeout(() => {
-                const firstFile = document.querySelector(".project-file");
-                if (firstFile) firstFile.classList.add("active");
-            }, 50);
-        }
     }
 
     async function openFile(pid, filePath) {
@@ -569,9 +555,8 @@ function toggleMenu() {
 
         const data = await res.json();
 
-        if(data.ok){
-            await loadProjects();
-            openFile(pid, filename);
+        if (data.ok) {
+            goToProject(pid, filename);
         } else {
             alert("Could not create file");
         }
@@ -596,17 +581,12 @@ function toggleMenu() {
         const data = await res.json();
     
         if (data.ok) {
-            await loadProjects();
-            openFile(data.project_id, "main.py");
+            goToProject(data.project_id, "main.py");
         } else {
             alert(data.error || "Could not create project");
         }
     }
 
-
-    document.addEventListener("DOMContentLoaded", () => {
-        loadProjects();
-    });
 
     async function renameFile(projectId, oldPath){
         const newName = prompt("New file name:", oldPath);
@@ -624,9 +604,8 @@ function toggleMenu() {
 
         const data = await res.json();
 
-        if(data.ok){
-            await loadProjects();
-            openFile(projectId, newName);
+        if (data.ok) {
+            goToProject(projectId, newName);
         } else {
             alert("Could not rename file");
         }
@@ -683,6 +662,30 @@ function toggleMenu() {
     
         return true;
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadProjects().then(() => {
+            const activeProjectId = document.getElementById("project_id")?.value;
+            const activeFilePath = document.getElementById("current_file_path")?.value;
+    
+            if (!activeProjectId || !activeFilePath) return;
+    
+            document.querySelectorAll(".project").forEach(projectEl => {
+                const fileEl = projectEl.querySelector(
+                    `.project-file[data-project-id="${activeProjectId}"][data-path="${CSS.escape(activeFilePath)}"]`
+                );
+                if (fileEl) {
+                    fileEl.classList.add("active");
+                    projectEl.classList.add("open");
+    
+                    const classGroup = projectEl.closest(".class-group");
+                    if (classGroup) {
+                        classGroup.classList.add("open");
+                    }
+                }
+            });
+        });
+    });
 
   </script>
 {% endblock %}

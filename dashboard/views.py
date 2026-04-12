@@ -837,6 +837,8 @@ def editor_view(request):
     assigned = None
     project_id = request.GET.get("project_id")
 
+    selected_file = request.GET.get("file")
+
     # Assignment context (if present)
     if assigned_id:
         assigned = get_object_or_404(AssignedToClass, id=assigned_id)
@@ -864,19 +866,31 @@ def editor_view(request):
         else:
             if project.owner != request.user:
                 return HttpResponse("Access denied", status=403)
+        if project.assignment and project.for_class:
+            assigned = AssignedToClass.objects.filter(
+                assignment=project.assignment,
+                for_class=project.for_class
+            ).first()
+        
+        project_file = None
 
-        main_file = project.files.filter(path="main.py").first()
-        if not main_file:
-            main_file = project.files.first()
+        if selected_file:
+            project_file = project.files.filter(path=selected_file).first()
 
-        if main_file:
+        if not project_file:
+            project_file = project.files.filter(path="main.py").first()
+
+        if not project_file:
+            project_file = project.files.first()
+
+        if project_file:
             try:
-                main_file.file.open("rb")
-                initial_code = force_str(main_file.file.read(), errors="ignore")
-            except:
+                project_file.file.open("rb")
+                initial_code = force_str(project_file.file.read(), errors="ignore")
+            except Exception:
                 initial_code = ""
 
-            code_name = main_file.path
+            code_name = project_file.path
 
         if project.submitted:
             is_readonly = True
