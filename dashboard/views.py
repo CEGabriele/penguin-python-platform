@@ -862,7 +862,6 @@ def editor_view(request):
             if project.for_class.teacher != request.user.teacher:
                 print("access denied: teacher does not match project class teacher")
                 return HttpResponse("Access denied", status=403)
-            is_readonly = True
         else:
             if project.owner != request.user:
                 return HttpResponse("Access denied", status=403)

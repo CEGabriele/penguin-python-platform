@@ -9,7 +9,7 @@
     {% endblock %}
     {% block extra_head%}
     <script>
-        window.WORKER_URL = "{% static 'editor/worker.js' %}";
+        window.WORKER_URL = "{% static 'editor/worker.js' %}?v=2";
         function toggleFolder(titleElement) {
             const group = titleElement.closest(".class-group");
             group.classList.toggle("open");

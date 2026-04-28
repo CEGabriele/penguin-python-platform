@@ -1,8 +1,5 @@
 // import js turtle
 
-window.WORKER_URL = "/static/editor/worker.js";
-
-
 import turtleModule from './turtle.js';
 
 let default_code = `# write your Python code here
@@ -85,7 +82,7 @@ window.console_write = function (s) {
 window.console_input = function (promptText = "") {
   return new Promise((resolve, reject) => {
     // prevent overlapping inputs
-    if (window.inputInProgress) {
+    if (inputInProgress) {
       reject(new Error("Input already in progress"));
       return;
     }
@@ -150,11 +147,19 @@ let workerReady = false;
 function attachWorkerHandlers(w) {
   w.onmessage = (e) => {
     console.log("worker message:", e.data);
+
+    if (typeof e.data === "string") {
+      console_write(e.data + "\n");
+      return;
+    }
+
     const message = e.data;
+
     switch (message.type) {
-      case 'ready':
+      case "ready":
         workerReady = true;
         window.sharedPyWorkerReady = true;
+        console_write("Python ready.\n");
         break;
       case 'stdout':
         console_write(message.data);
@@ -195,21 +200,16 @@ function attachWorkerHandlers(w) {
 
 function initWorker() {
   workerReady = false;
+  window.sharedPyWorkerReady = false;
 
-  if (window.sharedPyWorker) {
-    worker = window.sharedPyWorker;
-    attachWorkerHandlers(worker);
-    workerReady = !!window.sharedPyWorkerReady;
-    worker.postMessage({ type: "ping_ready" });
-    return;
+  if (worker) {
+    try { worker.terminate(); } catch {}
   }
 
-  worker = new Worker(window.WORKER_URL, { type: 'classic' });
+  worker = new Worker(window.WORKER_URL, { type: "classic" });
   window.sharedPyWorker = worker;
-  window.sharedPyWorkerReady = false;
-  attachWorkerHandlers(worker);
-  worker.postMessage({ type: "ping_ready" });
 
+  attachWorkerHandlers(worker);
 }
 
 
@@ -246,8 +246,7 @@ async function runCode() {
   // make sure everything is ready
   if (codeRunning) return alert('Code is already running.');
   if (!workerReady) {
-    alert("Python is still loading. Try again in a moment.");
-    return;
+    console_write("Starting Python...\n");
   }
   
 

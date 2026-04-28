@@ -1,13 +1,9 @@
 try {
-  self.postMessage("WORKER_BOOTED_BEFORE_IMPORT");
-  importScripts(self.location.origin + "/static/pyodide/pyodide.js");
-  self.postMessage("WORKER_BOOTED_AFTER_IMPORT");
+  importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
 } catch (e) {
   self.postMessage({
     type: "error",
-    error: "importScripts failed",
-    message: e.message,
-    stack: e.stack,
+    error: "importScripts failed: " + e.message,
   });
 }
 
@@ -84,6 +80,7 @@ def _input_abort():
     if _input_future and not _input_future.done():
         _input_future.set_exception(asyncio.CancelledError("Input aborted"))
         _input_future = None
+builtins.input = input 
 `;
 
 // ---------------- AUTO ASYNC WRAPPER ----------------
@@ -151,16 +148,15 @@ function autoWrapAsync(code) {
 // ---------------- LOAD PYODIDE ----------------
 async function ensurePyodide() {
   if (!pyodide) {
-    pyodide = await loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/"
-    });
-    await pyodide.runPythonAsync(PY_BOOTSTRAP);
-    // remove Pyodide's disabled turtle
-    await pyodide.runPythonAsync(`
-    import sys
-    if "turtle" in sys.modules:
-        del sys.modules["turtle"]
-    `);
+  safePost({ type: "stdout", data: "Loading Python...\n" });
+
+  pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/"
+  });
+  await pyodide.runPythonAsync(PY_BOOTSTRAP);
+
+  pyodideReady = true;
+  
 
 
     // register JS turtle bridge
@@ -219,22 +215,20 @@ async function ensurePyodide() {
 self.onmessage = async (event) => {
   const { type, code, value, usesPygame, usesTurtle, files, entry } = event.data || {};
   try {
-    if (type === 'input_response') {
+    if (type === "input_response") {
       await ensurePyodide();
-      const escaped = JSON.stringify(String(value));
-      await pyodide.runPythonAsync(`
-import asyncio
-loop = asyncio.get_event_loop()
-if '_input_response' in globals():
-    loop.call_soon_threadsafe(_input_response, ${escaped})
-`);
+    
+      const inputResponse = pyodide.globals.get("_input_response");
+      inputResponse(String(value));
+    
       return;
     }
 
     if (type === 'input_abort') {
       await ensurePyodide();
-      pyodide.runPython(`_input_abort()`);
-      return;
+
+      const inputAbort = pyodide.globals.get("_input_abort");
+      inputAbort();
     }
     if (type === "ping_ready") {
       if (pyodideReady) {
@@ -272,18 +266,10 @@ if '_input_response' in globals():
         const moduleName = entryFile.replace(".py", "");
     
         // run the entry module
-        await pyodide.runPythonAsync(`
-import sys, importlib
+        const entryCode = projectFiles[entryFile] || "";
+        const wrappedCode = autoWrapAsync(entryCode);
 
-sys.path.append(".")
-importlib.invalidate_caches()
-
-module_name = ${JSON.stringify(moduleName)}
-if module_name in sys.modules:
-    del sys.modules[module_name]
-
-importlib.import_module(module_name)
-        `);
+        await pyodide.runPythonAsync(wrappedCode);
         
     
       } catch (e) {
@@ -297,4 +283,3 @@ importlib.import_module(module_name)
     safePost({ type: "error", error: err?.toString?.() || String(err) });
   }
 };
-ensurePyodide();
