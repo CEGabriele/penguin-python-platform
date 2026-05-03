@@ -55,18 +55,6 @@ require(['vs/editor/editor.main'], function () {
   }
 
 
-  const editor_container = document.getElementById('editor');
-  const graphics_container = document.getElementById('graphics-container');
-
-  function updateHeight(){
-    const height = editor.getContentHeight();
-    editor_container.style.height = height + 'px';
-    if (graphics_container) graphics_container.style.top = height + 'px';
-  }
-
-  updateHeight();
-  editor.onDidContentSizeChange(updateHeight);
-  editor.onDidChangeModelContent(onEditorChange);
   setInterval(autosave, 60000); // periodic autosave every minute
 });
 
@@ -445,3 +433,7 @@ function onEditorChange() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(autosave, 600);
 }
+
+window.addEventListener("resize", () => {
+  editor.layout();
+});
