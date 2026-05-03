@@ -1367,32 +1367,3 @@ padding-top: 0 !important;
     margin-bottom: 12px;
     color: #1f2a44;
 }
-
-html,
-body {
-    height: 100%;
-    overflow: hidden;
-}
-
-.page-bubble {
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-#main {
-    flex: 1;
-    min-height: 0;
-    height: 100%;
-}
-
-#editor {
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-}
-
-#console {
-    height: 100%;
-    min-height: 0;
-    overflow-y: auto;
-}
