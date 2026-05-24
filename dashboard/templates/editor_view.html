@@ -110,7 +110,7 @@
                 <i class="fa-solid fa-stop"></i>
             </button>
 
-            <span id="save"></span>
+            <span id="saveStatus"></span>
 
             {% if assigned %}
                 {% if is_submitted %}
@@ -130,13 +130,16 @@
     </form>
     <div id="main">
         <div id="editor"></div>
-        <div id="console"></div>
-        <div id="graphics-container"
-            style="display:none; text-align:center; background:#222; padding:5px;">
-        <canvas id="graphics-canvas" width="640" height="480"
-                style="border:1px solid #444; display:none;"></canvas>
+        <div id="drag-divider"></div>
+        <div id = "right-panel">
+            <div id="graphics-container"
+                style="display:none; text-align:center; background:#222; padding:5px;">
+                <canvas id="graphics-canvas" width="640" height="480"
+                        style="border:1px solid #444; display:none;"></canvas>
+                <div id="turtle-canvas" style="display:none;"></div>
+            </div>
+            <div id="console"></div>
         </div>
-
     </div>
 
 </div>
@@ -159,6 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 {% endif %}
 
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
 <script type="module" src="{% static 'editor/main.js' %}" defer></script>
 
 <script>

@@ -1,6 +1,6 @@
 // import js turtle
 
-import turtleModule from './turtle.js';
+//import turtleModule from './turtle.js';
 
 let default_code = `# write your Python code here
 
@@ -159,7 +159,9 @@ function attachWorkerHandlers(w) {
             const inputValue = await window.console_input(promptText);
             w.postMessage({ type: 'input_response', value: inputValue });
           } catch {
-            w.postMessage({ type: 'input_abort' });
+            if (codeRunning){
+              w.postMessage({ type: 'input_abort' });
+            }
           }
         })();
         break;
@@ -187,11 +189,13 @@ function attachWorkerHandlers(w) {
 }
 
 function initWorker() {
+
   workerReady = false;
   window.sharedPyWorkerReady = false;
 
   if (worker) {
     try { worker.terminate(); } catch {}
+    worker = null;
   }
 
   worker = new Worker(window.WORKER_URL, { type: "classic" });
@@ -245,10 +249,18 @@ async function runCode() {
 
   // get code and check what is used
   const rawCode = editor.getValue();
+
+  const usesSkulptTurtle = shouldUseSkulptTurtle(rawCode);
+  if (usesSkulptTurtle) {
+    codeRunning = true;
+    inputInProgress = false;
+    document.getElementById('console').innerHTML = '';
+    await runWithSkulptTurtle(rawCode);
+    return;
+  }
+
   const usesPygame = /\bimport\s+pygame\b/.test(rawCode);
-  const usesTurtle = /\bimport\s+turtle\b|\bfrom\s+turtle\s+import\b/.test(rawCode);
   lastRunUsedPygame = usesPygame;
-  lastRunUsedTurtle = usesTurtle;
 
 
   const container = document.getElementById('graphics-container');
@@ -256,7 +268,7 @@ async function runCode() {
   const turtleCanvas = ensureTurtleCanvas(); // create if missing
 
   // show appropriate canvases/container
-  if (usesPygame || usesTurtle) {
+  if (usesPygame) {
     container.style.display = 'block';
     container.style.height = '';
     container.style.padding = '5px';
@@ -264,18 +276,9 @@ async function runCode() {
     container.style.display = 'none';
   }
   if (pygameCanvas) pygameCanvas.style.display = usesPygame ? 'inline-block' : 'none';
-  if (turtleCanvas) turtleCanvas.style.display = usesTurtle ? 'inline-block' : 'none';
 
 
   // turtle setup if using
-  if (usesTurtle) {
-    turtleModule.setup({
-        canvas: turtleCanvas,
-        width: 640,
-        height: 480,
-        bgcolor: 'white',
-    });
-  }
   if (abortController) {
     try { abortController.abort(); } catch {}
     abortController = null;
@@ -299,11 +302,68 @@ async function runCode() {
     type: "run_project",
     files: files,
     entry: currentFilePath,
-    usesPygame,
-    usesTurtle
+    usesPygame
   });
 }
 window.runCode = runCode;
+
+function shouldUseSkulptTurtle(code) {
+  return /^\s*(import\s+turtle|from\s+turtle\s+import)/m.test(code);
+}
+
+function outf(text) {
+  console_write(text);
+}
+
+function builtinRead(file) {
+  if (
+    Sk.builtinFiles === undefined ||
+    Sk.builtinFiles["files"][file] === undefined
+  ) {
+    throw `File not found: '${file}'`;
+  }
+
+  return Sk.builtinFiles["files"][file];
+}
+
+async function runWithSkulptTurtle(code) {
+  const container = document.getElementById("graphics-container");
+  const pygameCanvas = document.getElementById("graphics-canvas");
+  const turtleCanvas = document.getElementById("turtle-canvas");
+
+  container.style.display = "block";
+  if (pygameCanvas) pygameCanvas.style.display = "none";
+
+  turtleCanvas.style.display = "block";
+  turtleCanvas.innerHTML = "";
+
+  Sk.configure({
+    output: outf,
+    read: builtinRead,
+    __future__: Sk.python3,
+
+    inputfun: (promptText) => {
+      return window.console_input(promptText || "");
+    },
+
+    inputfunTakesPrompt: true,
+  });
+
+  Sk.TurtleGraphics = Sk.TurtleGraphics || {};
+  Sk.TurtleGraphics.target = "turtle-canvas";
+  Sk.TurtleGraphics.width = 640;
+  Sk.TurtleGraphics.height = 480;
+
+  try {
+    await Sk.misceval.asyncToPromise(() =>
+      Sk.importMainWithBody("<stdin>", false, code, true)
+    );
+  } catch (err) {
+    console_write(`<span style="color:red;">${err.toString()}</span>\n`);
+  } finally {
+    codeRunning = false;
+  }
+}
 
 function clearTurtleCanvasIfVisible() {
   try {
@@ -336,8 +396,21 @@ async function stopCode() {
     try { abortController.abort(); } catch {}
     abortController = null;
   }
+
   inputInProgress = false;
   codeRunning = false;
+
+  console_write(`
+    <div style="
+      color:#ffb347;
+      padding:6px 10px;
+      margin-top:6px;
+      border-left:4px solid #ffb347;
+      background:#2a2a2a;
+    ">
+      ⏹ Program stopped
+    </div>
+  `);
 
   clearTurtleCanvasIfVisible();
   hideGraphics();
@@ -437,3 +510,49 @@ function onEditorChange() {
 window.addEventListener("resize", () => {
   editor.layout();
 });
+
+function setupDragDivider(){
+  const main = document.getElementById("main");
+  const divider = document.getElementById("drag-divider");
+  const editorEl = document.getElementById("editor");
+  const rightPanel = document.getElementById("right-panel");
+
+  if (!main || !divider || !editorEl || !rightPanel) return;
+
+  let isDragging = false;
+
+  divider.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    e.preventDefault();
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    const mainRect = main.getBoundingClientRect();
+    let newRightWidth = mainRect.right - e.clientX;
+
+    // set limits
+    const minRight = 320;
+    const minEditor = 300;
+    const maxRight = mainRect.width - minEditor - divider.offsetWidth;
+
+    const width = Math.max(minRight, Math.min(newRightWidth, maxRight));
+
+    rightPanel.style.width = `${width}px`;
+    rightPanel.style.flex = `0 0 ${width}px`;
+    if (editor && editor.layout) editor.layout();
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+    else return;
+  });
+}
+document.addEventListener("DOMContentLoaded", setupDragDivider);

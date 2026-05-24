@@ -494,7 +494,7 @@ a {
     display: flex;
     flex-direction: row;
     min-height: 0;
-    gap: 8px;
+    gap: 10px;
  }
  
  /* Make the editor area a positioned container */
@@ -552,16 +552,19 @@ a {
 }
 
 #console, .console {
-    width:35%;
-    background:#1e1e1e;
-    color:#eaeaea;
-    padding:12px;
-    overflow-y:auto;
-    font-family:monospace;
-    font-size:14px;
-    border-radius:10px;
+    width: 100%;
+    box-sizing: border-box;
+    background: #1e1e1e;
+    color: #eaeaea;
+    padding: 12px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 14px;
+    border-radius: 10px;
     text-align: left;
- }
+    flex: 1;
+    min-width: 0;
+}
  
 #userInput, .userInput{
     background-color: #111;
@@ -1366,4 +1369,58 @@ padding-top: 0 !important;
     margin-top: 0;
     margin-bottom: 12px;
     color: #1f2a44;
+}
+
+#graphics-container {
+    width: 640px;
+    min-height: 480px;
+
+    background: #222;
+    border-radius: 10px;
+
+    padding: 5px;
+    overflow: hidden;
+}
+
+
+#turtle-canvas {
+    width: 640px;
+    height: 480px;
+    background: white;
+}
+
+#right-panel {
+    width: 650px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    overflow: hidden
+}
+
+
+#drag-divider {
+    width: 8px;
+    cursor: col-resize;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    flex: 0 0 8px;
+}
+
+#drag-divider:hover {
+    background: #7fb3d5;
+}
+
+#editor {
+    flex: 1;
+    min-width: 300px;
+}
+
+#right-panel {
+    width: 650px;
+    min-width: 320px;
+    max-width: 80%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
