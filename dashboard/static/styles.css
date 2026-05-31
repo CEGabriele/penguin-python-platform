@@ -495,6 +495,7 @@ a {
     flex-direction: row;
     min-height: 0;
     gap: 10px;
+    overflow: hidden;
  }
  
  /* Make the editor area a positioned container */
@@ -633,7 +634,7 @@ a {
     right: 0; /* making it touch right side of screen*/
     bottom: 0; /*change this to 0 to make it stick to the bottom */
     left: 200px;
-    height: calc(100vh - var(--nav-height));
+    height: auto;
     padding: 16px 18px;
     background:#f4faff;/* #fff;*/
 
@@ -1423,4 +1424,26 @@ padding-top: 0 !important;
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+body.filebar-collapsed .side-menu {
+    width: 42px;
+    padding: 12px 6px;
+}
+
+body.filebar-collapsed .page-bubble {
+    left: 42px;
+}
+
+/* hide only the file content, not the header/button */
+body.filebar-collapsed #projectTree,
+body.filebar-collapsed .project-header span {
+    display: none;
+}
+
+body.filebar-collapsed .project-header {
+    justify-content: center;
+}
+
+body.filebar-collapsed .filebar-toggle i {
+    transform: none;
 }
