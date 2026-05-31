@@ -231,9 +231,7 @@ self.onmessage = async (event) => {
       inputAbort();
     }
     if (type === "ping_ready") {
-      if (pyodideReady) {
-        safePost({ type: "ready" });
-      }
+      await ensurePyodide();
       return;
     }
     

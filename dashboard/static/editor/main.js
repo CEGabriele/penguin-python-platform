@@ -24,6 +24,15 @@ let currentFilePath = "main.py";
 let cachedProjectFiles = null;
 let cachedProjectId = null;
 let statusSpan = document.getElementById("saveStatus");
+let workerReady = false;
+let workerReadyPromiseResolve = null;
+
+function waitForWorkerReady() {
+  if (workerReady) return Promise.resolve();
+  return new Promise((resolve) => {
+    workerReadyPromiseResolve = resolve;
+  });
+}
 
 // configure Monaco
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
@@ -130,11 +139,9 @@ function ensureTurtleCanvas() {
   return canvas;
 }
 
-let workerReady = false;
 
 function attachWorkerHandlers(w) {
   w.onmessage = (e) => {
-    console.log("worker message:", e.data);
 
     if (typeof e.data === "string") {
       console_write(e.data + "\n");
@@ -148,6 +155,12 @@ function attachWorkerHandlers(w) {
         workerReady = true;
         window.sharedPyWorkerReady = true;
         console_write("Python ready.\n");
+
+        if (workerReadyPromiseResolve) {
+          workerReadyPromiseResolve();
+          workerReadyPromiseResolve = null;
+        }
+
         break;
       case 'stdout':
         console_write(message.data);
@@ -189,7 +202,6 @@ function attachWorkerHandlers(w) {
 }
 
 function initWorker() {
-
   workerReady = false;
   window.sharedPyWorkerReady = false;
 
@@ -202,6 +214,8 @@ function initWorker() {
   window.sharedPyWorker = worker;
 
   attachWorkerHandlers(worker);
+
+  worker.postMessage({ type: "ping_ready" });
 }
 
 
@@ -237,15 +251,16 @@ async function runCode() {
   if (!editor) return;
   // make sure everything is ready
   if (codeRunning) return alert('Code is already running.');
+  // clear console
+  document.getElementById('console').innerHTML = '';
   if (!workerReady) {
     console_write("Starting Python...\n");
+    await waitForWorkerReady();
   }
   
 
   codeRunning = true;
   inputInProgress = false;
-  // clear console
-  document.getElementById('console').innerHTML = '';
 
   // get code and check what is used
   const rawCode = editor.getValue();
@@ -400,6 +415,11 @@ async function stopCode() {
   inputInProgress = false;
   codeRunning = false;
 
+  if (worker){
+    try { worker.terminate(); } catch {}
+    worker = null;
+  }
+
   console_write(`
     <div style="
       color:#ffb347;
@@ -415,10 +435,12 @@ async function stopCode() {
   clearTurtleCanvasIfVisible();
   hideGraphics();
 
-  if (editor) setTimeout(() => editor.focus(), 60);
+  initWorker();
 
   lastRunUsedPygame = false;
   lastRunUsedTurtle = false;
+
+  if (editor) setTimeout(() => editor.focus(), 60);
 }
 
 window.stopCode = stopCode;
