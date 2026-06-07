@@ -29,8 +29,14 @@ let workerReadyPromiseResolve = null;
 
 function waitForWorkerReady() {
   if (workerReady) return Promise.resolve();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     workerReadyPromiseResolve = resolve;
+
+    setTimeout(() => {
+      if (!workerReady) {
+        reject(new Error("Python worker did not become ready"));
+      }
+    }, 15000);
   });
 }
 
@@ -215,7 +221,6 @@ function initWorker() {
 
   attachWorkerHandlers(worker);
 
-  worker.postMessage({ type: "ping_ready" });
 }
 
 
@@ -255,7 +260,6 @@ async function runCode() {
   document.getElementById('console').innerHTML = '';
   if (!workerReady) {
     console_write("Starting Python...\n");
-    await waitForWorkerReady();
   }
   
 

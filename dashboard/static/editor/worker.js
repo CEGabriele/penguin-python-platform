@@ -153,61 +153,9 @@ async function ensurePyodide() {
   pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/"
   });
-  await pyodide.runPythonAsync(PY_BOOTSTRAP);
-
+  await pyodide.runPythonAsync(PY_BOOTSTRAP);    
   pyodideReady = true;
-  
-
-
-    // register JS turtle bridge
-    pyodide.registerJsModule("turtle", {
-
-      Turtle: function () {
-        const methods = {};
-        const names = [
-          "forward","fd","backward","bk","right","rt","left","lt",
-          "penup","pendown","goto","setheading","color","width",
-          "circle","begin_fill","end_fill","write","clear","reset","home"
-        ];
-    
-        for (const name of names) {
-          methods[name] = (...args) => {
-            safePost({
-              type: "turtle_call",
-              method: name,
-              args: args.map(a => Number.isFinite(a) ? a : String(a))
-            });
-          };
-        }
-    
-        return methods;
-      },
-    
-      forward: (...args) => safePost({ type: "turtle_call", method: "forward", args }),
-      fd: (...args) => safePost({ type: "turtle_call", method: "fd", args }),
-      backward: (...args) => safePost({ type: "turtle_call", method: "backward", args }),
-      bk: (...args) => safePost({ type: "turtle_call", method: "bk", args }),
-      right: (...args) => safePost({ type: "turtle_call", method: "right", args }),
-      rt: (...args) => safePost({ type: "turtle_call", method: "rt", args }),
-      left: (...args) => safePost({ type: "turtle_call", method: "left", args }),
-      lt: (...args) => safePost({ type: "turtle_call", method: "lt", args }),
-      penup: (...args) => safePost({ type: "turtle_call", method: "penup", args }),
-      pendown: (...args) => safePost({ type: "turtle_call", method: "pendown", args }),
-      goto: (...args) => safePost({ type: "turtle_call", method: "goto", args }),
-      setheading: (...args) => safePost({ type: "turtle_call", method: "setheading", args }),
-      color: (...args) => safePost({ type: "turtle_call", method: "color", args }),
-      width: (...args) => safePost({ type: "turtle_call", method: "width", args }),
-      circle: (...args) => safePost({ type: "turtle_call", method: "circle", args }),
-      begin_fill: (...args) => safePost({ type: "turtle_call", method: "begin_fill", args }),
-      end_fill: (...args) => safePost({ type: "turtle_call", method: "end_fill", args }),
-      write: (...args) => safePost({ type: "turtle_call", method: "write", args }),
-      clear: (...args) => safePost({ type: "turtle_call", method: "clear", args }),
-      reset: (...args) => safePost({ type: "turtle_call", method: "reset", args }),
-      home: (...args) => safePost({ type: "turtle_call", method: "home", args }),
-    });
-    
-    pyodideReady = true;
-    safePost({ type: "ready" });
+  safePost({ type: "ready" });
   }
 }
 
@@ -229,10 +177,6 @@ self.onmessage = async (event) => {
 
       const inputAbort = pyodide.globals.get("_input_abort");
       inputAbort();
-    }
-    if (type === "ping_ready") {
-      await ensurePyodide();
-      return;
     }
     
     if (type === "run_project") {
