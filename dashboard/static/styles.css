@@ -1373,8 +1373,8 @@ padding-top: 0 !important;
 }
 
 #graphics-container {
-    width: 640px;
-    min-height: 480px;
+    width: 100%;
+    min-height: 0;
 
     background: #222;
     border-radius: 10px;
@@ -1385,9 +1385,9 @@ padding-top: 0 !important;
 
 
 #turtle-canvas {
-    width: 640px;
-    height: 480px;
-    background: white;
+    width: 100%;
+    height: auto;
+    min-height: 200px;
 }
 
 #right-panel {
