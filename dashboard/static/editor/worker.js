@@ -141,8 +141,7 @@ function autoWrapAsync(code) {
     });
   }
 
-  const indented = lines.map(l => "    " + l).join("\n");
-  return `import asyncio\nasync def __user_main__():\n${indented}\n\nawait __user_main__()`;
+  return `import asyncio\n${lines.join("\n")}`;;
 }
 
 // ---------------- LOAD PYODIDE ----------------
