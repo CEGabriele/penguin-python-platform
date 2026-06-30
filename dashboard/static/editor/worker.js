@@ -31,7 +31,12 @@ self.safePost = (msg) => {
 
 // ---------------- PYTHON BOOTSTRAP ----------------
 const PY_BOOTSTRAP = `
-import sys, js, builtins, asyncio
+import sys, js, builtins, asyncio, inspect
+
+async def _maybe_await(value):
+    if inspect.isawaitable(value):
+        return await value
+    return value
 
 def _safe_str(obj):
     try: return str(obj)
@@ -141,8 +146,19 @@ function autoWrapAsync(code) {
     });
   }
 
-  return `import asyncio\n${lines.join("\n")}`;;
-}
+  // Handles indirect async calls like:
+  lines = lines.map(line => {
+    if (/^\s*(async\s+)?def\s+/.test(line)) return line;
+    if (/\bawait\s+/.test(line)) return line;
+    if (line.trim().startsWith("#")) return line;
+
+    return line.replace(
+      /^(\s*)action\s*\(\s*\)\s*$/,
+      "$1await _maybe_await(action())"
+    );
+  });
+    return `import asyncio\n${lines.join("\n")}`;;
+  }
 
 // ---------------- LOAD PYODIDE ----------------
 async function ensurePyodide() {
