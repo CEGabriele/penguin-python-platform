@@ -1,7 +1,6 @@
-import os
 from django.conf import settings
 
-USE_S3 = os.getenv("USE_S3", "false").lower() == "true"
+USE_S3 = settings.USE_S3
 
 if USE_S3:
     from storages.backends.s3boto3 import S3Boto3Storage

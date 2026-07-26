@@ -8,7 +8,6 @@ from operator import attrgetter
 from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
 import json, os
-import traceback
 from dashboard.services.ai_hw_review import get_ai_review
 from django.db.models import OuterRef, Exists, Count, Q, Max
 from collections import defaultdict
@@ -247,9 +246,12 @@ def admin_class_view(request, class_id):
 def view_student(request, username):
 
     teacher = Teacher.objects.get(user = request.user)
-    student = Student.objects.get(user = User.objects.get(username = username))
+    student = get_object_or_404(Student, user__username = username)
 
     classes = student.classes.filter(teacher = teacher)
+
+    if not classes.exists():
+        raise Http404("No Student matches the given query.")
 
     student_projects = []
     for section in classes:
@@ -559,6 +561,10 @@ def create_homework_template(request):
 @student_required
 def student_form_view(request, assigned_hw_id):
     assigned = get_object_or_404(AssignedHomework, id=assigned_hw_id)
+
+    if assigned.for_class not in request.user.student.classes.all():
+        raise Http404("No AssignedHomework matches the given query.")
+
     my_form = assigned.template
     questions = list(my_form.questions.all())
     
@@ -643,7 +649,7 @@ def student_form_view(request, assigned_hw_id):
 @login_required
 @teacher_required
 def responses_view(request, assigned_hw_id):
-    assigned = get_object_or_404(AssignedHomework, id = assigned_hw_id)
+    assigned = get_object_or_404(AssignedHomework, id = assigned_hw_id, for_class__teacher = request.user.teacher)
     template = assigned.template
     questions = template.questions.all()
     teacher = Teacher.objects.get(user = request.user)
@@ -752,9 +758,10 @@ def teacher_class_view(request, class_code):
     })
     """
 
-@csrf_exempt
+@login_required
+@student_required
 def get_code_feedback(request):
-    
+
     if request.method == 'POST':
         try:
             body_unicode = request.body.decode('utf-8')
@@ -762,7 +769,6 @@ def get_code_feedback(request):
 
             code = data.get("code")
             question_id = int(data.get("question_id"))
-            student_id = int(data.get("student_id"))
 
             if not code or not question_id:
                 return JsonResponse({"error": "Missing code or question_id"}, status=400)
@@ -771,17 +777,16 @@ def get_code_feedback(request):
 
             AIFeedback.objects.create(
                 question = get_object_or_404(HomeworkQuestion, id=question_id),
-                student = get_object_or_404(Student, id = student_id),
+                student = request.user.student,
                 response=feedback,
             )
-            
+
             if not feedback:
                 return JsonResponse({"error": "AI returned no feedback."}, status = 400)
             print("AI results", feedback)
             return JsonResponse({"feedback": feedback})
-        except Exception as e:
-            tb = traceback.format_exc()
-            return JsonResponse({"error": str(e), "traceback": tb}, status=400)
+        except Exception:
+            return JsonResponse({"error": "Something went wrong while generating feedback."}, status=400)
         
 def get_due_date_form(request, class_id, template_id):
     form = AssignHomeworkDueDateForm(initial={'class_id': class_id, 'template_id': template_id})

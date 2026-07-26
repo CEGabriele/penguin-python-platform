@@ -62,7 +62,7 @@ class Class(models.Model):
 
 class Student (models.Model):
     user = models.OneToOneField(User, on_delete = models.CASCADE)
-    date_of_birth = models.DateField
+    date_of_birth = models.DateField(null=True, blank=True)
     classes = models.ManyToManyField(Class, related_name = 'students')
 
     def latest_assignment_file(self, for_class):

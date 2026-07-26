@@ -38,6 +38,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['SERVER_IP', '127.0.0.1', 'localhost']
 
+USE_S3 = os.getenv("USE_S3", "false").lower() == "true"
+
 
 # Application definition
 
