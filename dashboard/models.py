@@ -2,8 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid, os
 from .storages import MediaRootS3Boto3Storage
-from django.db.models import Q
+from django.utils.text import slugify
 
+# Referenced by dotted path in migrations 0003/0006 (Uploads.file upload_to).
+# Keep even though Uploads is gone, or `migrate` on a fresh DB breaks replaying that history.
 def unique_student_upload_path(instance, filename):
     return f"student_uploads/{filename}"
 
@@ -65,20 +67,6 @@ class Student (models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     classes = models.ManyToManyField(Class, related_name = 'students')
 
-    def latest_assignment_file(self, for_class):
-        return Uploads.objects.filter(
-            person=self.user,
-            for_class=for_class,
-            assignment__isnull=False,
-        ).order_by("-last_edited").first()
-
-    def latest_classwork_file(self, for_class):
-        return Uploads.objects.filter(
-            person=self.user,
-            for_class=for_class,
-            assignment__isnull=True,
-        ).order_by("-last_edited").first()
-
     def __str__(self):
         return self.user.get_full_name()
 
@@ -89,8 +77,8 @@ def get_user_role(user):
         return "teacher"
     return "user"
 
-from django.utils.text import slugify
-
+# Referenced by dotted path in migrations 0003-0007/0015 (Uploads.file upload_to).
+# Keep even though Uploads is gone, or `migrate` on a fresh DB breaks replaying that history.
 def upload_path(instance, filename):
     user = instance.person
 
@@ -115,88 +103,6 @@ def upload_path(instance, filename):
 
     safe = filename or "classwork.py"
     return f"{base}/classwork/{safe}"
-
-class Uploads (models.Model):
-    person = models.ForeignKey(User, on_delete = models.SET_NULL, null = True)
-    file = models.FileField(storage=MediaRootS3Boto3Storage(), upload_to=upload_path)
-    
-    uploaded_at = models.DateTimeField(auto_now_add = True)
-    last_edited = models.DateTimeField(auto_now = True)
-
-    for_class = models.ForeignKey(Class, related_name = 'files', on_delete=models.SET_NULL, null = True)
-    assignment = models.ForeignKey(
-        "Assignment",
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="uploads",
-    )
-
-    display_name = models.CharField(max_length = 200, blank = True, null = True)
-
-    submitted = models.BooleanField(default=False)
-    submitted_at = models.DateTimeField(null=True, blank=True)
-
-    # Enforce unique classwork filenames per student per class
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["person", "for_class", "display_name"],
-                condition=Q(assignment__isnull=True),
-                name="unique_classwork_name_per_student_class",
-            )
-        ]
-
-class HomeworkTemplate(models.Model):
-    name = models.CharField(max_length=100)
-    curriculum = models.ForeignKey(Curriculum, on_delete=models.CASCADE)
-    description = models.TextField()
-    class_week = models.IntegerField(default = 0)
-    new_material = models.TextField(blank = True, null = True)
-
-class AssignedHomework (models.Model):
-    template = models.ForeignKey(HomeworkTemplate, on_delete=models.CASCADE)
-    for_class = models.ForeignKey(Class, on_delete = models.CASCADE, null = True)
-    due_date = models.DateField()
-    
-class HomeworkQuestion (models.Model):
-    template = models.ForeignKey(HomeworkTemplate, on_delete = models.CASCADE, related_name = 'questions', null = True)
-    prompt = models.TextField()
-    question_type = models.CharField(max_length = 20, choices = [('short', 'Short Answer'), ('file', 'Code Editor'), ('multiple_choice', 'Multiple Choice')])
-    uses_ai = models.BooleanField(default = False)
-
-class QuestionChoices (models.Model):
-    question = models.ForeignKey(HomeworkQuestion, on_delete = models.CASCADE, related_name = 'choices')
-    text = models.TextField()
-    is_correct = models.BooleanField(default = False)
-    def __str__(self):
-        return self.text
-    def setCorrect(self):
-        self.is_correct = True
-        self.save()
-
-class StudentQuestionResponse (models.Model):
-    student = models.ForeignKey(Student, on_delete = models.CASCADE, null = True)
-    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE)
-    assigned_homework = models.ForeignKey(AssignedHomework, on_delete = models.CASCADE, null = True)
-    
-    answer_text = models.TextField(blank = True)
-    selected_choice = models.ForeignKey(QuestionChoices, on_delete = models.SET_NULL, null = True)
-    upload = models.ForeignKey("dashboard.Uploads", on_delete=models.SET_NULL, null=True, blank=True)
-
-
-class CompletedCurriculum(models.Model):
-    student = models.ForeignKey(Student, on_delete = models.CASCADE)
-    curriculum = models.ForeignKey(Curriculum, on_delete = models.CASCADE)
-    completed_weeks = models.IntegerField(default = 0)
-
-class AIFeedback(models.Model):
-    question = models.ForeignKey(HomeworkQuestion, on_delete=models.CASCADE, related_name='feedback')
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True)
-    response = models.TextField()
-
-    def __str__(self):
-        return f"Feedback for {self.student.user.get_full_name()} on question {self.question.prompt}"
 
 
 class Assignment(models.Model):

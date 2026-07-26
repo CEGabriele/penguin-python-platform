@@ -40,50 +40,8 @@
         </div>
     
         <div id="projectTree"></div>
-    
+
     </div>
-        <!--
-        {% if user.teacher %}
-            <a href="{% url 'teacher_dashboard' %}">
-                <i class="fa-solid fa-chalkboard-user"></i>
-                <span class="menu-label">Teacher Dashboard</span>
-            </a>
-            <a href="{% url 'teacher_assignments' %}">
-                <i class="fa-solid fa-folder-open"></i>
-                <span class="menu-label">Assignments</span>
-            </a>
-            {% if user.teacher.is_admin %}
-                <a href="{% url 'admin_dashboard' %}">
-                    <i class="fa-solid fa-user-gear"></i>
-                    <span class="menu-label">Admin Dashboard</span>
-                </a>
-            {% endif %}
-        {% else %}
-            <a href="{% url 'student_dashboard' %}">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <span class="menu-label">Student Dashboard</span>
-            </a>
-
-            <a href="{% url 'student_assignments' %}">
-                <i class="fa-solid fa-book"></i>
-                <span class="menu-label">Assignments</span>
-            </a>
-        {% endif %}
-
-        <a href="{% url 'editor_view' %}">
-            <i class="fa-solid fa-code"></i>
-            <span class="menu-label">Code Editor</span>
-        </a>
-
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="logout-button">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span class="menu-label">Logout</span>
-            </button>
-        </form>
-
-    -->
     </div>
 </div>
     

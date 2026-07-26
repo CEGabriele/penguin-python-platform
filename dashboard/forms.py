@@ -1,73 +1,7 @@
 from django import forms
-from .models import User, Uploads, Student, Teacher, Class, HomeworkTemplate, AssignedHomework, HomeworkQuestion, Curriculum, QuestionChoices, StudentQuestionResponse
-from django.forms import modelformset_factory, inlineformset_factory
+from .models import User, Student, Teacher, Class, Curriculum
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from .widgets import TeacherSelect2Widget, StudentSelect2Widget
-from datetime import date
-
-class HomeworkUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file', 'for_class']
-        widgets = {'for_class': forms.HiddenInput(),}
-    def save(self, commit=True, user = None):
-        instance = super().save(commit = False)
-        instance.person = user
-        if commit:
-            instance.save()
-        return instance
-
-class ClassworkUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file', 'for_class']
-        widgets = {'for_class': forms.HiddenInput(),}
-    def save(self, commit=True, user = None):
-        instance = super().save(commit = False)
-        instance.person = user
-        if commit:
-            instance.save()
-        return instance
-
-class HomeworkTemplateForm(forms.ModelForm):
-    class Meta:
-        model = HomeworkTemplate
-        fields = ['name', 'description', 'curriculum', 'class_week', 'new_material']
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['curriculum'].label_from_instance = lambda obj: obj.name
-class HomeworkQuestionForm(forms.ModelForm):
-    class Meta:
-        model = HomeworkQuestion
-        fields = ['prompt', 'question_type', 'uses_ai']
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['uses_ai'].label = "Enable student AI review"
-
-class StudentAnswerForm(forms.ModelForm):
-    upload = forms.FileField(required=False, widget=forms.ClearableFileInput())
-    
-    class Meta:
-        model = StudentQuestionResponse
-        fields = ['question', 'selected_choice', 'answer_text']
-        widgets = {'question' : forms.HiddenInput(), 
-                   'answer_text': forms.Textarea(attrs={'placeholder': 'Type your answer...'}),
-                   'selected_choice':forms.RadioSelect()}
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        question = self.initial.get('question')
-        
-        if question:
-            self.instance.question = question 
-
-        if question and question.question_type == 'multiple_choice':
-            self.fields['selected_choice'].queryset = question.choices.all()
-            self.fields['selected_choice'].required = True
-        else:
-            self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
-            self.fields['selected_choice'].required = False
 
 class StudentCreationForm(forms.Form):
     username = forms.CharField(max_length=150, label='Username')
@@ -159,24 +93,6 @@ class ClassStudentUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['students'].initial = self.instance.students.all()
 
-HomeworkQuestionFormSet = modelformset_factory(
-    HomeworkQuestion, 
-    form = HomeworkQuestionForm, 
-    extra = 0
-)
-HomeworkChoiceFormSet = inlineformset_factory(
-    HomeworkQuestion, 
-    QuestionChoices, 
-    fields = ['text', 'is_correct'], 
-    extra = 2, 
-    can_delete = True
-)
-
-StudentAnswerFormSet = modelformset_factory(
-    StudentQuestionResponse,
-    form = StudentAnswerForm
-)
-
 class StudentPasswordResetForm(forms.Form):
     student = forms.ModelChoiceField(
         queryset=Student.objects.all(),
@@ -193,8 +109,3 @@ class TeacherPasswordResetForm(forms.Form):
         widget=TeacherSelect2Widget
     )
     new_password = forms.CharField(widget=forms.PasswordInput, label="New Password")
-
-class AssignHomeworkDueDateForm(forms.Form):
-    due_date = forms.DateField(initial=date.today, widget=forms.DateInput(attrs={'type': 'date'}))
-    class_id = forms.IntegerField(widget=forms.HiddenInput())
-    template_id = forms.IntegerField(widget=forms.HiddenInput())

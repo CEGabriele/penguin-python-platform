@@ -1,19 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import HomeworkUpload, ClassworkUpload, HomeworkTemplateForm, HomeworkQuestionFormSet, HomeworkChoiceFormSet, StudentAnswerForm, StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignHomeworkDueDateForm
+from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
+from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
 from .models import *
 from django.contrib.auth.decorators import login_required
-from itertools import groupby
-from operator import attrgetter
-from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
-import json, os
-from dashboard.services.ai_hw_review import get_ai_review
+import json
 from django.db.models import OuterRef, Exists, Count, Q, Max
 from collections import defaultdict
 from django.db import connection
-from django.core.exceptions import ObjectDoesNotExist, SuspiciousFileOperation
-from django.utils.text import slugify
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
@@ -30,20 +24,9 @@ def teacher_required(view_function):
     def wrapper(request, *args, **kwargs):
         if not Teacher.objects.filter(user = request.user).exists():
             return redirect('student_dashboard')
-        
+
         return view_function(request, *args, **kwargs)
     return wrapper
-
-try:
-    from botocore.exceptions import ClientError
-except Exception:
-    ClientError = tuple()
-
-def _related_or_none(obj, attr: str):
-    try:
-        return getattr(obj, attr)
-    except ObjectDoesNotExist:
-        return None
 
 @login_required
 @student_required
@@ -287,86 +270,6 @@ def view_student(request, username):
         "student_projects": student_projects,
     })
 @login_required
-def download_file_view(request, file_id):
-
-    upload = get_object_or_404(
-        Uploads.objects.select_related("person", "for_class__teacher"),
-        id=file_id,
-    )
-
-    user = request.user
-    user_teacher = _related_or_none(user, "teacher")
-    is_admin   = user.is_superuser
-    is_owner   = (upload.person_id == user.id)    
-
-    class_id  = getattr(upload.for_class, "teacher_id", None)
-    is_teacher = (user_teacher is not None) and (class_id == getattr(user_teacher, "id", None))
-
-    if not (is_admin or is_owner or is_teacher):
-        raise Http404("Access denied")
-
-    # Open and stream the file; map storage issues to 404 instead of 500
-    try:
-        upload.file.open("rb")
-    except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
-        raise Http404("File not found on storage")
-
-    return FileResponse(
-        upload.file,
-        as_attachment=True,
-        filename=os.path.basename(upload.display_name or "download.bin"),
-    )
-    
-
-@login_required
-@student_required
-def student_assignments(request):
-    student = Student.objects.get(user = request.user)
-    classes = student.classes.all()
-
-    assignments = AssignedHomework.objects.filter(for_class__in=classes).select_related('template', 'for_class')
-
-    completed_assignments = set(
-        StudentQuestionResponse.objects
-        .filter(student=student)
-        .values_list('assigned_homework_id', flat=True)
-        .distinct()
-    )
-
-    class_forms = defaultdict(lambda: {'completed': [], 'incomplete': []})
-
-    for assigned in assignments:
-        class_obj = assigned.for_class
-        if assigned.id in completed_assignments:
-            class_forms[class_obj]['completed'].append(assigned)
-        else:
-            class_forms[class_obj]['incomplete'].append(assigned)
-
-    return render(request, 'student_assignments.html', {
-        'class_forms': dict(class_forms)
-    })
-
-
-@login_required
-@teacher_required
-def teacher_assignments_list(request):
-    teacher = Teacher.objects.get(user = request.user)
-    classes = teacher.classes.all()
-    assignments = (
-        AssignedHomework.objects
-        .filter(for_class__in = classes)
-        .select_related('template', 'for_class')
-        .annotate(num_submissions = Count('studentquestionresponse__student', distinct=True))
-        .order_by('for_class__name', 'due_date')
-    )
-
-    class_forms = {class_obj: list(grouped_assignments)
-                   for class_obj, grouped_assignments in groupby(assignments, key = attrgetter('for_class'))
-    }
-
-    return render(request, 'teacher_assignments_list.html', {'class_forms':class_forms, 'teacher': teacher})
-
-@login_required
 @teacher_required
 def create_assignment(request):
     teacher = Teacher.objects.get(user=request.user)
@@ -515,166 +418,6 @@ def submit_assignment(request, assigned_id):
     return JsonResponse({"ok": True})
 
 @login_required
-@teacher_required
-def create_homework_template(request):
-
-    if request.method == 'POST':
-        template_form = HomeworkTemplateForm(request.POST)
-        formset = HomeworkQuestionFormSet(request.POST or None, queryset=HomeworkQuestion.objects.none(), prefix='form')
-        if template_form.is_valid() and formset.is_valid():
-            template = template_form.save()
-
-            for question_form in formset:
-                if question_form.cleaned_data and not question_form.cleaned_data.get('DELETE', False):
-                    question = question_form.save(commit = False)
-                    question.template = template
-                    question.save()
-
-                    if question.question_type == 'multiple_choice':
-                        choice_formset = HomeworkChoiceFormSet(request.POST, prefix = f'choices_{question_form.prefix}', instance = question)
-                        if choice_formset.is_valid():
-                            choice_formset.save()
-            return redirect('teacher_dashboard')
-    else:
-        template_form = HomeworkTemplateForm()
-        formset = HomeworkQuestionFormSet(queryset=HomeworkQuestion.objects.none(), prefix='form')
-
-    choice_formsets = []
-    for i, question_form in enumerate(formset.forms):
-        prefix = f'choices_form-{i}'
-        choice_formset = HomeworkChoiceFormSet(prefix=prefix)
-        choice_formsets.append(choice_formset)
-
-    formset_with_choices = zip(formset.forms, choice_formsets)
-    empty_question_form = formset.empty_form
-    teacher = Teacher.objects.get(user = request.user)
-
-    return render(request, 'create_homework_template.html', {
-        'template_form': template_form,
-        'formset': formset,
-        'formset_with_choices': formset_with_choices,
-        'empty_question_form': empty_question_form,
-        'teacher': teacher
-    })
-
-@login_required
-@student_required
-def student_form_view(request, assigned_hw_id):
-    assigned = get_object_or_404(AssignedHomework, id=assigned_hw_id)
-
-    if assigned.for_class not in request.user.student.classes.all():
-        raise Http404("No AssignedHomework matches the given query.")
-
-    my_form = assigned.template
-    questions = list(my_form.questions.all())
-    
-    completed = StudentQuestionResponse.objects.filter(student = request.user.student, assigned_homework = assigned).exists()
-    if completed:
-        return redirect ('student_assignments')
-    
-    initial_data = [{'question': question} for question in questions]
-
-    StudentAnswerFormSet = modelformset_factory(
-        StudentQuestionResponse,
-        form=StudentAnswerForm,
-        extra=len(initial_data)
-    )
-    
-    if request.method == 'POST':
-
-        formset = StudentAnswerFormSet(request.POST, request.FILES, queryset = StudentQuestionResponse.objects.none())
-        
-        for form, question in zip(formset.forms, questions):
-            form.fields['selected_choice'].queryset = question.choices.all()
-            
-        if formset.is_valid():
-            for form, question in zip(formset.forms, questions):
-                form.instance.student = request.user.student
-                form.instance.question = question
-                form.instance.assigned_homework = assigned
-
-                if getattr(question, 'question_type', None) == 'file':
-
-                    code = request.POST.get(f'code_q{question.id}', '') or ''
-                    if code.strip():
-                        display_name = f"{assigned.template.name}-q{question.id}"
-                        label = slugify(display_name) or f"q{question.id}"
-                        # Organize by class / student / assignment
-                        filename = f"class-{assigned.for_class_id}/student-{request.user.id}/assigned-{assigned.id}/{label}.py"
-
-                        upload = Uploads(
-                            person=request.user,
-                            for_class=assigned.for_class,
-                            display_name=display_name
-                        )
-                        upload.file.save(filename, ContentFile(code), save=True)
-                        form.instance.upload = upload
-                    else:
-                        form.instance.upload = None
-
-                uploaded_file = form.cleaned_data.get('upload')
-                
-                if uploaded_file:
-                    upload = Uploads.objects.create(
-                    file=uploaded_file,
-                    person=request.user,
-                    for_class=assigned.for_class,
-                )
-                    form.instance.upload = upload
-                form.instance.save()
-
-            return redirect('student_dashboard')
-        else:
-                for i, form in enumerate(formset.forms):
-                    print(f"Form {i} valid: {form.is_valid()}")
-                    print("Errors:", form.errors)
-        
-    else:
-        formset = StudentAnswerFormSet(queryset=StudentQuestionResponse.objects.none(), initial = initial_data)
-    
-    responses = StudentQuestionResponse.objects.filter(student = request.user.student, assigned_homework = assigned)
-    initial_code_map = {}
-    for r in responses:
-        if r.upload and r.upload.file:
-            try:
-                r.upload.file.open("rb")
-                text = r.upload.file.read().decode("utf-8")
-            except:
-                text = ""
-            initial_code_map[r.question.id] = text
-        else:
-            initial_code_map[r.question.id] = ""
-    return render(request, 'student_form_view.html', {'assigned':assigned, 'formset':formset, 'student_id':request.user.student.id, 'initial_code_map': initial_code_map})
-
-@login_required
-@teacher_required
-def responses_view(request, assigned_hw_id):
-    assigned = get_object_or_404(AssignedHomework, id = assigned_hw_id, for_class__teacher = request.user.teacher)
-    template = assigned.template
-    questions = template.questions.all()
-    teacher = Teacher.objects.get(user = request.user)
-    submission_count = (
-        StudentQuestionResponse.objects
-        .filter(assigned_homework=assigned)
-        .values('student')
-        .distinct()
-        .count()
-    )
-    question_data = []
-
-    for question in questions:
-        responses = StudentQuestionResponse.objects.filter(
-            question = question, 
-            assigned_homework = assigned
-        )
-        question_data.append({
-            'question':question, 
-            'responses':responses
-        })
-
-    return render(request, 'responses_view.html', {'assigned':assigned, 'question_data' : question_data, 'submission_count':submission_count, 'teacher':teacher})
-
-@login_required
 @student_required
 def student_class_view(request, class_code):
     class_obj = get_object_or_404(Class, code=class_code)
@@ -682,20 +425,7 @@ def student_class_view(request, class_code):
     
     if class_obj not in student.classes.all():
         return redirect('student_dashboard')
-    
-    """
-    assigned_homework = AssignedHomework.objects.filter(for_class = class_obj).select_related('template')
-    weekly_assignments = defaultdict(lambda: {'assignments': []})
 
-    for hw in assigned_homework:
-        week = hw.template.class_week
-        weekly_assignments[week]['assignments'].append(hw)
-    sorted_weeks = dict(sorted(weekly_assignments.items()))
-    context = {
-        'class': class_obj,
-        'sorted_weeks': sorted_weeks,
-    }
-    """
     assigned_assignments = AssignedToClass.objects.filter(for_class = class_obj).select_related('assignment').order_by('due_date')
     submitted_ids = set(
         CodeProject.objects.filter(
@@ -711,8 +441,6 @@ def student_class_view(request, class_code):
         'assigned_assignments': assigned_assignments,
         'submitted_ids': submitted_ids
     })
-
-    #return render(request, 'student_class_view.html', context)
 
 @login_required
 @teacher_required
@@ -743,79 +471,6 @@ def teacher_class_view(request, class_code):
         "assigned_assignment_ids": assigned_assignment_ids,
         "students": students
     })
-    """
-    curriculum = class_obj.curriculum
-    homework_templates = HomeworkTemplate.objects.filter(curriculum_id = curriculum.id)
-    assigned_homeworks = AssignedHomework.objects.filter(for_class = class_obj)
-    teacher = Teacher.objects.get(user = request.user)
-
-    return render(request, 'teacher_class_view.html', {
-        'class': class_obj,
-        'homework_templates': homework_templates,
-        'assigned_homeworks': assigned_homeworks,
-        'students': students,
-        'teacher': teacher,
-    })
-    """
-
-@login_required
-@student_required
-def get_code_feedback(request):
-
-    if request.method == 'POST':
-        try:
-            body_unicode = request.body.decode('utf-8')
-            data = json.loads(body_unicode)
-
-            code = data.get("code")
-            question_id = int(data.get("question_id"))
-
-            if not code or not question_id:
-                return JsonResponse({"error": "Missing code or question_id"}, status=400)
-
-            feedback = get_ai_review(request, code, question_id)
-
-            AIFeedback.objects.create(
-                question = get_object_or_404(HomeworkQuestion, id=question_id),
-                student = request.user.student,
-                response=feedback,
-            )
-
-            if not feedback:
-                return JsonResponse({"error": "AI returned no feedback."}, status = 400)
-            print("AI results", feedback)
-            return JsonResponse({"feedback": feedback})
-        except Exception:
-            return JsonResponse({"error": "Something went wrong while generating feedback."}, status=400)
-        
-def get_due_date_form(request, class_id, template_id):
-    form = AssignHomeworkDueDateForm(initial={'class_id': class_id, 'template_id': template_id})
-    return render (request, 'due_date_form.html', {'form': form})
-
-def assign_homework_assignment(request):
-    if request.method == 'POST':
-        form = AssignHomeworkDueDateForm(request.POST)
-        if form.is_valid():
-            class_id = form.cleaned_data['class_id']
-            template_id = form.cleaned_data['template_id']
-            due_date = form.cleaned_data['due_date']
-
-            class_obj = get_object_or_404(Class, id=class_id, teacher = request.user.teacher)
-            template = get_object_or_404(HomeworkTemplate, id=template_id, curriculum = class_obj.curriculum)
-
-            if not class_obj or not template:
-                return HttpResponseBadRequest("Invalid class or template.")
-
-            AssignedHomework.objects.create(
-                for_class=class_obj,
-                template=template,
-                due_date=due_date
-            )
-
-            return HttpResponse("Assigned")
-        else:
-            return render(request, 'partials/due_date_form.html', {'form': form, 'teacher' : request.user.teacher})
-    return HttpResponseBadRequest("Invalid request.")
 
 def healthz(request):
     """
@@ -918,30 +573,6 @@ def editor_view(request):
         
         code_name = main_file.path
         selected_class_id = str(assigned.for_class.id)
-
-        """
-        upload = Uploads.objects.filter (
-            person=user,
-            assignment=assigned.assignment
-        ).first()
-
-        if upload:
-            if upload.person != user:
-                is_readonly = True
-
-            elif hasattr(user, "student") and upload.submitted:
-                is_readonly = True
-
-            elif upload.file:
-                try:
-                    upload.file.open("rb")
-                    initial_code = force_str(upload.file.read(), errors="ignore")
-                except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
-                    initial_code = ""
-
-            code_name = upload.display_name
-            selected_class_id = str(assigned.for_class.id)
-    """
     else:
         project = None
     # JSON AUTOSAVE (editor autosave)
@@ -981,66 +612,6 @@ def editor_view(request):
             "last_edited": project_file.last_edited.timestamp()
         })
 
-        """
-        name = (data.get("name") or "").strip()
-        if not name:
-            return JsonResponse({"ok": False, "error": "Missing file name"}, status=400)
-
-        class_id = data.get("class_id")
-
-        if not name.lower().endswith(".py"):
-            name += ".py"
-
-        # ASSIGNMENT AUTOSAVE
-        if assigned and hasattr(user, "student"):
-            upload, _ = Uploads.objects.get_or_create(
-                person=user,
-                assignment=assigned.assignment,
-                defaults={
-                    "for_class": assigned.for_class,
-                    "display_name": assigned.assignment.title,
-                },
-            )
-            upload.display_name = assigned.assignment.title
-
-            upload.file.save(
-                upload.display_name or "code.py",
-                ContentFile(code),
-                save=True,
-            )
-
-            return JsonResponse({
-                "ok": True,
-                "upload_id": upload.id,
-                "class_id": upload.for_class.id,
-                "last_edited": upload.last_edited.timestamp(),
-            })
-        # CLASSWORK AUTOSAVE
-        if not class_id:
-            return JsonResponse(
-                {"ok": False, "error": "Missing class_id"},
-                status=400,
-            )
-
-        class_obj = get_object_or_404(Class, id=class_id)
-
-        upload, _ = Uploads.objects.get_or_create(
-            person=user,
-            for_class=class_obj,
-            display_name=name,
-        )
-
-        upload.file.save(name, ContentFile(code), save=True)
-
-        return JsonResponse({
-            "ok": True,
-            "upload_id": upload.id,
-            "class_id": upload.for_class.id,
-            "last_edited": upload.last_edited.timestamp(),
-        })
-    """
-
-
     # Class dropdown options
     if hasattr(user, "teacher"):
         class_options = user.teacher.classes.all()
@@ -1072,34 +643,6 @@ def editor_view(request):
         "project_id": project.id if project else "",
         "is_submitted": project.submitted if project else False,
     })
-@login_required
-def load_upload(request, pk):
-    upload = get_object_or_404(Uploads, pk=pk)
-
-    # Security
-    if not (
-        upload.person == request.user
-        or (hasattr(request.user, "teacher")
-            and upload.for_class
-            and upload.for_class.teacher == request.user.teacher)
-        or request.user.is_superuser
-    ):
-        return JsonResponse({"ok": False}, status=403)
-
-    try:
-        upload.file.open("rb")
-        code = force_str(upload.file.read(), errors="ignore")
-    except (FileNotFoundError, OSError, ValueError, SuspiciousFileOperation, ClientError):
-        return JsonResponse({"ok": False, "error": "File missing"}, status=404)
-
-
-    return JsonResponse({
-        "ok": True,
-        "code": code,
-        "name": upload.display_name,
-        "class_id": upload.for_class_id,
-    })
-
 
 def get_or_create_editor_project(user, for_class=None, assignment=None):
 
