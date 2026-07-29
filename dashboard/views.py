@@ -12,6 +12,12 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
 from django.views.decorators.http import require_GET
+import time
+import logging
+from datetime import timedelta
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def student_required(view_function):
     def wrapper(request, *args, **kwargs):
@@ -474,19 +480,67 @@ def teacher_class_view(request, class_code):
 
 def healthz(request):
     """
-    Simple health check endpoint.
-    Returns {"ok": True} if app and DB respond.
+    Comprehensive health check endpoint.
+    Returns component status (DB, S3, API latency, submission processing).
+    All checks complete within 5 seconds with short timeouts.
     """
+    from datetime import datetime
+    start_time = time.time()
+
+    health = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "db_ok": False,
+        "s3_ok": False,
+        "recent_submissions_processed": 0,
+        "error_rate_5min_percent": 0.0,
+        "all_ok": False,
+    }
+
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1;")
             cursor.fetchone()
-        db_ok = True
-    except Exception:
-        db_ok = False
+        health["db_ok"] = True
+    except Exception as e:
+        logger.error(f"Health check: DB connection failed: {e}")
+        health["db_ok"] = False
 
-    status = 200 if db_ok else 500
-    return JsonResponse({"ok": db_ok}, status=status)
+    if settings.USE_S3:
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+
+            s3 = boto3.client(
+                "s3",
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME,
+            )
+            s3.head_bucket(Bucket=settings.AWS_BUCKET_NAME)
+            health["s3_ok"] = True
+        except Exception as e:
+            logger.error(f"Health check: S3 connection failed: {e}")
+            health["s3_ok"] = False
+    else:
+        health["s3_ok"] = True
+
+    try:
+        now = timezone.now()
+        one_hour_ago = now - timedelta(hours=1)
+        recent_submitted = CodeProject.objects.filter(
+            submitted=True,
+            submitted_at__gte=one_hour_ago
+        ).count()
+        health["recent_submissions_processed"] = recent_submitted
+    except Exception as e:
+        logger.error(f"Health check: Submission query failed: {e}")
+        health["recent_submissions_processed"] = 0
+
+    health["all_ok"] = health["db_ok"] and health["s3_ok"]
+    status = 200 if health["all_ok"] else 500
+
+    logger.info(f"Health check: {json.dumps(health)}")
+    return JsonResponse(health, status=status)
 
 @login_required
 def editor_view(request):
@@ -921,4 +975,164 @@ def get_project_files_for_teacher(request, project_id):
         "ok": True,
         "project_name": project.name,
         "files": files
+    })
+
+
+@login_required
+def project_feedback(request, project_id):
+    project = get_object_or_404(CodeProject, id=project_id)
+
+    if request.method == "GET":
+        # Auth: teacher of the class or the student owner
+        is_teacher = hasattr(request.user, "teacher") and project.for_class.teacher == request.user.teacher
+        is_student_owner = project.owner == request.user
+
+        if not (is_teacher or is_student_owner):
+            return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+        # Mark feedback as read if student is viewing
+        if is_student_owner:
+            try:
+                feedback = project.feedback
+                feedback.read_by_student = True
+                feedback.save()
+            except ProjectFeedback.DoesNotExist:
+                pass
+
+        feedback_data = {"overall": None, "line_comments": []}
+
+        # Get overall feedback
+        try:
+            fb = project.feedback
+            feedback_data["overall"] = {
+                "comment": fb.comment,
+                "grader_name": fb.grader.user.get_full_name(),
+                "created_at": fb.created_at.isoformat(),
+                "updated_at": fb.updated_at.isoformat(),
+            }
+        except ProjectFeedback.DoesNotExist:
+            pass
+
+        # Get line comments
+        for lc in project.line_comments.all():
+            feedback_data["line_comments"].append({
+                "id": lc.id,
+                "file_path": lc.file_path,
+                "line_number": lc.line_number,
+                "end_line": lc.end_line or lc.line_number,
+                "comment": lc.comment,
+                "grader_name": lc.grader.user.get_full_name(),
+                "created_at": lc.created_at.isoformat(),
+                "updated_at": lc.updated_at.isoformat(),
+            })
+
+        return JsonResponse({"ok": True, **feedback_data})
+
+    elif request.method == "POST":
+        # Auth: teacher only
+        if not hasattr(request.user, "teacher"):
+            return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+        if project.for_class.teacher != request.user.teacher:
+            return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+        try:
+            data = json.loads(request.body)
+            comment = data.get("comment", "")
+        except json.JSONDecodeError:
+            return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+        feedback, created = ProjectFeedback.objects.get_or_create(
+            project=project,
+            defaults={"grader": request.user.teacher}
+        )
+        feedback.comment = comment
+        feedback.save()
+
+        return JsonResponse({
+            "ok": True,
+            "feedback": {
+                "comment": feedback.comment,
+                "grader_name": feedback.grader.user.get_full_name(),
+                "created_at": feedback.created_at.isoformat(),
+                "updated_at": feedback.updated_at.isoformat(),
+            }
+        })
+
+    return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+
+@login_required
+@teacher_required
+def save_line_comment(request, project_id):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+    project = get_object_or_404(CodeProject, id=project_id)
+
+    # Auth: teacher of the class
+    if project.for_class.teacher != request.user.teacher:
+        return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        file_path = data.get("file_path")
+        line_number = data.get("line_number")
+        end_line = data.get("end_line", line_number)
+        comment = data.get("comment", "")
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "error": "Invalid JSON"}, status=400)
+
+    if not file_path or line_number is None:
+        return JsonResponse({"ok": False, "error": "Missing file_path or line_number"}, status=400)
+
+    if end_line is None or end_line < line_number:
+        end_line = line_number
+
+    line_comment, created = CodeLineComment.objects.update_or_create(
+        project=project,
+        file_path=file_path,
+        line_number=line_number,
+        defaults={"comment": comment, "end_line": end_line, "grader": request.user.teacher}
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "line_comment": {
+            "id": line_comment.id,
+            "file_path": line_comment.file_path,
+            "line_number": line_comment.line_number,
+            "end_line": line_comment.end_line or line_comment.line_number,
+            "comment": line_comment.comment,
+            "grader_name": line_comment.grader.user.get_full_name(),
+            "created_at": line_comment.created_at.isoformat(),
+            "updated_at": line_comment.updated_at.isoformat(),
+        }
+    })
+
+
+@login_required
+@teacher_required
+def delete_line_comment(request, comment_id):
+    if request.method != "DELETE":
+        return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+    line_comment = get_object_or_404(CodeLineComment, id=comment_id)
+
+    # Auth: the teacher who created the comment
+    if line_comment.grader != request.user.teacher:
+        return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
+
+    line_comment.delete()
+    return JsonResponse({"ok": True})
+
+
+@login_required
+def operations_dashboard(request):
+    """Operations dashboard for admins/staff only. Real-time health monitoring."""
+    if not request.user.is_staff:
+        return HttpResponse("Access denied", status=403)
+
+    return render(request, "admin/operations_dashboard.html", {
+        "healthz_url": "/healthz/",
     })

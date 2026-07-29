@@ -195,3 +195,39 @@ class ProjectFile(models.Model):
 
     def __str__(self):
         return f"{self.project.name} - {self.path}"
+
+
+class ProjectFeedback(models.Model):
+    project = models.OneToOneField(CodeProject, on_delete=models.CASCADE, related_name="feedback")
+    grader = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="given_feedback")
+    comment = models.TextField(blank=True)
+    read_by_student = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Feedback for {self.project.name}"
+
+
+class CodeLineComment(models.Model):
+    project = models.ForeignKey(CodeProject, on_delete=models.CASCADE, related_name="line_comments")
+    file_path = models.CharField(max_length=300)
+    line_number = models.IntegerField()
+    end_line = models.IntegerField(null=True, blank=True)
+    comment = models.TextField()
+    grader = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="line_comments_given")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "file_path", "line_number"],
+                name="unique_line_comment_per_project_file_line"
+            )
+        ]
+
+    def __str__(self):
+        if self.end_line and self.end_line != self.line_number:
+            return f"Comment on {self.project.name}:{self.file_path}:{self.line_number}-{self.end_line}"
+        return f"Comment on {self.project.name}:{self.file_path}:{self.line_number}"

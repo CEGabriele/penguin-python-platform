@@ -10,6 +10,7 @@ urlpatterns = [
     path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view"),
     path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
     path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
+    path("admin/operations/", operations_dashboard, name="operations_dashboard"),
     path('editor/',editor_view, name='editor_view'),
     path('create-assignment/',create_assignment, name='create_assignment'),
     path("assignment/<int:assigned_id>/submissions/", teacher_view_submissions, name="teacher_view_submissions"),
@@ -25,4 +26,7 @@ urlpatterns = [
     path("editor/project/<int:project_id>/rename-file/", rename_file),
     path("editor/project/<int:project_id>/delete-file/", delete_file),
     path("editor/move-file/", move_file, name="move_file"),
+    path("project/<int:project_id>/feedback/", project_feedback, name="project_feedback"),
+    path("project/<int:project_id>/line-comment/", save_line_comment, name="save_line_comment"),
+    path("project/<int:project_id>/line-comment/<int:comment_id>/", delete_line_comment, name="delete_line_comment"),
 ]
