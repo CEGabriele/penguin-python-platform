@@ -510,9 +510,9 @@ def healthz(request):
             import boto3
             from botocore.exceptions import ClientError
 
-            bucket_name = getattr(settings, 'AWS_BUCKET_NAME', None)
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
             if not bucket_name:
-                raise ValueError("AWS_BUCKET_NAME not configured")
+                raise ValueError("AWS_STORAGE_BUCKET_NAME not configured")
 
             s3 = boto3.client(
                 "s3",
@@ -540,7 +540,8 @@ def healthz(request):
         logger.error(f"Health check: Submission query failed: {e}")
         health["recent_submissions_processed"] = 0
 
-    health["all_ok"] = health["db_ok"] and health["s3_ok"]
+    # App is healthy if database is OK (S3 is optional)
+    health["all_ok"] = health["db_ok"]
     status = 200 if health["all_ok"] else 500
 
     logger.info(f"Health check: {json.dumps(health)}")
