@@ -505,18 +505,22 @@ def healthz(request):
         logger.error(f"Health check: DB connection failed: {e}")
         health["db_ok"] = False
 
-    if settings.USE_S3:
+    if getattr(settings, 'USE_S3', False):
         try:
             import boto3
             from botocore.exceptions import ClientError
 
+            bucket_name = getattr(settings, 'AWS_BUCKET_NAME', None)
+            if not bucket_name:
+                raise ValueError("AWS_BUCKET_NAME not configured")
+
             s3 = boto3.client(
                 "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_S3_REGION_NAME,
+                aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', None),
+                aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', None),
+                region_name=getattr(settings, 'AWS_S3_REGION_NAME', 'us-east-1'),
             )
-            s3.head_bucket(Bucket=settings.AWS_BUCKET_NAME)
+            s3.head_bucket(Bucket=bucket_name)
             health["s3_ok"] = True
         except Exception as e:
             logger.error(f"Health check: S3 connection failed: {e}")
