@@ -27,6 +27,26 @@ let statusSpan = document.getElementById("saveStatus");
 let workerReady = false;
 let workerReadyPromiseResolve = null;
 
+// Worker heartbeat tracking
+const WORKER_SESSION_ID = 'worker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+let heartbeatInterval = null;
+
+function sendWorkerHeartbeat(action = 'start') {
+  const url = `/dashboard/api/worker/heartbeat/?worker_id=${encodeURIComponent(WORKER_SESSION_ID)}&action=${action}`;
+  navigator.sendBeacon(url) || fetch(url, { method: 'GET', keepalive: true }).catch(() => {});
+}
+
+function startWorkerHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  sendWorkerHeartbeat('start');
+  heartbeatInterval = setInterval(() => sendWorkerHeartbeat('start'), 10000);
+}
+
+function stopWorkerHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  sendWorkerHeartbeat('stop');
+}
+
 function waitForWorkerReady() {
   if (workerReady) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -198,10 +218,12 @@ function attachWorkerHandlers(w) {
       }
       case 'done':
         codeRunning = false;
+        stopWorkerHeartbeat();
         break;
       case 'error':
         console_write(`<span style="color:red;">${message.error}</span>\n`);
         codeRunning = false;
+        stopWorkerHeartbeat();
         break;
     }
   };
@@ -265,6 +287,7 @@ async function runCode() {
 
   codeRunning = true;
   inputInProgress = false;
+  startWorkerHeartbeat();
 
   // get code and check what is used
   const rawCode = editor.getValue();
@@ -381,6 +404,7 @@ async function runWithSkulptTurtle(code) {
     console_write(`<span style="color:red;">${err.toString()}</span>\n`);
   } finally {
     codeRunning = false;
+    stopWorkerHeartbeat();
   }
 }
 
@@ -418,6 +442,7 @@ async function stopCode() {
 
   inputInProgress = false;
   codeRunning = false;
+  stopWorkerHeartbeat();
 
   if (worker){
     try { worker.terminate(); } catch {}

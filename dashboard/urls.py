@@ -29,4 +29,8 @@ urlpatterns = [
     path("project/<int:project_id>/feedback/", project_feedback, name="project_feedback"),
     path("project/<int:project_id>/line-comment/", save_line_comment, name="save_line_comment"),
     path("project/<int:project_id>/line-comment/<int:comment_id>/", delete_line_comment, name="delete_line_comment"),
+    path("api/worker/heartbeat/", worker_heartbeat, name="worker_heartbeat"),
+    path("api/metrics/active-workers/", active_workers_metrics, name="active_workers_metrics"),
+    path("api/metrics/active-users/", active_users_metrics, name="active_users_metrics"),
+    path("api/metrics/instance-status/", instance_status_metrics, name="instance_status_metrics"),
 ]

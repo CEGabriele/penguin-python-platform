@@ -542,6 +542,139 @@ def healthz(request):
     logger.info(f"Health check: {json.dumps(health)}")
     return JsonResponse(health, status=status)
 
+@csrf_exempt
+@require_GET
+def active_workers_metrics(request):
+    """
+    Returns count of active code execution workers.
+    Workers send heartbeats while code is running; entries expire after 60 seconds.
+    Public endpoint (no auth required) for monitoring systems to scrape.
+    """
+    from django.core.cache import cache
+
+    active_workers_dict = cache.get("active_workers_registry", {})
+    now = timezone.now().timestamp()
+
+    # Remove expired entries (older than 70 seconds, giving 10s buffer)
+    active_workers_dict = {
+        worker_id: timestamp
+        for worker_id, timestamp in active_workers_dict.items()
+        if now - timestamp < 70
+    }
+
+    return JsonResponse({
+        "timestamp": timezone.now().isoformat() + "Z",
+        "active_workers": len(active_workers_dict),
+        "workers": list(active_workers_dict.keys()),
+    }, status=200)
+
+@csrf_exempt
+@require_GET
+def active_users_metrics(request):
+    """
+    Returns count of currently authenticated users (logged-in sessions).
+    Public endpoint for monitoring systems.
+    """
+    from django.contrib.sessions.models import Session
+    from django.contrib.auth.models import User
+    import json
+
+    try:
+        active_sessions = 0
+        for session in Session.objects.filter(expire_date__gte=timezone.now()):
+            try:
+                data = session.get_decoded()
+                if data.get('_auth_user_id'):
+                    active_sessions += 1
+            except:
+                pass
+
+        active_users = User.objects.filter(is_active=True).count()
+
+        # Count by role
+        students = User.objects.filter(student__isnull=False).count()
+        teachers = User.objects.filter(teacher__isnull=False).count()
+
+        return JsonResponse({
+            "timestamp": timezone.now().isoformat() + "Z",
+            "active_sessions": active_sessions,
+            "total_users": active_users,
+            "students": students,
+            "teachers": teachers,
+        }, status=200)
+    except Exception as e:
+        logger.error(f"Active users metrics error: {e}")
+        return JsonResponse({"error": "Failed to fetch metrics"}, status=500)
+
+@csrf_exempt
+@require_GET
+def instance_status_metrics(request):
+    """
+    Returns instance status: memory, CPU, uptime.
+    Public endpoint for monitoring systems.
+    """
+    import psutil
+    import platform
+    from datetime import datetime
+    import os
+
+    try:
+        # CPU and memory
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+
+        # Uptime
+        boot_time = datetime.fromtimestamp(psutil.boot_time())
+        uptime_seconds = (datetime.now() - boot_time).total_seconds()
+
+        # Process info (Django process)
+        process = psutil.Process(os.getpid())
+        process_memory_mb = process.memory_info().rss / (1024 * 1024)
+
+        return JsonResponse({
+            "timestamp": timezone.now().isoformat() + "Z",
+            "cpu_percent": cpu_percent,
+            "memory_total_gb": round(memory.total / (1024**3), 2),
+            "memory_used_gb": round(memory.used / (1024**3), 2),
+            "memory_percent": memory.percent,
+            "process_memory_mb": round(process_memory_mb, 2),
+            "uptime_seconds": int(uptime_seconds),
+            "python_version": platform.python_version(),
+            "platform": platform.system(),
+        }, status=200)
+    except Exception as e:
+        logger.error(f"Instance status metrics error: {e}")
+        return JsonResponse({"error": "Failed to fetch metrics"}, status=500)
+
+@csrf_exempt
+@require_GET
+def worker_heartbeat(request):
+    """
+    Receives heartbeat from a code execution worker.
+    - GET with ?worker_id=xxx&action=start : marks worker as active for 60s
+    - GET with ?worker_id=xxx&action=stop : removes worker immediately
+
+    Workers send heartbeats every 10s while code runs to keep the 60s timer fresh.
+    No authentication required (workers are client-side, can't authenticate).
+    """
+    from django.core.cache import cache
+
+    worker_id = request.GET.get("worker_id")
+    action = request.GET.get("action", "start")
+
+    if not worker_id:
+        return JsonResponse({"error": "worker_id required"}, status=400)
+
+    active_workers_dict = cache.get("active_workers_registry", {})
+
+    if action == "stop":
+        active_workers_dict.pop(worker_id, None)
+    else:  # start
+        active_workers_dict[worker_id] = timezone.now().timestamp()
+
+    cache.set("active_workers_registry", active_workers_dict, timeout=3600)
+    return JsonResponse({"status": "active" if action == "start" else "stopped"}, status=200)
+
 @login_required
 def editor_view(request):
     user = request.user
