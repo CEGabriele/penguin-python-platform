@@ -652,7 +652,6 @@ def instance_status_metrics(request):
         return JsonResponse({"error": "Failed to fetch metrics"}, status=500)
 
 @csrf_exempt
-@require_GET
 def worker_heartbeat(request):
     """
     Receives heartbeat from a code execution worker.
