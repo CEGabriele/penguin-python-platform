@@ -174,6 +174,8 @@ def admin_dashboard(request):
                     user = student.user
                     user.set_password(new_password)
                     user.save()
+                    student.password_text = new_password
+                    student.save()
                     return redirect('admin_dashboard')
             elif 'reset_teacher_password' in request.POST:
                 teacher_password_form = TeacherPasswordResetForm(request.POST)

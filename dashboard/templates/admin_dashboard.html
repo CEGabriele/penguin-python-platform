@@ -5,6 +5,47 @@
     <link rel="stylesheet" href="{% static 'admin/css/vendor/select2/select2.css' %}">
     <link rel="stylesheet" href="{% static 'django_select2/django_select2.css' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .password-field {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            position: relative;
+        }
+        .password-field input {
+            flex: 1;
+            padding-right: 36px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .password-toggle:hover {
+            color: #333;
+        }
+        .username-preview {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+        }
+        .username-preview-label {
+            font-weight: bold;
+            color: #333;
+        }
+        .username-preview-value {
+            color: #666;
+            font-family: monospace;
+        }
+    </style>
 {% endblock %}
 {% block extra_head %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -115,6 +156,37 @@
 
 {% block extra_js %}
 <script>
+function setupUsernamePreview(form) {
+    const firstNameField = form.querySelector('input[name="first_name"]');
+    const lastNameField = form.querySelector('input[name="last_name"]');
+
+    if (!firstNameField || !lastNameField) return;
+
+    function updatePreview() {
+        const firstName = firstNameField.value.toLowerCase();
+        const lastName = lastNameField.value.toLowerCase();
+        const username = firstName + lastName;
+
+        let preview = form.querySelector('.username-preview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.className = 'username-preview';
+            lastNameField.parentElement.insertAdjacentElement('afterend', preview);
+        }
+
+        if (username.length > 0) {
+            preview.innerHTML = '<span class="username-preview-label">Username:</span> <span class="username-preview-value">' + username + '</span>';
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    firstNameField.addEventListener('input', updatePreview);
+    lastNameField.addEventListener('input', updatePreview);
+    updatePreview();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll(".collapsible").forEach(btn => {
         btn.addEventListener("click", function() {
@@ -122,6 +194,23 @@ document.addEventListener("DOMContentLoaded", function() {
             const content = this.nextElementSibling;
             content.style.display = content.style.display === "block" ? "none" : "block";
         });
+    });
+
+    document.querySelectorAll(".password-toggle").forEach(toggle => {
+        toggle.addEventListener("click", function(e) {
+            e.preventDefault();
+            const passwordField = this.parentElement.querySelector(".password-input");
+            const icon = this.querySelector("i");
+            const isPassword = passwordField.type === "password";
+
+            passwordField.type = isPassword ? "text" : "password";
+            icon.classList.toggle("bi-eye", isPassword === false);
+            icon.classList.toggle("bi-eye-slash", isPassword === true);
+        });
+    });
+
+    document.querySelectorAll('form').forEach(form => {
+        setupUsernamePreview(form);
     });
 });
 </script>
