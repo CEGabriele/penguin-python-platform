@@ -24,6 +24,7 @@ class Curriculum(models.Model):
 
 class Class(models.Model):
     DAY_CHOICES = [
+        ('All Week', 'All Week'),
         ('Monday', 'Monday'),
         ('Tuesday', 'Tuesday'),
         ('Wednesday', 'Wednesday'),
@@ -43,10 +44,10 @@ class Class(models.Model):
         ('Park Slope', 'Park Slope'),
         ('Online', 'Online'),
     ]
-            
+
     name = models.CharField(max_length = 100)
     day = models.CharField(choices=DAY_CHOICES)
-    time = models.TimeField()
+    time = models.TimeField(blank=True, null=True)
     code = models.CharField(unique = True)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name = "classes")
     location = models.CharField(choices=LOCATION_CHOICES)

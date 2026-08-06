@@ -121,7 +121,12 @@
                 <a href="{% url 'admin_class_view' class.id %}" class="button">
                     {{ class.name }}
                 </a>
-                ({{ class.day }} {{ class.time }}) – Teacher: {{ class.teacher.user.first_name }}
+                {% if class.time %}
+                    ({{ class.day }} {{ class.time }})
+                {% else %}
+                    ({{ class.day }})
+                {% endif %}
+                – Teacher: {{ class.teacher.user.first_name }}
             </p>
         {% endfor %}
     </div>

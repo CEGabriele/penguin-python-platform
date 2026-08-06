@@ -9,7 +9,11 @@
    <div class="class-page">
       <div class="class-page-header">
          <h1>{{class.name}}</h1>
-         <p>{{class.day}} - {{class.time}}</p>
+         {% if class.time %}
+            <p>{{class.day}} - {{class.time}}</p>
+         {% else %}
+            <p>{{class.day}}</p>
+         {% endif %}
          <p>{{class.teacher}}</p>
       </div>
 

@@ -91,7 +91,7 @@ class ClassCreationForm(forms.ModelForm):
             search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
         ),
         required = False,
-        
+
     )
 
     class Meta:
@@ -101,6 +101,10 @@ class ClassCreationForm(forms.ModelForm):
         widgets = {
             "time": forms.TimeInput(attrs={"type": "time"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['time'].required = False
 
     def save(self, commit=True):
         instance = super().save(commit=False)
