@@ -757,13 +757,13 @@ def editor_view(request):
         ensure_main_file(project)
 
         main_file = project.files.filter(path="main.py").first()
-        
+
         try:
             main_file.file.open("rb")
             initial_code = force_str(main_file.file.read(), errors="ignore")
         except Exception:
             initial_code = ""
-        
+            
         code_name = main_file.path
         selected_class_id = str(assigned.for_class.id)
     else:
@@ -903,6 +903,7 @@ def editor_projects(request):
             "name": project.name or "Untitled Project",
             "files": list(project.files.values_list("path", flat=True)),
             "assignment_id": project.assignment_id,
+            "last_edited": project.last_edited.isoformat() if project.last_edited else None,
         })
 
     result = []
@@ -1123,7 +1124,11 @@ def project_feedback(request, project_id):
 
     if request.method == "GET":
         # Auth: teacher of the class or the student owner
-        is_teacher = hasattr(request.user, "teacher") and project.for_class.teacher == request.user.teacher
+        is_teacher = (
+            hasattr(request.user, "teacher")
+            and project.for_class
+            and project.for_class.teacher == request.user.teacher
+        )
         is_student_owner = project.owner == request.user
 
         if not (is_teacher or is_student_owner):

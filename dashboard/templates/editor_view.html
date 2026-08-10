@@ -24,6 +24,26 @@
     {% block title %}Code Editor{% endblock %}
 
 {% block content %}
+
+{% if not project_id %}
+<div id="projectSelectorModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: white; padding: 40px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2>Select a Project to Start Coding</h2>
+        <p style="color: #666; margin: 20px 0;">Choose an existing project or make a new one to begin coding.</p>
+
+        <div id="projectList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+        </div>
+    </div>
+</div>
+<style>
+    #projectSelectorModal + .side-menu,
+    #projectSelectorModal + .side-menu + .page-bubble {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+</style>
+{% endif %}
+
 <!-- SIDE MENU -->
 <div class="side-menu">
 
@@ -36,19 +56,19 @@
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
         </div>
-    
+
         <div id="projectTree"></div>
 
     </div>
     </div>
 </div>
-    
+
 <div class="page-bubble">
 
     {% if assigned %}
         <div class="assignment-context">
             <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
-            {{ assigned.assignment.description }}
+            <div style="white-space: pre-wrap; margin-top: 10px; line-height: 1.5;">{{ assigned.assignment.description }}</div>
         </div>
     {% endif %}
 
@@ -705,13 +725,88 @@ document.addEventListener("DOMContentLoaded", () => {
         return true;
     }
 
+    function parseDjangoDatetime(dateStr) {
+        if (!dateStr) return "Unknown";
+        try {
+            // ISO format: "2026-08-10T16:02:48.507515"
+            const date = new Date(dateStr);
+            if (!isNaN(date)) {
+                return date.toLocaleString();
+            }
+        } catch (e) {}
+        return "Unknown";
+    }
+
+    async function populateProjectSelector() {
+        const modal = document.getElementById("projectSelectorModal");
+        if (!modal) {
+            return;
+        }
+        const res = await fetch("/dashboard/editor/projects/");
+        const data = await res.json();
+        const list = document.getElementById("projectList");
+
+        if (!data.classes || data.classes.length === 0) {
+            list.innerHTML = "<p style='color: #999;'>No classes yet.</p>";
+            return;
+        }
+
+        let html = "";
+
+        html += `<div style="margin-bottom: 30px;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">Create New Project</h4>`;
+        data.classes.forEach(cls => {
+            html += `
+                <button type="button" onclick="createProject(${cls.id}, '${cls.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; margin-bottom: 8px;">
+                    + ${cls.name}
+                </button>
+            `;
+        });
+        html += `</div>`;
+
+        // Show existing projects below
+        html += `<div><h4 style="margin: 0 0 10px 0; color: #333;">Existing Projects</h4>`;
+        let hasProjects = false;
+
+        data.classes.forEach(cls => {
+            if (cls.projects && cls.projects.length > 0) {
+                hasProjects = true;
+                html += `<div style="margin-bottom: 15px;"><h5 style="margin: 0 0 8px 0; color: #666; font-size: 12px; text-transform: uppercase;">${cls.name}</h5>`;
+                cls.projects.forEach(proj => {
+                    const dateStr = parseDjangoDatetime(proj.last_edited);
+                    html += `
+                        <div onclick="goToProject(${proj.id})" style="padding: 10px; margin: 5px 0; background: #f0f0f0; border-radius: 4px; cursor: pointer;">
+                            <strong>${proj.name || 'Untitled'}</strong><br>
+                            <small style="color: #666;">Last edited: ${dateStr}</small>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+        });
+
+        if (!hasProjects) {
+            html += `<p style='color: #999; font-size: 14px;'>No existing projects yet. Create one above!</p>`;
+        }
+        html += `</div>`;
+
+        list.innerHTML = html;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
+        const projectId = document.getElementById("project_id")?.value;
+
+        // Populate selector if no project is selected
+        if (!projectId) {
+            populateProjectSelector();
+        }
+
         loadProjects().then(() => {
             const activeProjectId = document.getElementById("project_id")?.value;
             const activeFilePath = document.getElementById("current_file_path")?.value;
-    
+
             if (!activeProjectId || !activeFilePath) return;
-    
+
             document.querySelectorAll(".project").forEach(projectEl => {
                 const fileEl = projectEl.querySelector(
                     `.project-file[data-project-id="${activeProjectId}"][data-path="${CSS.escape(activeFilePath)}"]`
@@ -719,7 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (fileEl) {
                     fileEl.classList.add("active");
                     projectEl.classList.add("open");
-    
+
                     const classGroup = projectEl.closest(".class-group");
                     if (classGroup) {
                         classGroup.classList.add("open");
