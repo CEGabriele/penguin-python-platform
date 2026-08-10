@@ -131,6 +131,19 @@ class ClassStudentUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['students'].initial = self.instance.students.all()
 
+class ClassEditForm(forms.ModelForm):
+    class Meta:
+        model = Class
+        fields = ['name', 'day', 'time', 'location', 'curriculum']
+        widgets = {
+            "time": forms.TimeInput(attrs={"type": "time"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['time'].required = False
+        self.fields['curriculum'].required = False
+
 class StudentPasswordResetForm(forms.Form):
     student = forms.ModelChoiceField(
         queryset=Student.objects.all(),

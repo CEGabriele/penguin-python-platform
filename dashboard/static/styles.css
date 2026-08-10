@@ -1,7 +1,7 @@
 
 :root {
-    --accent-color: rgba(252, 164, 43);
-    --accent-color-light: rgba(253, 182, 85);
+    --accent-color: rgba(0, 123, 255);
+    --accent-color-light: rgba(80, 160, 255);
     --nav-height: 76px;
 }
 
@@ -122,7 +122,7 @@ body {
 
 .button, button{
     background-color: var(--accent-color);
-    color: rgb(227, 221, 110); /*testing*/
+    color: white;
     border: none;
     padding: 7px 12px;
     border-radius: 5px;
@@ -133,12 +133,12 @@ body {
 
 }
 
-button:hover , .button:hover, .bar-links a {
+button:hover , .button:hover, .bar-links a, .class-card .button:hover, .download-link:hover, .view-class-btn:hover, .nav-btn:hover {
     background-color: var(--accent-color-light);
 }
 /* Style only the "View Class Page" button inside class cards */
 .class-card .button {
-    background-color: #2DB0F4;
+    background-color: var(--accent-color);
     color: white;
     border-radius: 8px;
     padding: 8px 16px;
@@ -148,11 +148,6 @@ button:hover , .button:hover, .bar-links a {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     text-align: center;
-}
-
-.class-card .button:hover {
-    background-color: #45a049;
-    transform: translateY(-3px);
 }
 
 .file-grid {
@@ -389,7 +384,6 @@ a {
 .view-class-btn {
     display: inline-block;
     margin-top: 8px;
-    background-color: #ff9800;
     color: white;
     padding: 4px 8px;       /* smaller padding = smaller button */
     font-size: 0.85rem;     /* smaller text */
@@ -397,11 +391,6 @@ a {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
     text-decoration: none;
     transition: all 0.3s ease;
-}
-
-.view-class-btn:hover {
-    background-color: #ffc366;
-    transform: translateY(-2px);
 }
 
 

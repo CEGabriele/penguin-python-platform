@@ -11,14 +11,71 @@
 {%block content%}
     <h1>Class: {{ class_obj.name }}</h1>
     <p> Teacher: {{ class_obj.teacher.user.get_full_name }}</p>
+
+    <div style="margin: 20px 0;">
+        <a href="{% url 'edit_class' class_obj.id %}" style="display: inline-block;" class="button">
+            ✎ Edit Class Details
+        </a>
+    </div>
+
     <h2>Manage Students</h2>
     
     {{ student_form.media }}
     <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="students" value="">
         {{ student_form.as_p }}
         <button type="submit">Update Students</button>
     </form>
+
+    <h2>Assignments</h2>
+
+    {% if assigned_assignments %}
+        <div style="margin: 0 auto 30px auto; max-width: 600px;">
+            <h3>Currently Assigned</h3>
+            {% for assigned in assigned_assignments %}
+                <div style="background: #f9f9f9; padding: 15px; margin-bottom: 10px; border-radius: 4px; border-left: 4px solid #007bff;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ assigned.assignment.title }}</strong><br>
+                            <small style="color: #666;">by {{ assigned.assignment.created_by.user.get_full_name }}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>Due:</strong> {{ assigned.due_date }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if available_assignments %}
+        <div style="margin-bottom: 30px;">
+            <h3>Add Assignment</h3>
+            <form method="post" style="display: inline-block; background: #f9f9f9; padding: 15px; border-radius: 4px;">
+                {% csrf_token %}
+                <input type="hidden" name="assign_assignment" value="1">
+                <div style="margin-bottom: 15px;">
+                    <label for="assignment_id" style="display: block; margin-bottom: 5px; font-weight: 600;">Assignment</label>
+                    <select name="assignment_id" id="assignment_id" required style="width: 300px; padding: 8px;">
+                        <option value="">-- Select Assignment --</option>
+                        {% for assignment in available_assignments %}
+                            <option value="{{ assignment.id }}">{{ assignment.title }} (by {{ assignment.created_by.user.get_full_name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="due_date" style="display: block; margin-bottom: 5px; font-weight: 600;">Due Date</label>
+                    <input type="date" name="due_date" id="due_date" required style="padding: 8px;">
+                </div>
+                <button type="submit" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                    Add Assignment
+                </button>
+            </form>
+        </div>
+    {% else %}
+        <p style="color: #999;">All available assignments have been assigned to this class.</p>
+    {% endif %}
 
     <br>
 {%endblock%}

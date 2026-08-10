@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, StudentPasswordResetForm, TeacherPasswordResetForm
+from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassStudentUpdateForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm
 from .models import *
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -208,7 +208,28 @@ def admin_class_view(request, class_id):
     teacher = request.user.teacher
     class_obj = get_object_or_404(Class, id=class_id)
 
-    if request.method == "POST":
+    # Handle adding assignments to the class
+    if request.method == "POST" and "assign_assignment" in request.POST:
+        assignment_id = request.POST.get("assignment_id")
+        due_date = request.POST.get("due_date")
+
+        assignment = get_object_or_404(Assignment, id=assignment_id)
+
+        # Check if already assigned
+        if not AssignedToClass.objects.filter(
+            assignment=assignment,
+            for_class=class_obj
+        ).exists():
+            AssignedToClass.objects.create(
+                assignment=assignment,
+                for_class=class_obj,
+                due_date=due_date
+            )
+
+        return redirect('admin_class_view', class_id=class_obj.id)
+
+    # Handle updating students
+    if request.method == "POST" and "students" in request.POST:
         student_form = ClassStudentUpdateForm(request.POST, instance=class_obj)
         if student_form.is_valid():
             students = student_form.cleaned_data['students']
@@ -221,12 +242,53 @@ def admin_class_view(request, class_id):
     else:
         student_form = ClassStudentUpdateForm(instance=class_obj)
 
+    # Get assigned assignments
+    assigned_assignments = class_obj.assigned_assignments.select_related("assignment")
+
+    # Get available assignments to assign
+    all_assignments = Assignment.objects.all()
+    already_assigned_ids = set(
+        assigned_assignments.values_list("assignment_id", flat=True)
+    )
+    available_assignments = all_assignments.exclude(id__in=already_assigned_ids)
+
     return render(
         request,
         'admin_class_view.html',
         {
             'class_obj': class_obj,
             'student_form': student_form,
+            'teacher': teacher,
+            'assigned_assignments': assigned_assignments,
+            'available_assignments': available_assignments,
+        }
+    )
+
+
+@login_required
+@teacher_required
+def edit_class(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who owns the class
+    if not (teacher.is_admin or class_obj.teacher == teacher):
+        return redirect('teacher_dashboard')
+
+    if request.method == "POST":
+        form = ClassEditForm(request.POST, instance=class_obj)
+        if form.is_valid():
+            form.save()
+            return redirect('admin_class_view', class_id=class_obj.id)
+    else:
+        form = ClassEditForm(instance=class_obj)
+
+    return render(
+        request,
+        'edit_class.html',
+        {
+            'form': form,
+            'class_obj': class_obj,
             'teacher': teacher
         }
     )
@@ -277,6 +339,36 @@ def view_student(request, username):
         "teacher": teacher,
         "student_projects": student_projects,
     })
+@login_required
+@teacher_required
+def admin_create_assignment(request):
+    teacher = Teacher.objects.get(user=request.user)
+
+    if not teacher.is_admin:
+        return redirect('teacher_dashboard')
+
+    # Admins can see all curricula
+    curricula = Curriculum.objects.all()
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        description = request.POST.get("description")
+        curriculum_id = request.POST.get("curriculum")
+
+        curriculum = get_object_or_404(Curriculum, id=curriculum_id)
+
+        assignment = Assignment.objects.create(
+            created_by=teacher,
+            curriculum=curriculum,
+            title=title,
+            description=description,
+        )
+
+        return redirect("teacher_assignment_detail", assignment_id=assignment.id)
+
+    return render(request, "admin_create_assignment.html", {"curricula": curricula})
+
+
 @login_required
 @teacher_required
 def create_assignment(request):
@@ -335,7 +427,13 @@ def create_assignment(request):
 @login_required
 @teacher_required
 def teacher_assignment_detail(request, assignment_id):
-    assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who created it
+    if not (teacher.is_admin or assignment.created_by == teacher):
+        return redirect('teacher_dashboard')
+
     assigned_classes = assignment.assigned_instances.select_related("for_class")
 
     return render(request, "teacher_assignment_detail.html", {
@@ -346,14 +444,28 @@ def teacher_assignment_detail(request, assignment_id):
 @login_required
 @teacher_required
 def assign_assignment_to_class(request, assignment_id):
-    assignment = get_object_or_404(Assignment, id=assignment_id, created_by__user=request.user)
-    classes = request.user.teacher.classes.all()
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who created it
+    if not (teacher.is_admin or assignment.created_by == teacher):
+        return redirect('teacher_dashboard')
+
+    # If admin, show all classes; otherwise show only their classes
+    if teacher.is_admin:
+        classes = Class.objects.all()
+    else:
+        classes = teacher.classes.all()
 
     if request.method == "POST":
         class_id = request.POST.get("class_id")
         due_date = request.POST.get("due_date")
 
-        class_obj = get_object_or_404(Class, id=class_id, teacher=request.user.teacher)
+        class_obj = get_object_or_404(Class, id=class_id)
+
+        # Admin can assign to any class; regular teachers only to their own
+        if not (teacher.is_admin or class_obj.teacher == teacher):
+            return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
 
         AssignedToClass.objects.create(
             assignment=assignment,
@@ -371,7 +483,15 @@ def assign_assignment_to_class(request, assignment_id):
 @login_required
 @teacher_required
 def teacher_view_submissions(request, assigned_id):
-    assigned = get_object_or_404(AssignedToClass, id=assigned_id, assignment__created_by__user=request.user)
+    assigned = get_object_or_404(AssignedToClass, id=assigned_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who created the assignment or owns the class
+    if not (teacher.is_admin or
+            assigned.assignment.created_by == teacher or
+            assigned.for_class.teacher == teacher):
+        return redirect('teacher_dashboard')
+
     projects = (
         CodeProject.objects
         .filter(
