@@ -79,10 +79,16 @@ def student_dashboard(request):
             'upcoming_assignments': upcoming_assignments,
         })
 
+    # Add orphaned projects (from deleted classes)
+    orphaned_projects = CodeProject.objects.filter(
+        owner=user,
+        for_class__isnull=True
+    ).order_by("-last_edited")
 
     return render(request, 'student_dashboard.html', {
         'student': student,
-        'classes': classes
+        'classes': classes,
+        'orphaned_projects': orphaned_projects
     })
 
 @login_required
@@ -291,6 +297,29 @@ def edit_class(request, class_id):
             'class_obj': class_obj,
             'teacher': teacher
         }
+    )
+
+
+@login_required
+@teacher_required
+def delete_class(request, class_id):
+    class_obj = get_object_or_404(Class, id=class_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who owns the class
+    if not (teacher.is_admin or class_obj.teacher == teacher):
+        return redirect('teacher_dashboard')
+
+    if request.method == "POST":
+        # Detach all projects from this class instead of deleting them
+        CodeProject.objects.filter(for_class=class_obj).update(for_class=None)
+        class_obj.delete()
+        return redirect('teacher_dashboard')
+
+    return render(
+        request,
+        'confirm_delete_class.html',
+        {'class_obj': class_obj}
     )
 
 
@@ -832,10 +861,12 @@ def editor_view(request):
         project = get_object_or_404(CodeProject, id=project_id)
 
         if hasattr(request.user, "teacher"):
-            if project.for_class.teacher != request.user.teacher:
+            # Teachers can only view projects from their classes
+            if project.for_class and project.for_class.teacher != request.user.teacher:
                 print("access denied: teacher does not match project class teacher")
                 return HttpResponse("Access denied", status=403)
         else:
+            # Students can only view their own projects
             if project.owner != request.user:
                 return HttpResponse("Access denied", status=403)
         if project.assignment and project.for_class:
@@ -1026,12 +1057,38 @@ def editor_projects(request):
             "last_edited": project.last_edited.isoformat() if project.last_edited else None,
         })
 
+    # Get orphaned projects (from deleted classes)
+    orphaned_projects = (
+        CodeProject.objects
+        .filter(owner=request.user, for_class__isnull=True)
+        .prefetch_related("files")
+        .order_by("name")
+    )
+
+    orphaned_list = []
+    for project in orphaned_projects:
+        orphaned_list.append({
+            "id": project.id,
+            "name": project.name or "Untitled Project",
+            "files": list(project.files.values_list("path", flat=True)),
+            "assignment_id": project.assignment_id,
+            "last_edited": project.last_edited.isoformat() if project.last_edited else None,
+        })
+
     result = []
     for class_obj in user_classes:
         result.append({
             "id": class_obj.id,
             "name": class_obj.name,
             "projects": projects_by_class_id[class_obj.id],
+        })
+
+    # Add orphaned projects section if any exist
+    if orphaned_list:
+        result.append({
+            "id": None,
+            "name": "Archived Projects (Deleted Classes)",
+            "projects": orphaned_list,
         })
 
     return JsonResponse({
@@ -1400,3 +1457,50 @@ def operations_dashboard(request):
     return render(request, "admin/operations_dashboard.html", {
         "healthz_url": "/healthz/",
     })
+
+
+@login_required
+def profile_view(request):
+    user = request.user
+    return render(request, 'profile.html', {
+        'user': user,
+    })
+
+
+@login_required
+def projects_view(request):
+    user = request.user
+    projects = CodeProject.objects.filter(owner=user).order_by('-last_edited')
+    return render(request, 'projects.html', {
+        'projects': projects,
+    })
+
+
+@login_required
+def rename_project(request, project_id):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+    project = get_object_or_404(CodeProject, id=project_id, owner=request.user)
+
+    data = json.loads(request.body)
+    new_name = data.get("name", "").strip()
+
+    if not new_name:
+        return JsonResponse({"ok": False, "error": "Project name cannot be empty"})
+
+    project.name = new_name
+    project.save()
+
+    return JsonResponse({"ok": True, "name": project.name})
+
+
+@login_required
+def delete_project(request, project_id):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "Method not allowed"}, status=405)
+
+    project = get_object_or_404(CodeProject, id=project_id, owner=request.user)
+    project.delete()
+
+    return JsonResponse({"ok": True})

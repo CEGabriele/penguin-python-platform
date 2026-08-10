@@ -18,6 +18,8 @@ let abortController = null;
 let lastRunUsedPygame = false;
 let lastRunUsedTurtle = false;
 let lastSavedCode = "";
+let currentFontSize = 14;
+let wordWrapEnabled = true;
 let autosaveTimer;
 let projectId = null;
 let currentFilePath = "main.py";
@@ -83,6 +85,7 @@ require(['vs/editor/editor.main'], function () {
   if (!projectId || projectId === "None") {
     projectId = null;
   }
+
   currentFilePath = document.getElementById("current_file_path")?.value || "main.py";
 
   if (window.IS_READONLY) {
@@ -149,22 +152,79 @@ window.console_input = function (promptText = "") {
 
 
 
-function ensureTurtleCanvas() {
-  const container = document.getElementById('graphics-container');
-  let canvas = document.getElementById('turtle-canvas');
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'turtle-canvas';
-    canvas.width = 640;
-    canvas.height = 480;
-    canvas.style.border = '1px solid #444';
-    canvas.style.display = 'none';
-    container?.appendChild(canvas);
-  }
+function extractScreenSize(code) {
+  const setupMatch = code.match(/\w+\.setup\s*\(\s*(?:width\s*=\s*)?(\d+)\s*,\s*(?:height\s*=\s*)?(\d+)/);
+  const setmodeMatch = code.match(/pygame\.display\.set_mode\s*\(\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)\s*\)/);
 
-  return canvas;
+  if (setupMatch) {
+    return { width: parseInt(setupMatch[1]), height: parseInt(setupMatch[2]) };
+  }
+  if (setmodeMatch) {
+    return { width: parseInt(setmodeMatch[1]), height: parseInt(setmodeMatch[2]) };
+  }
+  return null;
 }
 
+function getGraphicsSize() {
+  const widthInput = document.getElementById('graphicsWidth');
+  const heightInput = document.getElementById('graphicsHeight');
+  return {
+    width: widthInput ? parseInt(widthInput.value) || 640 : 640,
+    height: heightInput ? parseInt(heightInput.value) || 480 : 480,
+  };
+}
+
+function setGraphicsSize(width, height) {
+  const widthInput = document.getElementById('graphicsWidth');
+  const heightInput = document.getElementById('graphicsHeight');
+  if (widthInput) widthInput.value = width;
+  if (heightInput) heightInput.value = height;
+  window.applyGraphicsSize();
+}
+
+window.applyGraphicsSize = function() {
+  const size = getGraphicsSize();
+  const pygameCanvas = document.getElementById('graphics-canvas');
+  const turtleCanvas = document.getElementById('turtle-canvas');
+
+  if (pygameCanvas) {
+    pygameCanvas.width = size.width;
+    pygameCanvas.height = size.height;
+    pygameCanvas.style.maxWidth = '100%';
+    pygameCanvas.style.height = 'auto';
+  }
+
+  if (turtleCanvas) {
+    // For turtle, clear and update the container
+    turtleCanvas.innerHTML = "";
+    turtleCanvas.style.width = size.width + 'px';
+    turtleCanvas.style.height = size.height + 'px';
+  }
+
+  const container = document.getElementById('graphics-container');
+  if (container) {
+    container.style.maxWidth = (size.width + 20) + 'px';
+  }
+};
+
+function showGraphicsSettings() {
+  const settings = document.getElementById('graphics-settings');
+  if (settings) {
+    settings.style.display = 'block';
+  }
+}
+
+function ensureTurtleCanvas() {
+  const container = document.getElementById('graphics-container');
+  let div = document.getElementById('turtle-canvas');
+  if (!div) {
+    div = document.createElement('div');
+    div.id = 'turtle-canvas';
+    div.style.display = 'none';
+    container?.appendChild(div);
+  }
+  return div;
+}
 
 function attachWorkerHandlers(w) {
   w.onmessage = (e) => {
@@ -304,7 +364,6 @@ async function runCode() {
   const usesPygame = /\bimport\s+pygame\b/.test(rawCode);
   lastRunUsedPygame = usesPygame;
 
-
   const container = document.getElementById('graphics-container');
   const pygameCanvas = document.getElementById('graphics-canvas');
   const turtleCanvas = ensureTurtleCanvas(); // create if missing
@@ -373,6 +432,12 @@ async function runWithSkulptTurtle(code) {
   const pygameCanvas = document.getElementById("graphics-canvas");
   const turtleCanvas = document.getElementById("turtle-canvas");
 
+  const screenSize = extractScreenSize(code);
+  if (screenSize) {
+    setGraphicsSize(screenSize.width, screenSize.height);
+  }
+  const size = getGraphicsSize();
+
   container.style.display = "block";
   if (pygameCanvas) pygameCanvas.style.display = "none";
 
@@ -393,8 +458,8 @@ async function runWithSkulptTurtle(code) {
 
   Sk.TurtleGraphics = Sk.TurtleGraphics || {};
   Sk.TurtleGraphics.target = "turtle-canvas";
-  Sk.TurtleGraphics.width = 640;
-  Sk.TurtleGraphics.height = 480;
+  Sk.TurtleGraphics.width = size.width;
+  Sk.TurtleGraphics.height = size.height;
 
   try {
     await Sk.misceval.asyncToPromise(() =>
@@ -607,3 +672,139 @@ function setupDragDivider(){
   });
 }
 document.addEventListener("DOMContentLoaded", setupDragDivider);
+
+// Font size controls
+window.increaseFontSize = function() {
+  if (editor && currentFontSize < 32) {
+    currentFontSize += 2;
+    editor.updateOptions({ fontSize: currentFontSize });
+    document.getElementById('fontSizeDisplay').textContent = currentFontSize;
+    localStorage.setItem('editorFontSize', currentFontSize);
+  }
+};
+
+window.decreaseFontSize = function() {
+  if (editor && currentFontSize > 10) {
+    currentFontSize -= 2;
+    editor.updateOptions({ fontSize: currentFontSize });
+    document.getElementById('fontSizeDisplay').textContent = currentFontSize;
+    localStorage.setItem('editorFontSize', currentFontSize);
+  }
+};
+
+window.toggleWordWrap = function() {
+  if (!editor) return;
+  wordWrapEnabled = !wordWrapEnabled;
+  editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off' });
+  const btn = document.getElementById('wordWrapBtn');
+  if (btn) {
+    btn.style.opacity = wordWrapEnabled ? '1' : '0.5';
+  }
+  localStorage.setItem('editorWordWrap', wordWrapEnabled);
+};
+
+// Project menu functions
+function getCsrfToken() {
+  let name = 'csrftoken';
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+window.renameProject = function(projectId, currentName) {
+  const newName = prompt('Enter new project name:', currentName);
+  if (!newName || !newName.trim()) return;
+
+  fetch(`/dashboard/editor/project/${projectId}/rename/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken()
+    },
+    body: JSON.stringify({ name: newName.trim() })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(e => alert('Error: ' + e));
+};
+
+window.deleteProject = function(projectId, projectName) {
+  if (!confirm(`Are you sure you want to delete "${projectName}"? This cannot be undone.`)) {
+    return;
+  }
+
+  fetch(`/dashboard/editor/project/${projectId}/delete/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCsrfToken()
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      window.location.href = '/dashboard/editor/';
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(e => alert('Error: ' + e));
+};
+
+// Toggle project menu dropdown
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('project-menu-btn')) {
+    const dropdown = e.target.nextElementSibling;
+    document.querySelectorAll('.project-menu-dropdown').forEach(d => {
+      if (d !== dropdown) d.style.display = 'none';
+    });
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  } else if (!e.target.closest('.project-menu-dropdown')) {
+    document.querySelectorAll('.project-menu-dropdown').forEach(d => {
+      d.style.display = 'none';
+    });
+  }
+}, true);
+
+// Load saved editor preferences
+document.addEventListener('DOMContentLoaded', function() {
+  const savedFontSize = localStorage.getItem('editorFontSize');
+  const savedWordWrap = localStorage.getItem('editorWordWrap');
+
+  if (savedFontSize) {
+    currentFontSize = parseInt(savedFontSize);
+  }
+  if (savedWordWrap === 'true') {
+    wordWrapEnabled = true;
+  }
+
+  // Apply settings when editor is ready
+  const checkEditor = setInterval(function() {
+    if (editor) {
+      clearInterval(checkEditor);
+      editor.updateOptions({
+        fontSize: currentFontSize,
+        wordWrap: wordWrapEnabled ? 'on' : 'off'
+      });
+      document.getElementById('fontSizeDisplay').textContent = currentFontSize;
+      const btn = document.getElementById('wordWrapBtn');
+      if (btn && wordWrapEnabled) {
+        btn.style.opacity = '1';
+      }
+    }
+  }, 100);
+});

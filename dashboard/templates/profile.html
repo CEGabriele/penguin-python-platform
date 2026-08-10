@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>Profile</h1>
+  </div>
+
+  <div class="profile-card">
+    <div class="profile-info">
+      <div class="info-group">
+        <label>Name</label>
+        <p>{{ user.get_full_name|default:user.username }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Username</label>
+        <p>{{ user.username }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Email</label>
+        <p>{{ user.email }}</p>
+      </div>
+
+      {% if user.student %}
+      <div class="info-group">
+        <label>Role</label>
+        <p>Student</p>
+      </div>
+      {% elif user.teacher %}
+      <div class="info-group">
+        <label>Role</label>
+        <p>Teacher</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.profile-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.profile-header {
+  margin-bottom: 40px;
+}
+
+.profile-header h1 {
+  font-size: 2.5rem;
+  color: #1f4f75;
+  margin: 0;
+}
+
+.profile-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  padding: 40px;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-group label {
+  font-size: 0.9rem;
+  color: rgba(0,0,0,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-group p {
+  font-size: 1.1rem;
+  color: rgba(0,0,0,0.8);
+  margin: 0;
+}
+</style>
+{% endblock %}

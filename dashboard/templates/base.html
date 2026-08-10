@@ -21,5 +21,25 @@
     </main>
 
     {% block extra_js %}{% endblock %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const profileMenuBtn = document.getElementById('profileMenuBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (profileMenuBtn && profileDropdown) {
+          profileMenuBtn.addEventListener('click', function() {
+            profileMenuBtn.classList.toggle('active');
+            profileDropdown.classList.toggle('active');
+          });
+
+          document.addEventListener('click', function(event) {
+            if (!event.target.closest('.profile-menu')) {
+              profileMenuBtn.classList.remove('active');
+              profileDropdown.classList.remove('active');
+            }
+          });
+        }
+      });
+    </script>
 </body>
 </html>
