@@ -406,16 +406,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadProjects() {
         const openProjects = getOpenProjects();
-    
+
         const res = await fetch("/dashboard/editor/projects/");
         const data = await res.json();
-    
+
         const tree = document.getElementById("projectTree");
         tree.innerHTML = "";
-    
+
         let firstProject = null;
-    
+
+        data.classes.sort((a, b) => {
+            const aIsArchived = a.name.includes("Archived");
+            const bIsArchived = b.name.includes("Archived");
+            if (aIsArchived && !bIsArchived) return 1;
+            if (!aIsArchived && bIsArchived) return -1;
+            return a.name.localeCompare(b.name);
+        });
+
         data.classes.forEach(cls => {
+            cls.projects.sort((a, b) => a.name.localeCompare(b.name));
             const classDiv = document.createElement("div");
             classDiv.className = "class-group open";
             classDiv.dataset.classId = cls.id;
@@ -559,7 +568,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
                 const filesDiv = document.createElement("div");
                 filesDiv.className = "project-files";
-    
+
+                project.files.sort((a, b) => a.localeCompare(b));
+
                 project.files.forEach(file => {
                     const f = document.createElement("div");
                     f.className = "project-file";
