@@ -1034,9 +1034,19 @@ padding-top: 0 !important;
     gap:6px;
     align-items:center;
     font-size:0.9rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    
+    justify-content:space-between;
+    min-width: 0;
+}
+
+.file-left {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.file-menu {
+    flex-shrink: 0;
 }
 
 .project-file:hover{
@@ -1074,6 +1084,14 @@ padding-top: 0 !important;
     display:flex;
     align-items:center;
     justify-content:space-between;
+    min-width: 0;
+}
+
+.project-name {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .project-title:hover{
@@ -1084,6 +1102,7 @@ padding-top: 0 !important;
 .new-file-row{
     color:#888;
     font-style:italic;
+    justify-content: flex-start;
 }
 
 .new-file-row:hover{
@@ -1311,6 +1330,7 @@ padding-top: 0 !important;
     padding: 6px 8px;
     border-radius: 6px;
     font-weight: 600;
+    min-width: 0;
 }
 
 .class-header:hover {
@@ -1321,6 +1341,7 @@ padding-top: 0 !important;
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
 }
 
 .class-header .icon-btn {

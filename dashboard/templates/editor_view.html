@@ -542,12 +542,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 title.onclick = (e) => {
                     if (e.target.closest(".new-file-btn") || e.target.closest(".project-menu-btn")) return;
-                
+
+                    if (e.target.closest(".project-arrow")) {
+                        e.stopPropagation();
+                        projectDiv.classList.toggle("open");
+                        return;
+                    }
+
                     let mainFile = project.files.find(f => f === "main.py");
                     if (!mainFile) {
                         mainFile = project.files[0] || null;
                     }
-                
+
                     goToProject(project.id, mainFile);
                 };
     
