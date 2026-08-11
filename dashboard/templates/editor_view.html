@@ -844,18 +844,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 cls.projects.forEach(proj => {
                     const dateStr = parseDjangoDatetime(proj.last_edited);
                     html += `
-                        <div style="padding: 10px; margin: 5px 0; background: #f0f0f0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; position: relative;">
-                            <div onclick="goToProject(${proj.id})" style="flex: 1; cursor: pointer;">
-                                <strong>${proj.name || 'Untitled'}</strong><br>
-                                <small style="color: #666;">Last edited: ${dateStr}</small>
-                            </div>
-                            <div style="margin-left: 10px; position: relative;">
-                                <button class="project-menu-btn" onclick="event.stopPropagation();" style="background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.2rem;">⋯</button>
-                                <div class="project-menu-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 100; min-width: 120px; margin-top: 5px;">
-                                    <button onclick="window.renameProject(${proj.id}, '${(proj.name || 'Untitled').replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem;">Rename</button>
-                                    <button onclick="window.deleteProject(${proj.id}, '${(proj.name || 'Untitled').replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; color: #dc3545;">Delete</button>
-                                </div>
-                            </div>
+                        <div onclick="goToProject(${proj.id})" style="padding: 10px; margin: 5px 0; background: #f0f0f0; border-radius: 4px; cursor: pointer;">
+                            <strong>${proj.name || 'Untitled'}</strong><br>
+                            <small style="color: #666;">Last edited: ${dateStr}</small>
                         </div>
                     `;
                 });
