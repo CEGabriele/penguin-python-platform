@@ -1,8 +1,15 @@
 from django import forms
 from .models import User, Student, Teacher, Class, Curriculum
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
-from .widgets import TeacherSelect2Widget, StudentSelect2Widget
+from .widgets import TeacherSelect2Widget, StudentSelect2Widget, StudentSelect2MultipleWidget
 from django.utils.html import format_html
+
+
+class CleanModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def to_python(self, value):
+        if value:
+            value = [v for v in value if v]
+        return super().to_python(value)
 
 class PasswordInputWithToggle(forms.PasswordInput):
     def render(self, name, value, attrs=None, renderer=None):
@@ -85,13 +92,10 @@ class CurriculumCreationForm(forms.ModelForm):
         return instance
 
 class ClassCreationForm(forms.ModelForm):
-    students = forms.ModelMultipleChoiceField(
+    students = CleanModelMultipleChoiceField(
         queryset=Student.objects.all(),
-        widget=ModelSelect2MultipleWidget(
-            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
-        ),
-        required = False,
-
+        widget=StudentSelect2MultipleWidget(),
+        required=False,
     )
 
     class Meta:
@@ -117,11 +121,10 @@ class ClassCreationForm(forms.ModelForm):
         return instance
     
 class ClassStudentUpdateForm(forms.ModelForm):
-    students = forms.ModelMultipleChoiceField(
+    students = CleanModelMultipleChoiceField(
         queryset=Student.objects.all(),
-        widget=ModelSelect2MultipleWidget(
-            search_fields=['user__username__icontains', 'user__first_name__icontains', 'user__last_name__icontains'],
-        ),
+        widget=StudentSelect2MultipleWidget(),
+        required=False,
     )
     class Meta:
         model = Class

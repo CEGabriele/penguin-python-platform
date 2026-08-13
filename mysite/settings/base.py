@@ -62,6 +62,10 @@ DJANGO_ICONS = {
     }
 }
 
+SELECT2_JS = 'admin/js/vendor/select2/select2.full.min.js'
+SELECT2_CSS = 'admin/css/vendor/select2/select2.css'
+SELECT2_AKAMAI_ENABLED_URL = '/select2_urls/'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

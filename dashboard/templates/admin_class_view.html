@@ -23,7 +23,6 @@
     {{ student_form.media }}
     <form method="post">
         {% csrf_token %}
-        <input type="hidden" name="students" value="">
         {{ student_form.as_p }}
         <button type="submit">Update Students</button>
     </form>
