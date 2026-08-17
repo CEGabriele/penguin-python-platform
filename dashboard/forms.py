@@ -1,15 +1,7 @@
 from django import forms
 from .models import User, Student, Teacher, Class, Curriculum
-from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
-from .widgets import TeacherSelect2Widget, StudentSelect2Widget, StudentSelect2MultipleWidget
 from django.utils.html import format_html
 
-
-class CleanModelMultipleChoiceField(forms.ModelMultipleChoiceField):
-    def to_python(self, value):
-        if value:
-            value = [v for v in value if v]
-        return super().to_python(value)
 
 class PasswordInputWithToggle(forms.PasswordInput):
     def render(self, name, value, attrs=None, renderer=None):
@@ -104,20 +96,6 @@ class ClassCreationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['time'].required = False
         self.fields['curriculum'].required = False
-    
-class ClassStudentUpdateForm(forms.ModelForm):
-    students = CleanModelMultipleChoiceField(
-        queryset=Student.objects.all(),
-        widget=StudentSelect2MultipleWidget(),
-        required=False,
-    )
-    class Meta:
-        model = Class
-        fields = ['students']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['students'].initial = self.instance.students.all()
 
 class ClassEditForm(forms.ModelForm):
     class Meta:
@@ -134,17 +112,23 @@ class ClassEditForm(forms.ModelForm):
 
 class StudentPasswordResetForm(forms.Form):
     student = forms.ModelChoiceField(
-        queryset=Student.objects.all(),
+        queryset=Student.objects.all().select_related('user').order_by('user__first_name', 'user__last_name'),
         label="Student",
-        widget=StudentSelect2Widget
     )
     new_password = forms.CharField(widget=PasswordInputWithToggle, label="New Password")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['student'].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.username})"
 
 
 class TeacherPasswordResetForm(forms.Form):
     teacher = forms.ModelChoiceField(
-        queryset=Teacher.objects.all(),
+        queryset=Teacher.objects.all().select_related('user').order_by('user__first_name', 'user__last_name'),
         label="Teacher",
-        widget=TeacherSelect2Widget
     )
     new_password = forms.CharField(widget=PasswordInputWithToggle, label="New Password")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['teacher'].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.username})"
