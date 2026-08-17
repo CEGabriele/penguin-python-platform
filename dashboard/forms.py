@@ -92,12 +92,6 @@ class CurriculumCreationForm(forms.ModelForm):
         return instance
 
 class ClassCreationForm(forms.ModelForm):
-    students = CleanModelMultipleChoiceField(
-        queryset=Student.objects.all(),
-        widget=StudentSelect2MultipleWidget(),
-        required=False,
-    )
-
     class Meta:
         model = Class
         fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
@@ -109,16 +103,7 @@ class ClassCreationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['time'].required = False
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if commit:
-            instance.save()
-            students = self.cleaned_data.get('students')
-            if students:
-                for student in students:
-                    student.classes.add(instance)
-        return instance
+        self.fields['curriculum'].required = False
     
 class ClassStudentUpdateForm(forms.ModelForm):
     students = CleanModelMultipleChoiceField(

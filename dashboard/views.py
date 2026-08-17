@@ -169,8 +169,8 @@ def admin_dashboard(request):
             elif 'create_class' in request.POST:
                 class_form = ClassCreationForm(request.POST)
                 if class_form.is_valid():
-                    class_form.save()
-                    return redirect('admin_dashboard')
+                    new_class = class_form.save()
+                    return redirect('add_students_to_class', class_id=new_class.id)
             
             elif 'reset_student_password' in request.POST:
                 student_password_form = StudentPasswordResetForm(request.POST)
