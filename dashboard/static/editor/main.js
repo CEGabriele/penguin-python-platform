@@ -592,7 +592,7 @@ async function autosave() {
   try {
     const response = await fetch(window.location.href, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": getCookie("csrftoken"),
       },
@@ -601,10 +601,11 @@ async function autosave() {
         path: currentFilePath,
         code: code,
       }),
+      keepalive: true,
     });
     if (response.ok) {
       const data = await response.json();
-    
+
       statusSpan.textContent = "Autosaved";
       lastSavedCode = code;
     } else {
@@ -625,6 +626,39 @@ function onEditorChange() {
 
 window.addEventListener("resize", () => {
   editor.layout();
+});
+
+// Autosave immediately when leaving page or switching tabs
+window.addEventListener("beforeunload", () => {
+  if (window.IS_READONLY) return;
+  if (!editor || !editor.getModel()) return;
+  const code = editor.getValue();
+  if (!projectId || code === lastSavedCode) return;
+  clearTimeout(autosaveTimer);
+
+  // Fetch with keepalive ensures the request completes even during unload
+  fetch(window.location.href, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      project_id: projectId,
+      path: currentFilePath,
+      code: code,
+    }),
+    keepalive: true,
+  }).catch(err => {
+    console.error("Autosave on unload failed:", err);
+  });
+});
+
+window.addEventListener("visibilitychange", () => {
+  if (document.hidden && !window.IS_READONLY) {
+    clearTimeout(autosaveTimer);
+    autosave();
+  }
 });
 
 function setupDragDivider(){
