@@ -1,12 +1,5 @@
 {% extends "base.html" %}
 {% load static %}
-{% block extra_css%}
-    <link rel="stylesheet" href="{% static 'admin/css/vendor/select2/select2.css' %}">
-    <link rel="stylesheet" href="{% static 'django_select2/django_select2.css' %}">
-{%endblock%}
-{% block extra_head %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-{% endblock%}
 {%block title %}Student Dashboard{% endblock %}
 {%block content%}
     <h1>Class: {{ class_obj.name }}</h1>
@@ -19,13 +12,34 @@
     </div>
 
     <h2>Manage Students</h2>
-    
-    {{ student_form.media }}
-    <form method="post">
-        {% csrf_token %}
-        {{ student_form.as_p }}
-        <button type="submit">Update Students</button>
-    </form>
+
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'add_students_to_class' class_obj.id %}" class="button">
+            + Add Students
+        </a>
+    </div>
+
+    {% if class_obj.students.all %}
+        <div style="margin: 0 auto 30px auto; max-width: 600px;">
+            <h3>Currently Enrolled ({{ class_obj.students.count }})</h3>
+            <ul style="list-style: none; padding: 0;">
+                {% for student in class_obj.students.all %}
+                    <li style="padding: 10px; background: #f9f9f9; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>{{ student.user.get_full_name }} ({{ student.user.username }})</span>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="remove_student" value="{{ student.id }}">
+                            <button type="submit" style="background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                                Remove
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <p style="color: #999; margin-bottom: 30px;">No students enrolled yet.</p>
+    {% endif %}
 
     <h2>Assignments</h2>
 

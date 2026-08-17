@@ -12,6 +12,7 @@ urlpatterns = [
     path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view"),
     path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
     path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
+    path("class/<int:class_id>/add-students/", add_students_to_class, name="add_students_to_class"),
     path("class/<int:class_id>/edit/", edit_class, name="edit_class"),
     path("class/<int:class_id>/delete/", delete_class, name="delete_class"),
     path("admin/operations/", operations_dashboard, name="operations_dashboard"),

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{%block title %}Add Students to Class{% endblock %}
+{%block content%}
+    <h1>Add Students to Class: {{ class_obj.name }}</h1>
+
+    <div style="margin-bottom: 30px;">
+        <a href="{% url 'admin_class_view' class_obj.id %}" style="color: #0066cc; text-decoration: none;">
+            ← Back to Class
+        </a>
+    </div>
+
+    <form method="get" style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px;">
+            <input
+                type="text"
+                name="q"
+                placeholder="Search by name or username..."
+                value="{{ query }}"
+                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+            >
+            <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                Search
+            </button>
+            {% if query %}
+                <a href="{% url 'add_students_to_class' class_obj.id %}" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 4px; text-decoration: none; cursor: pointer; display: inline-block;">
+                    Clear
+                </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if students %}
+        <div style="margin-bottom: 20px;">
+            <p style="color: #666;">Found {{ students|length }} student{{ students|length|pluralize }} not in this class yet
+                {% if query %} matching "{{ query }}"{% endif %}
+            </p>
+        </div>
+
+        <div style="border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+            {% for student in students %}
+                <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="flex: 1;">
+                        <strong>{{ student.user.get_full_name }}</strong>
+                        <br>
+                        <small style="color: #666;">@{{ student.user.username }}</small>
+                    </div>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_student" value="{{ student.id }}">
+                        <button type="submit" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                            + Add
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="padding: 20px; background: #f9f9f9; border-radius: 4px; color: #999;">
+            {% if query %}
+                <p>No students found matching "{{ query }}".</p>
+            {% else %}
+                <p>All students are already enrolled in this class.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+{%endblock%}

@@ -214,6 +214,13 @@ def admin_class_view(request, class_id):
     teacher = request.user.teacher
     class_obj = get_object_or_404(Class, id=class_id)
 
+    # Handle removing a student
+    if request.method == "POST" and "remove_student" in request.POST:
+        student_id = request.POST.get("remove_student")
+        student = get_object_or_404(Student, id=student_id)
+        student.classes.remove(class_obj)
+        return redirect('admin_class_view', class_id=class_obj.id)
+
     # Handle adding assignments to the class
     if request.method == "POST" and "assign_assignment" in request.POST:
         assignment_id = request.POST.get("assignment_id")
@@ -234,20 +241,6 @@ def admin_class_view(request, class_id):
 
         return redirect('admin_class_view', class_id=class_obj.id)
 
-    # Handle updating students
-    if request.method == "POST" and "students" in request.POST:
-        student_form = ClassStudentUpdateForm(request.POST, instance=class_obj)
-        if student_form.is_valid():
-            students = student_form.cleaned_data['students']
-
-            class_obj.students.clear()  # cleaner than manual remove loop
-
-            for student in students:
-                student.classes.add(class_obj)
-            return redirect('admin_class_view', class_id=class_obj.id)
-    else:
-        student_form = ClassStudentUpdateForm(instance=class_obj)
-
     # Get assigned assignments
     assigned_assignments = class_obj.assigned_assignments.select_related("assignment")
 
@@ -263,10 +256,53 @@ def admin_class_view(request, class_id):
         'admin_class_view.html',
         {
             'class_obj': class_obj,
-            'student_form': student_form,
             'teacher': teacher,
             'assigned_assignments': assigned_assignments,
             'available_assignments': available_assignments,
+        }
+    )
+
+
+@login_required
+@teacher_required
+def add_students_to_class(request, class_id):
+    if not request.user.teacher.is_admin:
+        return redirect('teacher_dashboard')
+
+    class_obj = get_object_or_404(Class, id=class_id)
+    query = request.GET.get('q', '').strip()
+
+    # Handle adding a single student (POST request)
+    if request.method == "POST":
+        student_id = request.POST.get('add_student')
+        student = get_object_or_404(Student, id=student_id)
+        student.classes.add(class_obj)
+        # Stay on the search page to allow adding multiple students
+        return redirect('add_students_to_class', class_id=class_obj.id)
+
+    # Search for students
+    if query:
+        students = Student.objects.filter(
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(user__username__icontains=query)
+        ).select_related('user').order_by('user__first_name', 'user__last_name')
+    else:
+        students = Student.objects.select_related('user').order_by('user__first_name', 'user__last_name')
+
+    # Get currently enrolled students
+    current_student_ids = set(class_obj.students.values_list('id', flat=True))
+
+    # Filter out already enrolled students from the list
+    available_students = [s for s in students if s.id not in current_student_ids]
+
+    return render(
+        request,
+        'add_students_to_class.html',
+        {
+            'class_obj': class_obj,
+            'students': available_students,
+            'query': query,
         }
     )
 
