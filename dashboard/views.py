@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm
+from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm, generate_unique_username
 from .models import *
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -140,6 +140,72 @@ def teacher_dashboard(request):
         'teacher': teacher,
         'classes': class_info
     })
+
+@login_required
+@teacher_required
+@require_GET
+def check_duplicate_student(request):
+    if not request.user.teacher.is_admin:
+        return HttpResponseBadRequest()
+
+    first_name = request.GET.get('first_name', '').strip()
+    last_name = request.GET.get('last_name', '').strip()
+    if not (first_name and last_name):
+        return JsonResponse({'matches': []})
+
+    matches = (
+        Student.objects
+        .filter(user__first_name__iexact=first_name, user__last_name__iexact=last_name)
+        .select_related('user')
+        .prefetch_related('classes')
+        .order_by('user__username')
+    )
+
+    return JsonResponse({
+        'matches': [
+            {
+                'full_name': m.user.get_full_name(),
+                'username': m.user.username,
+                'classes': [f"{c.name} ({c.location})" for c in m.classes.all()],
+            }
+            for m in matches
+        ],
+        'resulting_username': generate_unique_username(first_name, last_name),
+    })
+
+
+@login_required
+@teacher_required
+@require_GET
+def check_duplicate_teacher(request):
+    if not request.user.teacher.is_admin:
+        return HttpResponseBadRequest()
+
+    first_name = request.GET.get('first_name', '').strip()
+    last_name = request.GET.get('last_name', '').strip()
+    if not (first_name and last_name):
+        return JsonResponse({'matches': []})
+
+    matches = (
+        Teacher.objects
+        .filter(user__first_name__iexact=first_name, user__last_name__iexact=last_name)
+        .select_related('user')
+        .prefetch_related('classes')
+        .order_by('user__username')
+    )
+
+    return JsonResponse({
+        'matches': [
+            {
+                'full_name': m.user.get_full_name(),
+                'username': m.user.username,
+                'classes': [f"{c.name} ({c.location})" for c in m.classes.all()],
+            }
+            for m in matches
+        ],
+        'resulting_username': generate_unique_username(first_name, last_name),
+    })
+
 
 @login_required
 @teacher_required
@@ -1093,7 +1159,7 @@ def editor_projects(request):
             "last_edited": project.last_edited.isoformat() if project.last_edited else None,
         })
 
-    # Get orphaned projects (from deleted classes)
+    # Get projects from deleted classes
     orphaned_projects = (
         CodeProject.objects
         .filter(owner=request.user, for_class__isnull=True)
@@ -1119,7 +1185,7 @@ def editor_projects(request):
             "projects": projects_by_class_id[class_obj.id],
         })
 
-    # Add orphaned projects section if any exist
+    # Add projects  section if any exist
     if orphaned_list:
         result.append({
             "id": None,

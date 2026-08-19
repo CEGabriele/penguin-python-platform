@@ -61,10 +61,34 @@
     <button type="button" class="collapsible">Create New Students</button>
     <div class="content">
         <h2>Create Student</h2>
-        <form method="post">
+        <form method="post" id="create-student-form">
             {% csrf_token %}
-            {{ student_form.as_p }}
-            <button type="submit" name="create_student">Create Student</button>
+            {% if not student_form.duplicate_matches %}{{ student_form.non_field_errors }}{% endif %}
+            <div id="student-duplicate-warning" style="border: 1px solid #f0ad4e; background: #fff8e6; border-radius: 4px; padding: 15px; margin-bottom: 15px; {% if not student_form.duplicate_matches %}display: none;{% endif %}">
+                <p style="margin-top: 0;"><strong>A student with this name already exists</strong></p>
+                <ul id="student-duplicate-list" style="margin: 0 0 10px 20px; padding: 0;">
+                    {% for match in student_form.duplicate_matches %}
+                        <li>
+                            {{ match.user.get_full_name }} — @{{ match.user.username }}
+                            {% if match.classes.all %}
+                                — {% for c in match.classes.all %}{{ c.name }} ({{ c.location }}){% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% else %}
+                                — not in any class yet
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p style="margin-bottom: 10px;">
+                    If this is the same student, don't create another account. Add the
+                    existing one from the class page instead.
+                </p> 
+                <p id="student-duplicate-username" style="margin-bottom: 10px;"></p>
+                <label>{{ student_form.confirm_duplicate }} {{ student_form.confirm_duplicate.label }}</label>
+            </div>
+            <p>{{ student_form.first_name.label_tag }} {{ student_form.first_name }} {{ student_form.first_name.errors }}</p>
+            <p>{{ student_form.last_name.label_tag }} {{ student_form.last_name }} {{ student_form.last_name.errors }}</p>
+            <p>{{ student_form.password.label_tag }} {{ student_form.password }} {{ student_form.password.errors }}</p>
+            <button type="submit" name="create_student" id="create-student-submit"{% if student_form.duplicate_matches %} disabled title="Check the confirmation box above first"{% endif %}>Create Student</button>
         </form>
     </div>
 </div>
@@ -73,10 +97,36 @@
     <button type="button" class="collapsible">Create New Teachers</button>
     <div class="content">
         <h2>Create Teacher</h2>
-        <form method="post">
+        <form method="post" id="create-teacher-form">
             {% csrf_token %}
-            {{ teacher_form.as_p }}
-            <button type="submit" name="create_teacher">Create Teacher</button>
+            {% if not teacher_form.duplicate_matches %}{{ teacher_form.non_field_errors }}{% endif %}
+            <div id="teacher-duplicate-warning" style="border: 1px solid #f0ad4e; background: #fff8e6; border-radius: 4px; padding: 15px; margin-bottom: 15px; {% if not teacher_form.duplicate_matches %}display: none;{% endif %}">
+                <p style="margin-top: 0;"><strong>A teacher with this name already exists</strong></p>
+                <ul id="teacher-duplicate-list" style="margin: 0 0 10px 20px; padding: 0;">
+                    {% for match in teacher_form.duplicate_matches %}
+                        <li>
+                            {{ match.user.get_full_name }} — @{{ match.user.username }}
+                            {% if match.classes.all %}
+                                — {% for c in match.classes.all %}{{ c.name }} ({{ c.location }}){% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% else %}
+                                — not teaching any class yet
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p style="margin-bottom: 10px;">
+                    If this is the same teacher, use the existing account instead of
+                    creating a new one.
+                </p>
+                <p id="teacher-duplicate-username" style="margin-bottom: 10px;"></p>
+                <label>{{ teacher_form.confirm_duplicate }} {{ teacher_form.confirm_duplicate.label }}</label>
+            </div>
+            <p>{{ teacher_form.first_name.label_tag }} {{ teacher_form.first_name }} {{ teacher_form.first_name.errors }}</p>
+            <p>{{ teacher_form.last_name.label_tag }} {{ teacher_form.last_name }} {{ teacher_form.last_name.errors }}</p>
+            <p>{{ teacher_form.email.label_tag }} {{ teacher_form.email }} {{ teacher_form.email.errors }}</p>
+            <p>{{ teacher_form.password.label_tag }} {{ teacher_form.password }} {{ teacher_form.password.errors }}</p>
+            <p>{{ teacher_form.is_admin.label_tag }} {{ teacher_form.is_admin }} {{ teacher_form.is_admin.errors }}</p>
+            <button type="submit" name="create_teacher" id="create-teacher-submit"{% if teacher_form.duplicate_matches %} disabled title="Check the confirmation box above first"{% endif %}>Create Teacher</button>
         </form>
     </div>
 </div>
@@ -201,7 +251,122 @@ function setupUsernamePreview(form) {
     updatePreview();
 }
 
+function setupDuplicateWarning(form, options) {
+    const firstNameField = form.querySelector('input[name="first_name"]');
+    const lastNameField = form.querySelector('input[name="last_name"]');
+    const warningBox = document.getElementById(options.warningId);
+    const list = document.getElementById(options.listId);
+    const usernameLine = document.getElementById(options.usernameLineId);
+    const submitButton = document.getElementById(options.submitId);
+    // Scoped to this form: both create-student and create-teacher forms render
+    // a field named "confirm_duplicate", so their auto-generated ids collide.
+    const confirmCheckbox = form.querySelector('input[name="confirm_duplicate"]');
+
+    if (!firstNameField || !lastNameField || !warningBox || !list || !submitButton) return;
+
+    let debounceTimer = null;
+    let latestRequestId = 0;
+
+    function updateSubmitState() {
+        const hasWarning = warningBox.style.display !== 'none';
+        const confirmed = confirmCheckbox ? confirmCheckbox.checked : false;
+        submitButton.disabled = hasWarning && !confirmed;
+        submitButton.title = submitButton.disabled ? 'Check the confirmation box above first' : '';
+    }
+
+    function renderMatches(matches) {
+        list.innerHTML = '';
+        matches.forEach(function(match) {
+            const li = document.createElement('li');
+            const classesText = match.classes.length
+                ? match.classes.join(', ')
+                : 'not in any class yet';
+            li.textContent = match.full_name + ' — @' + match.username + ' — ' + classesText;
+            list.appendChild(li);
+        });
+    }
+
+    function checkForDuplicates() {
+        const firstName = firstNameField.value.trim();
+        const lastName = lastNameField.value.trim();
+
+        if (!firstName || !lastName) {
+            warningBox.style.display = 'none';
+            updateSubmitState();
+            return;
+        }
+
+        const requestId = ++latestRequestId;
+        const params = new URLSearchParams({ first_name: firstName, last_name: lastName });
+
+        fetch(options.checkUrl + '?' + params.toString())
+            .then(response => response.ok ? response.json() : { matches: [] })
+            .then(data => {
+                if (requestId !== latestRequestId) return; // stale response, ignore
+                const matches = data.matches || [];
+                if (matches.length > 0) {
+                    renderMatches(matches);
+                    warningBox.style.display = 'block';
+                    if (confirmCheckbox) confirmCheckbox.checked = false;
+                    if (usernameLine && data.resulting_username) {
+                        usernameLine.textContent = 'This new account will be created with the username "' + data.resulting_username + '" to avoid clashing with the existing account(s) above.';
+                    }
+                } else {
+                    warningBox.style.display = 'none';
+                }
+                // The server's suffix-avoidance logic is authoritative — override the naive preview.
+                if (data.resulting_username) {
+                    const preview = form.querySelector('.username-preview');
+                    if (preview) {
+                        preview.innerHTML = '<span class="username-preview-label">Username:</span> <span class="username-preview-value">' + data.resulting_username + '</span>';
+                        preview.style.display = 'block';
+                    }
+                }
+                updateSubmitState();
+            })
+            .catch(() => {});
+    }
+
+    function scheduleCheck() {
+        // Editing the name again invalidates any prior confirmation.
+        clearTimeout(debounceTimer);
+        warningBox.style.display = 'none';
+        updateSubmitState();
+        debounceTimer = setTimeout(checkForDuplicates, 400);
+    }
+
+    firstNameField.addEventListener('input', scheduleCheck);
+    lastNameField.addEventListener('input', scheduleCheck);
+    if (confirmCheckbox) {
+        confirmCheckbox.addEventListener('change', updateSubmitState);
+    }
+
+    updateSubmitState();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+    const createStudentForm = document.getElementById('create-student-form');
+    if (createStudentForm) {
+        setupDuplicateWarning(createStudentForm, {
+            checkUrl: '{% url "check_duplicate_student" %}',
+            warningId: 'student-duplicate-warning',
+            listId: 'student-duplicate-list',
+            usernameLineId: 'student-duplicate-username',
+            submitId: 'create-student-submit',
+        });
+    }
+
+    const createTeacherForm = document.getElementById('create-teacher-form');
+    if (createTeacherForm) {
+        setupDuplicateWarning(createTeacherForm, {
+            checkUrl: '{% url "check_duplicate_teacher" %}',
+            warningId: 'teacher-duplicate-warning',
+            listId: 'teacher-duplicate-list',
+            usernameLineId: 'teacher-duplicate-username',
+            submitId: 'create-teacher-submit',
+        });
+    }
+
     document.querySelectorAll(".collapsible").forEach(btn => {
         btn.addEventListener("click", function() {
             this.classList.toggle("active");
