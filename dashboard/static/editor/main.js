@@ -427,7 +427,58 @@ function builtinRead(file) {
   return Sk.builtinFiles["files"][file];
 }
 
+// replacing Skulpt's ontimer function with one that can handle multiple timers at a timer
+const turtleTimerQueue = {
+  timers: [],
+  schedule(fn, delayMs) {
+    const id = setTimeout(() => {
+      this.timers = this.timers.filter(t => t.id !== id);
+      try {
+        Sk.misceval.asyncToPromise(() => Sk.misceval.callsimOrSuspendArray(fn, []))
+            .catch(err => {
+              console_write(`<span style="color:red;">${err.toString ? err.toString() : err}</span>\n`);
+            });
+      } catch (err) {
+        console_write(`<span style="color:red;">${err.toString ? err.toString() : err}</span>\n`);
+      }
+    }, delayMs);
+    this.timers.push({ id, fn });
+    return id;
+  },
+  clearAll() {
+    this.timers.forEach(t => clearTimeout(t.id));
+    this.timers = [];
+  }
+};
+
+function makeOntimerPatch() {
+  return new Sk.builtin.func(function (self, fn, t) {
+    let delayMs = 0;
+    if (t !== undefined && t !== null && t !== Sk.builtin.none.none$) {
+      delayMs = Sk.builtin.asnum$(t);
+    }
+    turtleTimerQueue.schedule(fn, delayMs);
+    return Sk.builtin.none.none$;
+  });
+}
+
+Sk.onAfterImport = function (moduleName) {
+  if (moduleName !== "turtle") return;
+  const turtleMod = Sk.sysmodules.quick$lookup(new Sk.builtin.str("turtle"));
+  if (!turtleMod) return;
+
+  if (turtleMod.$d.ontimer) {
+    turtleMod.$d.ontimer = makeOntimerPatch();
+  }
+  const ScreenClass = turtleMod.$d.Screen;
+  if (ScreenClass && ScreenClass.prototype && ScreenClass.prototype.ontimer) {
+    ScreenClass.prototype.ontimer = makeOntimerPatch();
+  }
+};
+
 async function runWithSkulptTurtle(code) {
+  // clear timer queue before running
+  turtleTimerQueue.clearAll();
   const container = document.getElementById("graphics-container");
   const pygameCanvas = document.getElementById("graphics-canvas");
   const turtleCanvas = document.getElementById("turtle-canvas");
@@ -443,7 +494,7 @@ async function runWithSkulptTurtle(code) {
 
   turtleCanvas.style.display = "block";
   turtleCanvas.innerHTML = "";
-
+  
   Sk.configure({
     output: outf,
     read: builtinRead,
