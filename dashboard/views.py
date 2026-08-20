@@ -830,35 +830,50 @@ def active_workers_metrics(request):
 @require_GET
 def active_users_metrics(request):
     """
-    Returns count of currently authenticated users (logged-in sessions).
+    Returns users with recent activity (code edits in last N minutes).
+    Activity is determined by CodeProject.last_edited, not login sessions.
+    Query param: ?minutes=15 (default) to adjust activity window.
     Public endpoint for monitoring systems.
     """
-    from django.contrib.sessions.models import Session
     from django.contrib.auth.models import User
     import json
 
     try:
-        active_sessions = 0
-        for session in Session.objects.filter(expire_date__gte=timezone.now()):
-            try:
-                data = session.get_decoded()
-                if data.get('_auth_user_id'):
-                    active_sessions += 1
-            except:
-                pass
+        now = timezone.now()
+        recently_active_minutes = int(request.GET.get("minutes", 15))
+        time_threshold = now - timedelta(minutes=recently_active_minutes)
 
-        active_users = User.objects.filter(is_active=True).count()
+        # Users who edited code recently
+        recently_active_user_ids = set(
+            CodeProject.objects
+            .filter(last_edited__gte=time_threshold)
+            .values_list("owner_id", flat=True)
+            .distinct()
+        )
 
         # Count by role
-        students = User.objects.filter(student__isnull=False).count()
-        teachers = User.objects.filter(teacher__isnull=False).count()
+        recently_active_students = User.objects.filter(
+            id__in=recently_active_user_ids,
+            student__isnull=False
+        ).count()
+        recently_active_teachers = User.objects.filter(
+            id__in=recently_active_user_ids,
+            teacher__isnull=False
+        ).count()
+
+        total_users = User.objects.filter(is_active=True).count()
+        students_total = User.objects.filter(student__isnull=False).count()
+        teachers_total = User.objects.filter(teacher__isnull=False).count()
 
         return JsonResponse({
             "timestamp": timezone.now().isoformat() + "Z",
-            "active_sessions": active_sessions,
-            "total_users": active_users,
-            "students": students,
-            "teachers": teachers,
+            "activity_window_minutes": recently_active_minutes,
+            "recently_active": len(recently_active_user_ids),
+            "recently_active_students": recently_active_students,
+            "recently_active_teachers": recently_active_teachers,
+            "total_users": total_users,
+            "students": students_total,
+            "teachers": teachers_total,
         }, status=200)
     except Exception as e:
         logger.error(f"Active users metrics error: {e}")
