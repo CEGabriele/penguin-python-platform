@@ -22,24 +22,28 @@ def login(client, credentials, host):
         logger.error(f"Failed to load login page: {response.status_code}")
         return False
 
-    # Extract CSRF token from HTML (try multiple patterns)
+    # Extract CSRF token from HTML
     csrf_token = None
-    csrf_match = re.search(r'value="([a-zA-Z0-9]+)"[^>]*name="csrfmiddlewaretoken"', response.text)
+    # Match: name="csrfmiddlewaretoken" value="<token>"
+    csrf_match = re.search(r'name="csrfmiddlewaretoken"\s+value="([^"]+)"', response.text)
+
     if not csrf_match:
-        csrf_match = re.search(r'name="csrfmiddlewaretoken"[^>]*value="([a-zA-Z0-9]+)"', response.text)
-    if not csrf_match:
-        csrf_match = re.search(r'csrfmiddlewaretoken["\']?\s*[:=]\s*["\']([a-zA-Z0-9]+)', response.text)
+        # Try alternate: value="<token>" name="csrfmiddlewaretoken"
+        csrf_match = re.search(r'value="([^"]+)"\s+name="csrfmiddlewaretoken"', response.text)
 
     if csrf_match:
         csrf_token = csrf_match.group(1)
-        logger.debug(f"Extracted CSRF token: {csrf_token[:20]}...")
+        logger.info(f"✓ Extracted CSRF token (length: {len(csrf_token)})")
     else:
-        logger.warning("Could not find CSRF token in login page, trying without it")
+        logger.error("✗ Could not find CSRF token in login page")
+        logger.error(f"Page excerpt: {response.text[500:1000]}")
 
-    # Step 2: POST login form with CSRF token in headers (AJAX style)
-    headers = {}
-    if csrf_token:
-        headers["X-CSRFToken"] = csrf_token
+    # Step 2: POST login form with CSRF token and Referer header
+    # Django CSRF middleware checks the Referer header
+    headers = {
+        "Referer": f"{client.base_url}/accounts/login/",
+        "X-CSRFToken": csrf_token
+    } if csrf_token else {}
 
     login_payload = {
         "username": credentials["username"],
@@ -47,6 +51,8 @@ def login(client, credentials, host):
     }
     if csrf_token:
         login_payload["csrfmiddlewaretoken"] = csrf_token
+
+    logger.debug(f"Posting login with CSRF token: {csrf_token[:20] if csrf_token else 'NONE'}...")
 
     response = client.post(
         "/accounts/login/",
@@ -56,16 +62,19 @@ def login(client, credentials, host):
         allow_redirects=True
     )
 
-    # Check if login succeeded (200 OK or redirect to dashboard)
-    if response.status_code == 200 and ("/dashboard/" in response.url or "student" in response.url.lower()):
-        logger.info(f"Successfully logged in as {credentials['username']}")
-        return True
-    elif response.status_code in [301, 302]:
-        # Successful redirect
-        logger.info(f"Successfully logged in as {credentials['username']} (redirected)")
+    # Check if login succeeded
+    success = (
+        response.status_code == 200 and
+        ("/dashboard/" in response.url or "student" in response.url.lower())
+    ) or response.status_code in [301, 302]
+
+    if success:
+        logger.info(f"✓ Login successful: {credentials['username']}")
         return True
     else:
-        logger.error(f"Login failed for {credentials['username']}: status={response.status_code}, url={response.url}")
+        logger.error(f"✗ Login failed: {credentials['username']} (HTTP {response.status_code})")
+        if response.status_code == 403:
+            logger.error("  → 403 Forbidden (CSRF token issue?)")
         return False
 
 
