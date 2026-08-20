@@ -1,61 +1,169 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <title> View Student </title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <h1>{{student.user.get_full_name}}<h1>
-    
-    {%for class in student_files%}
-        <h2>{{ class.class.name }}</h1>
-        <h4>Classwork</h4>
-        {% if class.cw_files%}
-            <ul>
-                {%for file in class.cw_files%}
-                    <li>
-                        <p>{{ file.file.name |cut:"student_files/"}}</p>
-                        <i class = "bi bi-file-earmark-code"></i>
-                        <br>
-                        <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                        <a href="{% url 'download_file' file.id %}" >
-                            Download
-                        </a> 
-                    </li>
-                {%endfor%}
-            </ul>
-        {%else%}
-            <p>No classwork uploaded yet.</p>
-        {%endif%}
-        
-        <h4>Homework</h4>
-        {% if class.hw_files%}
-            <ul>
-                {%for file in class.hw_files%}
-                    <li>
-                        
-                        <p>{{ file.file.name |cut:"student_files/"}}</p>
-                        <i class = "bi bi-file-earmark-code"></i>
-                        <br>
-                        <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                        <a href="{% url 'download_file' file.id %}" >
-                            Download
-                        </a> 
-                    </li>
-                {%endfor%}
-            </ul>
-        {%else%}
-            <p>No homework uploaded yet.</p>
-        {%endif%}
-    {%endfor%}
+{% block title %}View Student{% endblock %}
 
-    
-    <a href = "{% url 'teacher_dashboard' %}"> Go to dashboard </a> <br>
-    
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
-</body>
-</html>
+{% block content %}
+    {% include "navbar.html" %}
+    <h1>{{ student.user.get_full_name }}</h1>
+
+    {% for class in student_projects %}
+        <div class="submission-card">
+            <div class="student-header" onclick="toggleClass('{{ class.class.id }}')">
+                <h2>Class: {{ class.class.name }}</h2>
+                <span id="chevron-{{ class.class.id }}" class="chevron">▼</span>
+            </div>
+
+            <div id="class-{{ class.class.id }}" class="student-content">
+
+                <h4>Classwork</h4>
+                {% if class.cw_projects %}
+                    {% for project in class.cw_projects %}
+                        <div class="project-row">
+                            <strong>{{ project.name|default:"Classwork Project" }}</strong><br>
+                            Last Edited - {{ project.last_edited|date:"M j, P" }}
+
+                            {% if project.submitted %}
+                                <br>
+                                Submitted - {{ project.submitted_at|date:"M j, P" }}
+                            {% endif %}
+
+                            <br><br>
+
+                            <button class="view-btn"
+                                    onclick="toggleProjectViewer(event, {{ project.id }})">
+                                View Code
+                            </button>
+
+                            <div id="viewer-{{ project.id }}" class="projectViewer" style="display:none;">
+                                <div class="project-viewer-body">
+                                    <div id="fileList-{{ project.id }}"></div>
+                                    <pre id="fileContent-{{ project.id }}"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No classwork yet.</p>
+                {% endif %}
+
+                <h4>Homework</h4>
+                {% if class.hw_projects %}
+                    {% for project in class.hw_projects %}
+                        <div class="project-row">
+                            <strong>{{ project.name|default:"Homework Project" }}</strong><br>
+                            Last Edited - {{ project.last_edited|date:"M j, P" }}
+
+                            {% if project.submitted %}
+                                <br>
+                                Submitted - {{ project.submitted_at|date:"M j, P" }}
+                            {% endif %}
+
+                            <br><br>
+
+                            <button class="view-btn"
+                                    onclick="toggleProjectViewer(event, {{ project.id }})">
+                                View Code
+                            </button>
+
+                            <div id="viewer-{{ project.id }}" class="projectViewer" style="display:none;">
+                                <div class="project-viewer-body">
+                                    <div id="fileList-{{ project.id }}"></div>
+                                    <pre id="fileContent-{{ project.id }}"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No homework yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const loadedProjects = new Set();
+
+    function toggleClass(classId) {
+        const el = document.getElementById(`class-${classId}`);
+        const chevron = document.getElementById(`chevron-${classId}`);
+
+        const isOpen = el.style.display === "block";
+        el.style.display = isOpen ? "none" : "block";
+        chevron.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+    }
+
+    async function toggleProjectViewer(event, projectId) {
+        event.stopPropagation();
+
+        const viewer = document.getElementById(`viewer-${projectId}`);
+        const isVisible = viewer.style.display === "block";
+
+        if (isVisible) {
+            viewer.style.display = "none";
+            return;
+        }
+
+        viewer.style.display = "block";
+
+        if (!loadedProjects.has(projectId)) {
+            await openProject(projectId);
+            loadedProjects.add(projectId);
+        }
+    }
+
+    async function openProject(projectId) {
+        const res = await fetch(`/dashboard/editor/project/${projectId}/teacher-files/`);
+        const data = await res.json();
+
+        if (!data.ok) {
+            alert("Failed to load project");
+            return;
+        }
+
+        const fileList = document.getElementById(`fileList-${projectId}`);
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+
+        fileList.innerHTML = "";
+        fileContent.textContent = "";
+
+        const files = data.files;
+        const filePaths = Object.keys(files);
+
+        if (!filePaths.length) {
+            fileContent.textContent = "No files found.";
+            return;
+        }
+
+        filePaths.forEach(path => {
+            const item = document.createElement("div");
+            item.textContent = path;
+            item.className = "file-item-view";
+
+            item.onclick = () => {
+                document.querySelectorAll(`#fileList-${projectId} .file-item-view`)
+                    .forEach(el => el.classList.remove("active"));
+
+                item.classList.add("active");
+                fileContent.textContent = files[path] || "";
+            };
+
+            fileList.appendChild(item);
+        });
+
+        let firstFile = filePaths.find(f => f === "main.py");
+        if (!firstFile) firstFile = filePaths[0];
+
+        const initialItem = Array.from(fileList.children).find(
+            el => el.textContent === firstFile
+        );
+
+        if (initialItem) {
+            initialItem.classList.add("active");
+        }
+
+        fileContent.textContent = files[firstFile] || "";
+    }
+</script>
+{% endblock %}

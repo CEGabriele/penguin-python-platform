@@ -1,0 +1,1552 @@
+
+:root {
+    --accent-color: rgba(0, 123, 255);
+    --accent-color-light: rgba(80, 160, 255);
+    --nav-height: 76px;
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    background-color: #eaf6ff;/* #f5f5f5 testing*/
+    text-align: center;
+    margin: 0;
+    align-items: center;
+    padding-top: 80px;
+}
+.side-menu .menu-toggle {
+    background: none;
+    border: none;
+    color: #61605f;
+    font-size: 1.5rem;
+    margin: 10px;
+    cursor: pointer;
+}
+
+.side-menu .menu-items {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-menu a, .side-menu button.logout-button {
+    color: #61605f;
+    height: 24px;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 1rem;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.side-menu a:hover, .side-menu button.logout-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}  
+
+
+.class-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+    gap: 20px;
+    padding: 20px 24px;
+}
+
+.class-card {
+    background-color: #fff; /*changed color to grey */
+    border-radius: 8px;
+    box-shadow:  0 6px 12px rgba(0,0,0,0.25); /*added stronger shadow*/ /* changed from 0 2px 4px rgba(0, 0, 0, 0.1)*/
+    position: relative; /* for positioning icons */;
+    padding: 20px;
+    transition: transform 0.2s;
+    text-align: center;
+    min-height: 300px;
+    display:flex;
+    flex-direction: column;
+    justify-content: flex-start; /* changed from space-bewteen*/
+    gap: 15px; /* added gap between elements */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+/*added so that i can change text color of h1 in class card*/
+.class-card h1 {
+    color: #120900; /* or any color you want */
+    font-size: 2.2 rem; /* adjust to your liking */
+    margin-bottom: 8px; /* adds spacing */
+    /* optional: subtle depth effect */
+    text-align: left;
+}
+/* added so that header and button are aligned */
+.class-card-header {
+    display: flex;                  /* align children in a row */
+    justify-content: space-between; /* title left, button right */
+    align-items: center;            /* vertically center them */
+    margin-bottom: 10px;            /* spacing under header */
+}
+.class-card-title {
+    display: flex;
+    flex-direction: column;  /* stacks title above button */
+    align-items: flex-start; /* aligns button to the left */
+    margin-bottom: 10px;     /* optional spacing below */
+}
+.icon-btn i {
+    pointer-events: none; /* make icon clicks count as button clicks */
+}
+
+
+.student-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.student-card {
+    background-color: #fff; /*changed color to grey */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+    text-align: center;
+}
+
+.student-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+}
+
+.student-card h5 {
+    margin-top: 16px;
+    font-size: 1rem;
+    color: #555;
+}
+
+
+.button, button{
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+
+}
+
+button:hover , .button:hover, .bar-links a, .class-card .button:hover, .download-link:hover, .view-class-btn:hover, .nav-btn:hover {
+    background-color: var(--accent-color-light);
+}
+/* Style only the "View Class Page" button inside class cards */
+.class-card .button {
+    background-color: var(--accent-color);
+    color: white;
+    border-radius: 8px;
+    padding: 8px 16px;
+    width: auto;
+    display: inline-block;
+    margin-top: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.file-card {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s ease;
+    justify-content: center;
+    
+}
+
+.file-icon {
+    font-size: 32px;
+    margin-right: 16px;
+
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-name {
+    font-weight: 600;
+    margin: 0;
+}
+
+.upload-date {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 4px 0;
+}
+/*adding this section for icons in class cards*/
+.card-icons {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    display: flex;
+    gap: 25px;
+    font-size: 1.8rem;
+    color: #7a7977 /* accent color */
+}
+.download-link {
+    display: inline-block;
+    margin-top: 4px;
+    background-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.download-link:hover {
+    background-color: var(--accent-color-light);
+}
+
+.file-section, .upload-section {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 16px; /*changed from 24*/
+    margin-top: 16px; /*changed from 24*/
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+.upload-block input[type="file"]{
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem
+}
+
+.question-block {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.question-block input[type="text"]{
+  width: 100%;
+  height: 400px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.ai-feedback {
+    margin-top: 10px;
+    background-color: #f2f2f2;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.assignment-card{
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.response-card{
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.select2-container {
+    width: 75% !important;
+}
+  
+  
+.content {
+    display: none;
+}
+
+.collapsible{
+    margin-bottom: 10px;
+}
+
+
+.feed-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.collapsible-card {
+    margin-bottom: 24px;
+    padding: 0 20px;
+}
+
+.content {
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+a {
+    text-decoration: none;
+}
+
+.navbar {
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+   /* max-width: 1200px;*/
+    margin:  0 6rem 16px 2rem; 
+    padding-block:2.2rem;
+    padding-inline: 3rem;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+    transition: box-shadow 0.3s ease, transform 0.3s ease; /*smooth transition*/
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0 3rem;
+    
+    z-index: 1000; /* ensures navbar is on top */
+}
+
+.navbar-links {
+    display: flex;
+    list-style: none;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    
+}
+
+.navbar-links a{
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    align-items: center;
+    
+}
+.logout-icon-btn{
+    background: transparent !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border: none;
+    padding: 0;
+
+}
+/*this where i control size of logout button*/
+.logout-icon-btn img {
+    height: 65px;
+    width: auto;
+}
+/* Hover effects for all navbar links and buttons */
+.navbar a:hover,
+.navbar button:hover,
+.navbar-links a:hover,
+.logout-button:hover {
+    background-color: var(--accent-color-light);
+    color: #000; /* makes text darker on hover */
+    transform: translateY(-2px); /* slight lift effect */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* stronger shadow */
+    transition: all 0.3s ease;
+}
+/*specific style for view class button*/
+.view-class-btn {
+    display: inline-block;
+    margin-top: 8px;
+    color: white;
+    padding: 4px 8px;       /* smaller padding = smaller button */
+    font-size: 0.85rem;     /* smaller text */
+    border-radius: 5px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+
+.logout-button {
+    background: none;
+    border: none;
+    background-color: var(--accent-color);
+    color: white;
+    font: inherit;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    margin-left: auto; /*added this*/
+
+
+}
+
+.editor-container body , #editor-container .body {
+    color: black;
+    margin: 0;
+    margin-top:0px; /*removing extra space above editor*/
+    padding-top:0px;
+    display: flex;
+    flex-direction: column;
+    font-family: sans-serif;
+    overflow-y: auto
+ }
+ /* changing up the control bar. 
+ .controls, #controls {
+    padding: 10px;
+    background: #E5E6E4; 
+    border-bottom: 1px solid;
+ }
+    */
+#controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 6px 12px;
+    margin: 6px 0 8px 0;
+
+    font-size: 0.9rem;
+}
+    
+
+/*adjusting label spacing*/
+#controls label.class-label {
+     position: relative;
+
+}
+
+
+/* Class dropdown & Name input styling */
+#controls select#class,
+#controls input#name {
+    height: 30px;            /* same height for both */
+    width: 110px;
+    /*padding: 4px 12px;*/
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.2);
+    font-size: 0.6rem;
+    margin-bottom:0px;
+    background-color: #9ff4e4;
+}
+
+/* Name input shorter width */
+#controls input#name {
+    background-color: #9ff4e4;
+    width: 110px;
+    max-width: 150px;    /* limit max width */
+     /* adjust % until it lines up with right side */
+    margin-bottom: 0px;
+    padding: 12px 8px; 
+    
+}
+
+/* Save button styling to match */
+#saveBtn {
+    height: 25px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: .9rem;
+    margin-left: 10px; /* space between Name input and Save button */
+    margin-bottom:0px;
+}
+ 
+#main, .main {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    gap: 10px;
+    overflow: hidden;
+ }
+ 
+ /* Make the editor area a positioned container */
+#main {
+    margin-top:0;
+    padding-top:0;
+    position: relative;
+}
+
+/* Floating run/stop controls */
+#editor-controls {
+    position: absolute;
+    right: 40px;
+    display: flex;
+    gap: 10px;
+    z-index: 9999;
+    margin-left: -10px; /*move to left side*/
+    margin-top: 32px; /*spacing below*/
+    margin-bottom:30px;
+    padding-top:0px;
+}
+
+
+/* Icon-only buttons (no background, no box) */
+.icon-btn {
+    background: none !important;   /* removes ALL background */
+    border: none !important;       /* removes outline box */
+    box-shadow: none !important;   /* removes subtle shadows */
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-size: 32px;               /* icon size */
+    color: #1f2a44;/* #444; */                  /* icon color */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
+}
+
+.icon-btn:focus {
+    outline: none !important;      /* removes dotted focus outline */
+}
+
+
+#editor, .editor {
+    margin-top:0; /*removing extra space above editor*/
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid #444;
+    text-align: left;
+    position: relative;   /* ← add this */
+    border-radius: 10px;
+    overflow: hidden;
+    border:1px solid rgba(0,0,0,0.08);
+}
+
+#console, .console {
+    width: 100%;
+    box-sizing: border-box;
+    background: #1e1e1e;
+    color: #eaeaea;
+    padding: 12px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 14px;
+    border-radius: 10px;
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+}
+ 
+#userInput, .userInput{
+    background-color: #111;
+    border: none;
+    color: white;
+    text-decoration: none;
+}
+ 
+#graphics-container.hidden, .graphics-container.hidden {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+}
+.assignment-context {
+    background: #fff7e6;
+    border: 1px solid #ffd18b;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+
+/* ===== Light File Sidebar ===== */
+/*
+.side-menu{
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 4px 0 12px rgba(0,0,0,0.04);
+  padding: 12px 8px;
+}
+
+.side-menu .menu-toggle{
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #444;
+  cursor: pointer;
+}
+
+.side-menu .menu-toggle:hover{
+  background: rgba(0,0,0,0.06);
+}
+*/
+
+.side-menu{
+  position: fixed;
+  top: var(--nav-height);
+  left: 0; 
+  width: 200px;
+  height: calc(100vh - var(--nav-height));
+  background: #ffffff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+  padding: 12px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.page-bubble {
+    position: fixed;
+    top: var(--nav-height);
+    right: 0; /* making it touch right side of screen*/
+    bottom: 0; /*change this to 0 to make it stick to the bottom */
+    left: 200px;
+    height: auto;
+    padding: 16px 18px;
+    background:#f4faff;/* #fff;*/
+
+    display: flex;
+    flex-direction: column;
+  }  
+
+
+/* Menu content */
+.side-menu .menu-items{
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px);
+}
+
+/* File list container */
+.files-list{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Scrollbar */
+.files-list::-webkit-scrollbar{
+  width: 8px;
+}
+.files-list::-webkit-scrollbar-thumb{
+  background: rgba(0,0,0,0.15);
+  border-radius: 999px;
+}
+
+/* Individual file */
+.file-item{
+  width: 90%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #333;
+  font-size: 0.95rem;
+  transition: background 0.15s ease,
+              border-color 0.15s ease,
+              transform 0.12s ease;
+}
+
+/* File icon */
+.file-item i{
+  color: rgba(0,0,0,0.45);
+  width: 18px;
+  text-align: center;
+}
+
+/* Hover */
+.file-item:hover{
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+/* Active file */
+.file-item.active{
+  background: rgba(252,164,43,0.16);
+  border-color: rgba(252,164,43,0.45);
+}
+
+.file-item.active i{
+  color: rgba(252,164,43,0.95);
+}
+
+/* Empty state */
+.files-empty{
+  color: rgba(0,0,0,0.55);
+  font-size: 0.9rem;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.03);
+  border: 1px dashed rgba(0,0,0,0.15);
+}
+/* =========================
+   Top Navigation (Right-Aligned)
+========================= */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: var(--nav-height);
+    padding-top: 20px; 
+    padding-left: 16px;
+    padding-right: 40px;
+  
+    background: #f4faff;
+    /*border-bottom: 1px solid rgba(0,0,0,0.08);*/
+    box-shadow: none; /* 0 4px 10px rgba(0,0,0,0.05);*/
+  
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 15px;
+  
+    z-index: 1500;
+  }
+  
+  .top-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  /*penguin logo on right side */
+  .logo {
+    display: flex;
+    align-items: center;
+    margin-right: auto;   /* line that makes it go to right*/
+    padding-left: 0px;
+}
+
+.logo img {
+    height:  100px; 
+    width: auto;
+    display: block;
+}
+/* hover effect for logo */
+.logo img:hover {
+    opacity: 0.85;
+}
+
+  /* Nav links */
+  .nav-link {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color:#7fb3d5; /* #333;*/
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+
+.nav-link:hover {
+background: rgba(0,0,0,0.05);
+}
+
+  
+  /* Active page */
+  .nav-link.active {
+    text-decoration: underline; /* THIS gives the simple line */
+    text-decoration-color: rgba(252, 164, 43);
+    text-underline-offset: 4px; /* distance from text */
+    text-decoration-thickness: 1.5px; /* thickness of the line */
+    color: 000; /* optional active color */
+    background: none;
+  }
+  .nav-link.active {
+    position: relative;
+    background: linear-gradient(
+        135deg,
+        rgba(210, 240, 255, 0.9),
+        rgba(190, 225, 255, 0.7)
+    );
+    color: #1f4f75;
+    border-radius: 14px;
+
+    box-shadow:
+        
+        inset 0 0 10px rgba(255,255,255,0.8);
+
+    backdrop-filter: blur(6px);
+    text-decoration: none;
+}
+.nav-link.active::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.8);
+    pointer-events: none;
+}
+.nav-link:hover:not(.active) {
+    background: rgba(200, 230, 255, 0.4);
+}
+  
+  /* Divider between nav and user info */
+  .nav-divider {
+    width: 1px;
+    height: 22px;
+    background: rgba(0,0,0,0.12);
+    margin: 0 4px;
+  }
+  
+  /* User name */
+  .user-name {
+    font-size: 0.95rem;
+    color: rgba(0,0,0,0.65);
+    white-space: nowrap;
+  }
+  
+  /* Logout button */
+  .nav-btn {
+    color: none;
+    border: none;
+    border-radius: 14px; /*shape*/
+    padding: 4px 8px;/*made button little bigger */
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: background 0.2s ease, transform 0.15s ease;
+    margin-left:16px;
+    margin-top: 12px; /*aligning with user name*/
+  }
+  
+  .nav-btn:hover {
+    background-color: var(--accent-color-light);
+    transform: translateY(-1px);
+  }
+
+  /* Profile dropdown menu */
+  .profile-menu {
+    position: relative;
+  }
+
+  .profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: rgba(0,0,0,0.65);
+    transition: background 0.2s ease;
+    border-radius: 8px;
+  }
+
+  .profile-btn:hover {
+    background: rgba(200, 230, 255, 0.4);
+  }
+
+  .profile-btn i {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+  }
+
+  .profile-btn.active i {
+    transform: rotate(180deg);
+  }
+
+  .profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    z-index: 1600;
+  }
+
+  .profile-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: rgba(0,0,0,0.7);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-family: "Poppins", sans-serif;
+  }
+
+  .profile-menu-item:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .profile-menu-item:hover {
+    background: rgba(200, 230, 255, 0.5);
+    color: rgba(0,0,0,0.9);
+  }
+
+  .profile-dropdown-divider {
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    margin: 4px 0;
+  }
+
+  .logout-menu-item:last-child {
+    border-radius: 0 0 12px 12px;
+  }
+
+  .logout-form {
+    width: 100%;
+  }
+
+.monaco-editor .margin,
+.monaco-editor .monaco-scrollable-element {
+padding-top: 0 !important;
+}
+
+.class-group {
+    margin-bottom: 10px;
+}
+
+.class-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-weight: 500;
+}
+
+.class-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.class-group.open .files-list {
+    display: block;
+}
+
+.chevron {
+    transition: transform 0.2s ease;
+}
+
+.class-group.open .chevron {
+    transform: rotate(180deg);
+}
+
+.project-section{
+    padding:6px;
+}
+
+.project-header{
+    display:flex;
+    align-items:center;
+    font-weight:600;
+    margin-bottom:4px;
+}
+
+.project-header span{
+    font-weight: 600;
+    margin-right: auto;
+}
+
+.project-header .icon-btn{
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+}
+
+.project{
+    margin-bottom:6px;
+}
+
+.project-title{
+    cursor:pointer;
+    padding:6px 8px;
+    border-radius:6px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    justify-content: space-between;
+}
+
+.project-title:hover{
+    background:#eef6ff;
+}
+
+.project-files{
+    margin-left:10px;
+    margin-top:4px;
+    border-left:1px solid rgba(0,0,0,0.08);
+    padding-left:6px;
+
+}
+
+.project-file{
+    cursor:pointer;
+    padding:5px 8px;
+    border-radius:6px;
+    display:flex;
+    gap:6px;
+    align-items:center;
+    font-size:0.9rem;
+    justify-content:space-between;
+    min-width: 0;
+}
+
+.file-left {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.file-menu {
+    flex-shrink: 0;
+}
+
+.project-file:hover{
+    background:#eef6ff;
+    transform:translateX(2px);
+    
+}
+
+.project-name{
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+.project-title .icon-btn{
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+}
+
+.project-file.active{
+    background: rgba(252,164,43,0.18);
+    border-radius:6px;
+    font-weight:500;
+}
+
+.project-file.active i{
+    color: rgba(252,164,43,0.9);
+}
+
+.project-title{
+    cursor:pointer;
+    padding:6px 8px;
+    border-radius:6px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-width: 0;
+}
+
+.project-name {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.project-title:hover{
+    background:#eef6ff;
+    transform:translateX(2px);
+}
+
+.new-file-row{
+    color:#888;
+    font-style:italic;
+    justify-content: flex-start;
+}
+
+.new-file-row:hover{
+    background:#f4faff;
+}
+
+.project-arrow{
+    font-size:12px;
+    margin-right:4px;
+    transition:transform 0.2s ease;
+}
+
+.project.open .project-arrow{
+    transform:rotate(90deg);
+}
+
+.project-files{
+    display:none;
+}
+
+.project.open .project-files{
+    display:block;
+}
+
+.file-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 8px;
+}
+
+.file-menu{
+    opacity:0;
+    transition:opacity 0.15s ease;
+}
+
+.project-file:hover .file-menu{
+    opacity:1;
+}
+.menu-btn{
+    background:none;
+    border:none;
+    font-size:18px;
+    cursor:pointer;
+    color:#777;
+    box-shadow: none;
+}
+
+.menu-btn:hover{
+    color:#000;
+    background-color: transparent;
+}
+
+.menu-dropdown{
+    position:absolute;
+    right:0;
+    top:22px;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:6px;
+    display:none;
+    flex-direction:column;
+    min-width:120px;
+    z-index:100;
+}
+.menu-dropdown button{
+    padding:8px 10px;
+    background:none;
+    border:none;
+    text-align:left;
+    cursor:pointer;
+    color: black;
+    font-size: 0.8rem;
+}
+
+.menu-dropdown button:hover{
+    background:#f3f3f3;
+}
+
+.file-menu.open .menu-dropdown{
+    display:flex;
+}
+
+.project.drag-over {
+    background: rgba(252,164,43,0.15);
+}
+
+/* ===== Submission Cards ===== */
+.submission-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    text-align: left;
+}
+
+.submission-card h3 {
+    margin-bottom: 12px;
+    color: #1f2a44;
+}
+
+/* Project row */
+.project-row {
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+/* View button */
+.view-btn {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+/* ===== Project Viewer ===== */
+#projectViewer {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 20px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    text-align: left;
+}
+
+/* Layout */
+.project-viewer-body {
+    display: flex;
+    height: 400px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.file-item-view {
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.file-item-view:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.file-item-view.active {
+    background: rgba(252,164,43,0.18);
+    font-weight: 500;
+}
+
+.student-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.student-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.projectViewer {
+    margin-top: 10px;
+}
+
+[id^="fileList-"] {
+    width: 220px;
+    background: #f4faff;
+    border-right: 1px solid rgba(0,0,0,0.08);
+    padding: 8px;
+    overflow-y: auto;
+}
+
+[id^="fileContent-"] {
+    flex: 1;
+    background: #1e1e1e;
+    color: #eaeaea;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 14px;
+    overflow: auto;
+}
+
+.class-header .icon-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+}
+
+.class-group {
+    margin-bottom: 8px;
+}
+
+
+.class-projects {
+    display: none;
+    margin-left: 8px;
+    padding-left: 6px;
+    border-left: 1px solid rgba(0,0,0,0.08);
+}
+
+.class-group.open .class-projects {
+    display: block;
+}
+
+.class-arrow {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.class-group.open .class-arrow {
+    transform: rotate(90deg);
+}
+
+.class-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    min-width: 0;
+}
+
+.class-header:hover {
+    background: #eef6ff;
+}
+
+.class-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.class-header .icon-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+}
+
+.class-header:hover{
+    background:#eef6ff;
+    transform:translateX(2px);
+    
+}
+
+.class-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    text-align: left;
+}
+
+.class-page-header {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.class-hero h1 {
+    margin: 0 0 8px 0;
+    color: #1f2a44;
+}
+
+.class-hero p {
+    margin: 0 0 16px 0;
+    color: #666;
+    font-size: 1rem;
+}
+
+.class-section {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.class-section h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #1f2a44;
+}
+
+.assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.teacher-assignment-card {
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: none;
+    margin-bottom: 0;
+}
+
+.teacher-assignment-card h3 {
+    margin: 0 0 8px 0;
+    color: #1f2a44;
+}
+
+.assignment-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.assignment-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.small-btn {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+}
+
+.assign-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.assign-form input[type="date"] {
+    padding: 8px 10px;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: white;
+}
+
+.student-link {
+    width: 100%;
+    text-align: center;
+}
+
+.muted {
+    color: #777;
+    font-style: italic;
+}
+
+.dashboard-section {
+    margin-top: 14px;
+    background: #f9fbff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.dashboard-section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #1f2a44;
+}
+
+#graphics-container {
+    width: 100%;
+    min-height: 0;
+
+    background: #222;
+    border-radius: 10px;
+
+    padding: 5px;
+    overflow: hidden;
+}
+
+
+#turtle-canvas {
+    width: 100%;
+    height: auto;
+    min-height: 200px;
+}
+
+#right-panel {
+    width: 650px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    overflow: hidden
+}
+
+
+#drag-divider {
+    width: 8px;
+    cursor: col-resize;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    flex: 0 0 8px;
+}
+
+#drag-divider:hover {
+    background: #7fb3d5;
+}
+
+#editor {
+    flex: 1;
+    min-width: 300px;
+}
+
+#right-panel {
+    width: 650px;
+    min-width: 320px;
+    max-width: 80%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+body.filebar-collapsed .side-menu {
+    width: 42px;
+    padding: 12px 6px;
+}
+
+body.filebar-collapsed .page-bubble {
+    left: 42px;
+}
+
+/* hide only the file content, not the header/button */
+body.filebar-collapsed #projectTree,
+body.filebar-collapsed .project-header span {
+    display: none;
+}
+
+body.filebar-collapsed .project-header {
+    justify-content: center;
+}
+
+body.filebar-collapsed .filebar-toggle i {
+    transform: none;
+}

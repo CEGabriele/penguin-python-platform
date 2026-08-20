@@ -17,11 +17,24 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
+from django.conf import settings
+from dashboard.views import healthz
 
 urlpatterns = [
+    path('', lambda request: redirect('/accounts/login/')),
     path('admin/', admin.site.urls),
     path('dashboard/', include('dashboard.urls')),
     path('accounts/login/', auth_views.LoginView.as_view(), name = 'login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name = 'logout')
-    
+    path('accounts/logout/', auth_views.LogoutView.as_view(), name = 'logout'),
+    path('select2_urls', include('django_select2.urls')),
+    path("healthz/", healthz, name="healthz"),
+    path("healthz", healthz, name="healthz-no-slash"),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]

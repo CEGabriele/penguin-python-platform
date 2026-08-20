@@ -1,0 +1,320 @@
+{%extends "base.html"%}
+{% load static %}
+
+{% block title %}View Assignment Submissions{% endblock %}
+{% block extra_head%}
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script src="{% static 'editor/commenting.js' %}"></script>
+    <style>
+        .feedback-container { display: flex; gap: 20px; margin-top: 20px; }
+        .code-viewer { flex: 1; border: 1px solid #ccc; padding: 10px; max-height: 600px; overflow-y: auto; }
+        .feedback-panel { flex: 0 0 300px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9; }
+        .feedback-panel h4 { margin-top: 0; }
+        .feedback-textarea { width: 100%; height: 200px; padding: 8px; font-family: monospace; }
+        .save-feedback-btn { background: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer; margin-top: 10px; }
+        .save-feedback-btn:hover { background: #45a049; }
+        .code-viewer-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 13px; }
+        .line-number { width: 40px; padding: 4px; text-align: right; user-select: none; }
+        .line-number.selectable { cursor: pointer; }
+        .line-number.selectable:hover { background: #dde6f0; }
+        .code-cell { padding: 4px; position: relative; }
+        .code-line-content { margin: 0; white-space: pre-wrap; word-break: break-word; }
+        .code-line.selected-line { background: #444444; color: #ffffff; }
+        .code-line.selected-line .line-number { background: #555555; }
+        .code-line.commented-line .line-number { background: #555555; }
+        .comment-hint { color: #777; font-size: 12px; margin: 0 0 6px; font-style: italic; }
+        .add-comment-trigger { margin-top: 6px; }
+        .add-comment-btn { cursor: pointer; border: 1px solid; border-radius: 3px; font-size: 12px; padding: 4px 8px; }
+        .line-comment-display { background: #555555; padding: 8px; margin-top: 4px; border-radius: 3px; font-size: 12px; }
+        .line-comment-range { font-weight: bold; color: #ffffff; margin-bottom: 3px; }
+        .edit-comment-btn, .delete-comment-btn { color: #ffffff; margin-left: 8px; background: #727272; border: none; cursor: pointer; }
+        .comment-input-form { margin-top: 10px; white-space: normal; display: flex; flex-direction: column; }
+        .comment-input-label { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
+        .comment-input-form textarea { width: 100%; height: 80px; padding: 4px; box-sizing: border-box; }
+        .comment-input-actions { margin-top: 5px; display: flex; gap: 8px; }
+    </style>
+{%endblock%}
+
+{% block content %}
+    <h2>Submissions</h2>
+
+    <p>
+        <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
+        <strong>Class:</strong> {{ assigned.for_class.name }}<br>
+        <strong>Due date:</strong> {{ assigned.due_date }}
+    </p>
+    
+    
+    {% for student, projects in submissions.items %}
+<div class="submission-card">
+
+    <!-- 🔽 Clickable header -->
+    <div class="student-header" onclick="toggleStudent('{{ student.id }}')">
+        <h3>{{ student.get_full_name }}</h3>
+        <span class="chevron">▼</span>
+    </div>
+
+    <!-- 🔽 Hidden content -->
+    <div id="student-{{ student.id }}" class="student-content">
+
+        {% if not projects %}
+            <p style="color:#888; font-style: italic;">
+                No work started yet
+            </p>
+        {% endif %}
+
+        {% for project in projects %}
+        <div class="project-row">
+            <strong>{{ project.name|default:"Project" }}</strong><br>
+
+            Last Edited - {{ project.last_edited|date:"M j, P" }}
+
+            {% if project.submitted %}
+                <br>
+                Submitted - {{ project.submitted_at|date:"M j, P" }}
+            {% endif %}
+
+            <br><br>
+
+            <button class="view-btn"
+                onclick="openProject({{ project.id }}, '{{ student.id }}')">
+                View Code
+            </button>
+
+            <!-- Per-project viewer with feedback -->
+            <div id="viewer-{{ project.id }}" class="projectViewer" style="display:none;">
+                <div class="feedback-container">
+                    <div class="code-viewer">
+                        <div id="fileList-{{ project.id }}"></div>
+                        <p class="comment-hint">Click a line number to comment on it. Shift+click another line number to comment on a range.</p>
+                        <pre id="fileContent-{{ project.id }}"></pre>
+                    </div>
+                    <div class="feedback-panel">
+                        <h4>Feedback</h4>
+                        <div id="feedback-display-{{ project.id }}"></div>
+                        <textarea id="feedback-input-{{ project.id }}" class="feedback-textarea" placeholder="Enter overall feedback..."></textarea>
+                        <button class="save-feedback-btn" onclick="saveFeedback({{ project.id }})">Save Feedback</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+{% endfor %}
+{%endblock%}
+{% block extra_js %}
+<script>
+    const feedbackManagers = {};
+
+    async function openProject(projectId, studentId) {
+        const res = await fetch(
+            `/dashboard/editor/project/${projectId}/teacher-files/`
+        );
+
+        const data = await res.json();
+
+        if (!data.ok) {
+            alert("Failed to load project");
+            return;
+        }
+
+        const viewer = document.getElementById(`viewer-${projectId}`);
+        const fileList = document.getElementById(`fileList-${projectId}`);
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+        const feedbackDisplay = document.getElementById(`feedback-display-${projectId}`);
+        const feedbackInput = document.getElementById(`feedback-input-${projectId}`);
+
+        viewer.style.display = "block";
+        fileList.innerHTML = "";
+        fileContent.textContent = "";
+
+        const files = data.files;
+
+        // Initialize feedback manager
+        const feedbackManager = new FeedbackManager(projectId, true);
+        feedbackManagers[projectId] = feedbackManager;
+
+        // Load existing feedback
+        await feedbackManager.loadFeedback();
+
+        // Display overall feedback if exists
+        if (feedbackManager.feedback.overall) {
+            feedbackDisplay.innerHTML = `
+                <div style="background: #e8f4f8; padding: 10px; border-radius: 3px; margin-bottom: 10px;">
+                    <strong>${escapeHtml(feedbackManager.feedback.overall.grader_name)}:</strong>
+                    <div>${escapeHtml(feedbackManager.feedback.overall.comment)}</div>
+                    <small style="color: #666;">Updated: ${new Date(feedbackManager.feedback.overall.updated_at).toLocaleString()}</small>
+                </div>
+            `;
+            feedbackInput.value = feedbackManager.feedback.overall.comment;
+        }
+
+        Object.keys(files).forEach(path => {
+            const item = document.createElement("div");
+            item.textContent = path;
+            item.className = "file-item-view";
+
+            item.onclick = () => {
+                document.querySelectorAll(`#fileList-${projectId} .file-item-view`)
+                    .forEach(el => el.classList.remove("active"));
+
+                item.classList.add("active");
+                feedbackManager.currentFile = path;
+
+                // Render code with line numbers and feedback UI
+                const codeWithFeedback = renderCodeWithFeedback(files[path], path, feedbackManager);
+                fileContent.innerHTML = codeWithFeedback;
+
+                // Attach event listeners for line comments
+                attachLineCommentListeners(projectId, path, feedbackManager);
+            };
+
+            fileList.appendChild(item);
+        });
+
+        // Auto-open main.py
+        let firstFile = Object.keys(files).find(f => f === "main.py");
+        if (!firstFile) firstFile = Object.keys(files)[0];
+
+        if (firstFile) {
+            const firstFileBtn = document.querySelector(`#fileList-${projectId} .file-item-view`);
+            if (firstFileBtn) firstFileBtn.click();
+        }
+    }
+
+    function attachLineCommentListeners(projectId, filePath, feedbackManager) {
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+
+        // Click a line number to select it; shift+click another to select a range.
+        attachLineSelection(fileContent, (startLine, endLine) => {
+            showLineCommentTrigger(projectId, filePath, startLine, endLine, feedbackManager);
+        });
+
+        // Edit comment button listeners
+        fileContent.querySelectorAll('.edit-comment-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const commentId = parseInt(btn.dataset.id);
+                const comment = feedbackManager.feedback.line_comments.find(lc => lc.id === commentId);
+                if (comment) {
+                    showLineCommentForm(projectId, filePath, comment.line_number, comment.end_line || comment.line_number, feedbackManager, comment);
+                }
+            };
+        });
+
+        // Delete comment button listeners
+        fileContent.querySelectorAll('.delete-comment-btn').forEach(btn => {
+            btn.onclick = async (e) => {
+                e.stopPropagation();
+                const commentId = parseInt(btn.dataset.id);
+                if (confirm('Delete this comment?')) {
+                    await feedbackManager.deleteLineComment(commentId);
+                    openProject(projectId);
+                }
+            };
+        });
+    }
+
+    // Shows a small "add comment" prompt beneath the selected line(s) once a
+    // teacher has clicked (or shift+clicked to select a range of) line numbers.
+    function showLineCommentTrigger(projectId, filePath, startLine, endLine, feedbackManager) {
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+        fileContent.querySelectorAll('.add-comment-trigger, .comment-input-form').forEach(el => el.remove());
+
+        const endRow = fileContent.querySelector(`tr[data-line="${endLine}"]`);
+        if (!endRow) return;
+
+        const label = startLine === endLine ? `line ${startLine}` : `lines ${startLine}-${endLine}`;
+
+        const trigger = document.createElement('div');
+        trigger.className = 'add-comment-trigger';
+        const btn = document.createElement('button');
+        btn.className = 'add-comment-btn';
+        btn.textContent = `Comment on ${label}`;
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            showLineCommentForm(projectId, filePath, startLine, endLine, feedbackManager);
+        };
+        trigger.appendChild(btn);
+
+        endRow.querySelector('.code-cell').appendChild(trigger);
+        trigger.scrollIntoView({ block: 'nearest' });
+    }
+
+    function showLineCommentForm(projectId, filePath, startLine, endLine, feedbackManager, existingComment = null) {
+        const fileContent = document.getElementById(`fileContent-${projectId}`);
+        const endRow = fileContent.querySelector(`tr[data-line="${endLine}"]`);
+
+        if (!endRow) return;
+
+        // Remove any existing trigger/form
+        fileContent.querySelectorAll('.add-comment-trigger, .comment-input-form').forEach(el => el.remove());
+
+        const form = document.createElement('div');
+        form.className = 'comment-input-form';
+
+        const label = document.createElement('div');
+        label.className = 'comment-input-label';
+        label.textContent = startLine === endLine ? `Comment on line ${startLine}` : `Comment on lines ${startLine}-${endLine}`;
+
+        const textarea = document.createElement('textarea');
+        textarea.value = existingComment ? existingComment.comment : '';
+        textarea.placeholder = 'Enter comment...';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        saveBtn.onclick = async () => {
+            if (textarea.value.trim()) {
+                await feedbackManager.saveLineComment(filePath, startLine, textarea.value, endLine);
+                clearLineSelection(fileContent);
+                openProject(projectId);
+            }
+        };
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => {
+            form.remove();
+            clearLineSelection(fileContent);
+        };
+
+        const actions = document.createElement('div');
+        actions.className = 'comment-input-actions';
+        actions.appendChild(saveBtn);
+        actions.appendChild(cancelBtn);
+
+        form.appendChild(label);
+        form.appendChild(textarea);
+        form.appendChild(actions);
+
+        endRow.querySelector('.code-cell').appendChild(form);
+        form.scrollIntoView({ block: 'nearest' });
+        textarea.focus();
+    }
+
+    async function saveFeedback(projectId) {
+        const feedbackInput = document.getElementById(`feedback-input-${projectId}`);
+        const feedbackManager = feedbackManagers[projectId];
+
+        if (feedbackManager) {
+            const comment = feedbackInput.value;
+            const result = await feedbackManager.saveOverallComment(comment);
+            if (result === null) {
+                alert('Failed to save feedback. Please try again.');
+                return;
+            }
+            alert('Feedback saved!');
+            openProject(projectId);
+        }
+    }
+</script>
+
+    <script>
+        function toggleStudent(studentId) {
+            const el = document.getElementById(`student-${studentId}`);
+            el.style.display = el.style.display === "block" ? "none" : "block";
+        }
+        </script>
+{% endblock %}

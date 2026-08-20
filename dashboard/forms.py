@@ -1,95 +1,134 @@
 from django import forms
-from .models import Uploads, Assignment, Class, HomeworkForm, HomeworkQuestion, QuestionChoices, StudentQuestionResponse
-from django.forms import modelformset_factory, inlineformset_factory
+from .models import User, Student, Teacher, Class, Curriculum
+from django.utils.html import format_html
 
-class HomeworkUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file', 'for_class']
-        widgets = {'for_class': forms.HiddenInput(),}
-    def save(self, commit=True, user = None):
-        instance = super().save(commit = False)
-        instance.person = user
-        instance.file_type = "HW"
-        if commit:
-            instance.save()
-        return instance
 
-class ClassworkUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file', 'for_class']
-        widgets = {'for_class': forms.HiddenInput(),}
-    def save(self, commit=True, user = None):
-        instance = super().save(commit = False)
-        instance.person = user
-        instance.type = "CW"
-        if commit:
-            instance.save()
-        return instance
+class PasswordInputWithToggle(forms.PasswordInput):
+    def render(self, name, value, attrs=None, renderer=None):
+        if attrs is None:
+            attrs = {}
+        attrs['class'] = attrs.get('class', '') + ' password-input'
+        password_input = super().render(name, value, attrs, renderer)
+        toggle_icon = format_html(
+            '<span class="password-toggle"><i class="bi bi-eye"></i></span>'
+        )
+        return format_html('<div class="password-field">{}{}</div>', password_input, toggle_icon)
 
-class AssignmentForm(forms.ModelForm):
-    class Meta:
-        model = Assignment
-        fields = ['title', 'description', 'for_class', 'due_date']
-    def __init__(self, *args, **kwargs):
-        teacher = kwargs.pop('teacher', None)
-        super().__init__(*args, **kwargs)
-        if teacher:
-            self.fields['for_class'].queryset = Class.objects.filter(teacher = teacher)
-        self.fields['for_class'].label_from_instance = lambda obj: obj.name
 
-class AssignmentUpload(forms.ModelForm):
-    class Meta:
-        model = Uploads
-        fields = ['file']
+class StudentCreationForm(forms.Form):
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    password = forms.CharField(widget=PasswordInputWithToggle, label='Password')
 
-class HomeworkFormForm(forms.ModelForm):
-    class Meta:
-        model = HomeworkForm
-        fields = ['name', 'for_class', 'description', 'due_date']
-class HomeworkQuestionForm(forms.ModelForm):
-    class Meta:
-        model = HomeworkQuestion
-        fields = ['prompt', 'question_type']
+    def save(self , commit=True):
+        first_name = self.cleaned_data['first_name']
+        last_name = self.cleaned_data['last_name']
+        username = f"{first_name.lower()}{last_name.lower()}"
 
-class StudentAnswerForm(forms.ModelForm):
+        # Handle duplicate usernames by appending a number
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            password=self.cleaned_data['password']
+        )
+        user.save()
+        Student.objects.create(user=user)
+        return user
+
+class TeacherCreationForm(forms.Form):
+    first_name = forms.CharField(max_length=30, label='First Name')
+    last_name = forms.CharField(max_length=30, label='Last Name')
+    email = forms.EmailField(max_length=254, label='Email')
+    password = forms.CharField(widget=PasswordInputWithToggle, label='Password')
+    is_admin = forms.BooleanField(required=False, label='Is Admin')
+
+    def save(self , commit=True):
+        first_name = self.cleaned_data['first_name']
+        last_name = self.cleaned_data['last_name']
+        username = f"{first_name.lower()}{last_name.lower()}"
+
+        # Handle duplicate usernames by appending a number
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=self.cleaned_data['email'],
+            password=self.cleaned_data['password'],
+        )
+        user.save()
+        Teacher.objects.create(user=user, is_admin=self.cleaned_data.get('is_admin', False))
+        return user
+
+class CurriculumCreationForm(forms.ModelForm):
     class Meta:
-        model = StudentQuestionResponse
-        fields = ['question', 'selected_choice', 'answer_text', 'upload']
-        widgets = {'question' : forms.HiddenInput(), 
-                   'answer_text': forms.TextInput(attrs={'placeholder': 'Type your answer...'}),
-                   'upload': forms.FileInput(), 
-                   'selected_choice':forms.RadioSelect()}
+        model = Curriculum
+        fields = ['name']
     
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance
+
+class ClassCreationForm(forms.ModelForm):
+    class Meta:
+        model = Class
+        fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
+
+        widgets = {
+            "time": forms.TimeInput(attrs={"type": "time"}),
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['time'].required = False
+        self.fields['curriculum'].required = False
 
-        question = self.initial.get('question')
-        
-        if question:
-            self.instance.question = question 
+class ClassEditForm(forms.ModelForm):
+    class Meta:
+        model = Class
+        fields = ['name', 'day', 'time', 'location', 'curriculum']
+        widgets = {
+            "time": forms.TimeInput(attrs={"type": "time"}),
+        }
 
-        if question and question.question_type == 'multiple_choice':
-            self.fields['selected_choice'].queryset = question.choices.all()
-        else:
-            self.fields['selected_choice'].queryset = QuestionChoices.objects.none()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['time'].required = False
+        self.fields['curriculum'].required = False
+
+class StudentPasswordResetForm(forms.Form):
+    student = forms.ModelChoiceField(
+        queryset=Student.objects.all().select_related('user').order_by('user__first_name', 'user__last_name'),
+        label="Student",
+    )
+    new_password = forms.CharField(widget=PasswordInputWithToggle, label="New Password")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['student'].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.username})"
 
 
-HomeworkQuestionFormSet = modelformset_factory(
-    HomeworkQuestion, 
-    form = HomeworkQuestionForm, 
-    extra = 0, can_delete = True
-)
-HomeworkChoiceFormSet = inlineformset_factory(
-    HomeworkQuestion, 
-    QuestionChoices, 
-    fields = ['text'], 
-    extra = 2, 
-    can_delete = True
-)
+class TeacherPasswordResetForm(forms.Form):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.all().select_related('user').order_by('user__first_name', 'user__last_name'),
+        label="Teacher",
+    )
+    new_password = forms.CharField(widget=PasswordInputWithToggle, label="New Password")
 
-StudentAnswerFormSet = modelformset_factory(
-    StudentQuestionResponse,
-    form = StudentAnswerForm
-)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['teacher'].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.username})"

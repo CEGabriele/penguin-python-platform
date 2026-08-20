@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+{% load static %}
+
+    {% block extra_css%}
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {% endblock %}
+    {% block extra_head%}
+    <script>
+        window.WORKER_URL = "{% static 'editor/worker.js' %}?v=7";
+        function toggleFolder(titleElement) {
+            const group = titleElement.closest(".class-group");
+            group.classList.toggle("open");
+        }
+        
+    </script>
+
+      
+    
+    <!-- Monaco + Pyodide -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+    {%endblock%}
+
+    {% block title %}Code Editor{% endblock %}
+
+{% block content %}
+
+{% if not project_id %}
+<div id="projectSelectorModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: white; padding: 40px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2>Select a Project to Start Coding</h2>
+        <p style="color: #666; margin: 20px 0;">Choose an existing project or make a new one to begin coding.</p>
+
+        <div id="projectList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+        </div>
+    </div>
+</div>
+<style>
+    #projectSelectorModal + .side-menu,
+    #projectSelectorModal + .side-menu + .page-bubble {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+</style>
+{% endif %}
+
+<!-- SIDE MENU -->
+<div class="side-menu">
+
+
+    <div class="project-section">
+
+        <div class="project-header">
+            <span>Projects By Class</span>
+            <button type="button" id="filebarToggle" class="filebar-toggle">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div id="projectTree"></div>
+
+    </div>
+    </div>
+</div>
+
+<div class="page-bubble">
+
+    {% if assigned %}
+        <div class="assignment-context">
+            <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
+            <div style="white-space: pre-wrap; margin-top: 10px; line-height: 1.5;">{{ assigned.assignment.description }}</div>
+        </div>
+    {% endif %}
+
+    <form method="post" id="editorForm">
+        {% csrf_token %}
+
+        <div id="controls">
+            <button type="button" onclick="window.runCode()" class="icon-btn">
+                <i class="fa-solid fa-play"></i>
+            </button>
+            <button type="button" onclick="window.stopCode()" class="icon-btn">
+                <i class="fa-solid fa-stop"></i>
+            </button>
+
+            <span id="saveStatus"></span>
+
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" onclick="window.decreaseFontSize()" class="icon-btn" title="Decrease font size">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <span id="fontSizeDisplay" style="font-size: 0.9rem; min-width: 40px; text-align: center;">14</span>
+                <button type="button" onclick="window.increaseFontSize()" class="icon-btn" title="Increase font size">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <button type="button" onclick="window.toggleWordWrap()" class="icon-btn" id="wordWrapBtn" title="Toggle word wrap">
+                    <i class="fa-solid fa-arrow-turn-down-left"></i>
+                </button>
+            </div>
+
+            {% if assigned %}
+                {% if is_submitted %}
+                    <span class="submitted-badge">Assignment Submitted ✓</span>
+                {% else %}
+                    <button type="button" id="submitBtn">Submit Assignment</button>
+                    <span id="submitStatus"></span>
+                {% endif %}
+            {% endif %}
+
+            </div>
+
+        <textarea id="id_code" hidden>{{ initial_code }}</textarea>
+        <input type="hidden" id="project_id" value="{{ project_id|default:'' }}">
+        <input type="hidden" id="current_file_path" value="{{ code_name|default:'main.py' }}">
+
+    </form>
+    <div id="main">
+        <div id="editor"></div>
+        <div id="drag-divider"></div>
+        <div id = "right-panel">
+            <div id="feedback-badge" class="assignment-context" style="display:none; padding: 10px; margin: 5px; border-radius: 3px;>
+                <strong>New Feedback from Teacher</strong> <a href="javascript:void(0)" onclick="openFeedbackPanel()">View Teacher Feedback</a>
+            </div>
+            <div id="feedback-panel" style="display:none; border-radius: 8px;border: 1px solid #ddd; padding: 10px; margin: 5px; background: #f9f9f9; max-height: 300px; overflow-y: auto;">
+                <button onclick="closeFeedbackPanel()" style="float: right; background: none; border: none; cursor: pointer; font-size: 18px; color: #666;">✕</button>
+                <h4>Feedback</h4>
+                <div id="feedback-content"></div>
+            </div>
+            <div id="graphics-settings" style="display:none; padding:10px; background:#f5f5f5; border-bottom:1px solid #ddd;">
+                <div style="display:flex; gap:15px; align-items:center; font-size:0.9rem;">
+                    <label>
+                        Width:
+                        <input type="number" id="graphicsWidth" value="640" min="100" max="2000" style="width:60px; padding:4px;">
+                    </label>
+                    <label>
+                        Height:
+                        <input type="number" id="graphicsHeight" value="480" min="100" max="2000" style="width:60px; padding:4px;">
+                    </label>
+                    <button type="button" onclick="window.applyGraphicsSize()" style="padding:6px 12px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;">
+                        Apply
+                    </button>
+                </div>
+            </div>
+            <div id="graphics-container"
+                style="display:none; text-align:center; background:#222; padding:5px;">
+                <canvas id="graphics-canvas" width="640" height="480"
+                        style="border:1px solid #444; display:none; max-width:100%; height:auto;"></canvas>
+                <div id="turtle-canvas" style="display:none; margin:0 auto;"></div>
+            </div>
+            <div id="console"></div>
+        </div>
+    </div>
+
+</div>
+{%endblock%}
+{% block extra_js %}
+
+<script src="{% static 'editor/commenting.js' %}"></script>
+<script>
+    window.IS_READONLY = {{ is_readonly|yesno:"true,false" }};
+    let feedbackManager = null;
+
+    async function loadAndDisplayFeedback() {
+        const projectId = document.getElementById("project_id").value;
+        if (!projectId) return;
+
+        feedbackManager = new FeedbackManager(projectId, false);
+        const feedback = await feedbackManager.loadFeedback();
+
+        if (!feedback || (!feedback.overall && feedback.line_comments.length === 0)) {
+            return; // No feedback to display
+        }
+
+        // Show badge if there is feedback
+        const badge = document.getElementById("feedback-badge");
+        if (badge) badge.style.display = "block";
+
+        // Prepare feedback content
+        let feedbackHtml = '';
+
+        // Overall feedback
+        if (feedback.overall) {
+            feedbackHtml += `
+                <div style="background: #e8f4f8; padding: 10px; border-radius: 3px; margin-bottom: 10px;">
+                    <strong>${escapeHtml(feedback.overall.grader_name)}:</strong>
+                    <div style="margin-top: 5px; white-space: pre-wrap;">${escapeHtml(feedback.overall.comment)}</div>
+                    <small style="color: #666;">Updated: ${new Date(feedback.overall.updated_at).toLocaleString()}</small>
+                </div>
+            `;
+        }
+
+        // Line comments summary
+        if (feedback.line_comments.length > 0) {
+            feedbackHtml += '<div style="margin-top: 10px;"><strong>Line Comments:</strong></div>';
+            feedback.line_comments.forEach(lc => {
+                const lineLabel = lc.end_line && lc.end_line !== lc.line_number
+                    ? `${lc.line_number}-${lc.end_line}`
+                    : `${lc.line_number}`;
+                feedbackHtml += `
+                    <div style="background: #e8f4f8; padding: 8px; margin: 5px 0; border-radius: 3px; ">
+                        <strong>${escapeHtml(lc.file_path)} Line(s) ${lineLabel}</strong> - ${escapeHtml(lc.grader_name)}
+                        <div style="margin-top: 5px; white-space: pre-wrap;">${escapeHtml(lc.comment)}</div>
+                    </div>
+                `;
+            });
+        }
+
+        const feedbackContent = document.getElementById("feedback-content");
+        if (feedbackContent) {
+            feedbackContent.innerHTML = feedbackHtml;
+        }
+    }
+
+    function openFeedbackPanel() {
+        const panel = document.getElementById("feedback-panel");
+        const badge = document.getElementById("feedback-badge");
+        if (panel) {
+            panel.style.display = "block";
+            if (badge) badge.style.display = "none";
+            // Mark as read
+            if (feedbackManager) {
+                const projectId = document.getElementById("project_id").value;
+                if (projectId) {
+                    fetch(`/dashboard/project/${projectId}/feedback/`).catch(e => {});
+                }
+            }
+        }
+    }
+
+    function closeFeedbackPanel() {
+        const panel = document.getElementById("feedback-panel");
+        if (panel) panel.style.display = "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(loadAndDisplayFeedback, 500);
+    });
+</script>
+
+
+{% if is_submitted %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.EditorAPI?.setReadOnly) {
+        window.EditorAPI.setReadOnly(true);
+    }
+});
+</script>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<script type="module" src="{% static 'editor/main.js' %}?v=7" defer></script>
+
+<script>
+
+function getCsrfToken() {
+    const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : "";
+}
+
+
+
+async function ajaxSave() {
+    {% if is_submitted %}
+    return;
+    {% endif %}
+
+    const status = document.getElementById("saveStatus");
+    const code = window.EditorAPI.getValue();
+    const projectId = document.getElementById("project_id").value;
+    const path = document.getElementById("current_file_path").value || "main.py";
+
+    if (!projectId) {
+        status.textContent = "No project selected";
+        return;
+    }
+
+    status.textContent = "Saving...";
+
+    try {
+        const response = await fetch(window.location.href, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken(),
+            },
+            body: JSON.stringify({
+                project_id: projectId,
+                path: path,
+                code: code,
+            }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Save failed");
+
+        status.textContent = "Saved!";
+    } catch (e) {
+        console.error(e);
+        status.textContent = "Save failed. Try again.";
+    } finally {
+        setTimeout(() => {
+            if (status.textContent.startsWith("Saved")) {
+                status.textContent = "Saved ✓";
+            }
+        }, 3000);
+    }
+}
+
+{% if assigned %}
+async function submitAssignment() {
+    const btn = document.getElementById("submitBtn");
+    const status = document.getElementById("submitStatus");
+    const projectIdEl = document.getElementById("project_id");
+
+    if (!projectIdEl) {
+        status.textContent = "Project not found";
+        return;
+    }
+
+    const projectId = projectIdEl.value;
+
+    if (!projectId) {
+        status.textContent = "No project selected";
+        return;
+    }
+
+    btn.disabled = true;
+    status.textContent = "Submitting...";
+
+    try {
+        const response = await fetch(
+            "{% url 'submit_assignment' assigned.id %}",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrfToken(),
+                },
+                body: JSON.stringify({
+                    project_id: projectId
+                })
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            throw new Error(data.error || "Submission failed");
+        }
+
+        status.textContent = "Submitted!";
+    } catch (err) {
+        console.error(err);
+        status.textContent = "Submission failed";
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document
+        .getElementById("submitBtn")
+        ?.addEventListener("click", submitAssignment);
+});
+{% endif %}
+
+</script>    
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const toggle = document.getElementById("filebarToggle");
+        const icon = toggle.querySelector("i");
+    
+        toggle.addEventListener("click", () => {
+            document.body.classList.toggle("filebar-collapsed");
+    
+            const collapsed = document.body.classList.contains("filebar-collapsed");
+    
+            icon.className = collapsed
+                ? "fa-solid fa-chevron-right"
+                : "fa-solid fa-chevron-left";
+        });
+    });
+    </script>
+
+<script>
+    
+
+    function getOpenProjects() {
+        const open = new Set();
+    
+        document.querySelectorAll(".project.open").forEach(p => {
+            const name = p.querySelector(".project-name")?.textContent.trim();
+            if (name) open.add(name);
+        });
+    
+        return open;
+    }
+
+    function goToProject(projectId, filePath=null) {
+        let url = `/dashboard/editor/?project_id=${projectId}`;
+        if (filePath) {
+            url += `&file=${encodeURIComponent(filePath)}`;
+        }
+        window.location.href = url;
+    }
+
+    async function loadProjects() {
+        const openProjects = getOpenProjects();
+
+        const res = await fetch("/dashboard/editor/projects/");
+        const data = await res.json();
+
+        const tree = document.getElementById("projectTree");
+        tree.innerHTML = "";
+
+        let firstProject = null;
+
+        data.classes.sort((a, b) => {
+            const aIsArchived = a.name.includes("Archived");
+            const bIsArchived = b.name.includes("Archived");
+            if (aIsArchived && !bIsArchived) return 1;
+            if (!aIsArchived && bIsArchived) return -1;
+            return a.name.localeCompare(b.name);
+        });
+
+        data.classes.forEach(cls => {
+            cls.projects.sort((a, b) => a.name.localeCompare(b.name));
+            const classDiv = document.createElement("div");
+            classDiv.className = "class-group open";
+            classDiv.dataset.classId = cls.id;
+    
+            const classHeader = document.createElement("div");
+            classHeader.className = "class-header";
+            classHeader.innerHTML = `
+                <span class="class-name">
+                    <i class="fa-solid fa-chevron-right class-arrow"></i>
+                    ${cls.name}
+                </span>
+                <button class="icon-btn class-new-project-btn">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            `;
+    
+            classHeader.querySelector(".class-new-project-btn").onclick = (e) => {
+                e.stopPropagation();
+                createProject(cls.id, cls.name);
+            };
+    
+            classHeader.onclick = (e) => {
+                if (e.target.closest(".class-new-project-btn")) return;
+                classDiv.classList.toggle("open");
+            };
+    
+            const classProjects = document.createElement("div");
+            classProjects.className = "class-projects";
+    
+            cls.projects.forEach(project => {
+                if (!firstProject) {
+                    firstProject = project;
+                }
+    
+                const projectDiv = document.createElement("div");
+                projectDiv.className = "project";
+    
+                if (openProjects.has(project.name)) {
+                    projectDiv.classList.add("open");
+                }
+    
+                projectDiv.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                });
+    
+                projectDiv.addEventListener("dragenter", () => {
+                    projectDiv.classList.add("drag-over");
+                });
+    
+                projectDiv.addEventListener("dragleave", () => {
+                    projectDiv.classList.remove("drag-over");
+                });
+    
+                projectDiv.addEventListener("drop", async (e) => {
+                    e.preventDefault();
+                    projectDiv.classList.remove("drag-over");
+    
+                    const path = e.dataTransfer.getData("path");
+                    const fromProjectId = e.dataTransfer.getData("fromProjectId");
+                    const toProjectId = String(project.id);
+    
+                    if (!path || fromProjectId === toProjectId) return;
+    
+                    const draggingEl = document.querySelector(".dragging");
+                    if (!draggingEl) return;
+    
+                    const ok = await moveFile(fromProjectId, toProjectId, path);
+                    if (!ok) return;
+    
+                    const targetFilesDiv = projectDiv.querySelector(".project-files");
+                    const newRow = targetFilesDiv.querySelector(".new-file-row");
+    
+                    if (newRow) {
+                        targetFilesDiv.insertBefore(draggingEl, newRow);
+                    } else {
+                        targetFilesDiv.appendChild(draggingEl);
+                    }
+    
+                    draggingEl.dataset.projectId = toProjectId;
+                    draggingEl.classList.remove("dragging");
+                });
+    
+                const title = document.createElement("div");
+                title.className = "project-title";
+                title.innerHTML = `
+                    <span class="project-name">
+                        <i class="fa-solid fa-chevron-right project-arrow"></i>
+                        <i class="fa-solid fa-folder"></i>
+                        ${project.name}
+                    </span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="icon-btn new-file-btn" data-project="${project.id}">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button class="icon-btn project-menu-btn" data-project="${project.id}">
+                            <i class="fa-solid fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                `;
+
+                title.querySelector(".new-file-btn").onclick = (e) => {
+                    e.stopPropagation();
+                    createFile(project.id);
+                };
+
+                title.querySelector(".project-menu-btn").onclick = (e) => {
+                    e.stopPropagation();
+                    const menu = document.createElement("div");
+                    menu.style.cssText = "position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 100; min-width: 120px;";
+                    menu.innerHTML = `
+                        <button onclick="window.renameProject(${project.id}, '${project.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; color: #333;">Rename</button>
+                        <button onclick="window.deleteProject(${project.id}, '${project.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; color: #dc3545;">Delete</button>
+                    `;
+                    document.body.appendChild(menu);
+                    const rect = e.target.getBoundingClientRect();
+                    menu.style.cssText += `; left: ${rect.left}px; top: ${rect.bottom + 5}px;`;
+
+                    const closeMenu = () => {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    };
+                    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+                };
+
+                title.onclick = (e) => {
+                    if (e.target.closest(".new-file-btn") || e.target.closest(".project-menu-btn")) return;
+
+                    if (e.target.closest(".project-arrow")) {
+                        e.stopPropagation();
+                        projectDiv.classList.toggle("open");
+                        return;
+                    }
+
+                    let mainFile = project.files.find(f => f === "main.py");
+                    if (!mainFile) {
+                        mainFile = project.files[0] || null;
+                    }
+
+                    goToProject(project.id, mainFile);
+                };
+    
+                const filesDiv = document.createElement("div");
+                filesDiv.className = "project-files";
+
+                project.files.sort((a, b) => a.localeCompare(b));
+
+                project.files.forEach(file => {
+                    const f = document.createElement("div");
+                    f.className = "project-file";
+                    f.draggable = true;
+                    f.dataset.path = file;
+                    f.dataset.projectId = project.id;
+    
+                    f.addEventListener("dragstart", (e) => {
+                        e.dataTransfer.setData("path", f.dataset.path);
+                        e.dataTransfer.setData("fromProjectId", String(f.dataset.projectId));
+                        f.classList.add("dragging");
+                    });
+    
+                    f.addEventListener("dragend", () => {
+                        f.classList.remove("dragging");
+                    });
+    
+                    f.innerHTML = `
+                        <span class="file-left">
+                            <i class="fa-solid fa-file"></i>
+                            ${file}
+                        </span>
+                        <div class="file-menu">
+                            <button class="menu-btn">⋯</button>
+                            <div class="menu-dropdown">
+                                <button onclick="renameFile(${project.id}, '${file}')">Rename</button>
+                                <button onclick="deleteFile(${project.id}, '${file}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+    
+                    const menuBtn = f.querySelector(".menu-btn");
+                    const fileMenu = f.querySelector(".file-menu");
+    
+                    menuBtn.onclick = (e) => {
+                        e.stopPropagation();
+    
+                        document.querySelectorAll(".file-menu")
+                            .forEach(m => m.classList.remove("open"));
+    
+                        fileMenu.classList.toggle("open");
+                    };
+    
+                    f.onclick = (e) => {
+                        if (e.target.closest(".file-menu")) return;
+                        goToProject(project.id, file);
+                    };
+    
+                    filesDiv.appendChild(f);
+                });
+    
+                const newRow = document.createElement("div");
+                newRow.className = "project-file new-file-row";
+                newRow.innerHTML = `
+                    <i class="fa-solid fa-plus"></i>
+                    New file
+                `;
+                newRow.onclick = () => createFile(project.id);
+    
+                filesDiv.appendChild(newRow);
+    
+                projectDiv.appendChild(title);
+                projectDiv.appendChild(filesDiv);
+                classProjects.appendChild(projectDiv);
+            });
+    
+            classDiv.appendChild(classHeader);
+            classDiv.appendChild(classProjects);
+            tree.appendChild(classDiv);
+        });
+    
+    }
+
+    async function openFile(pid, filePath) {
+        const res = await fetch(`/dashboard/editor/project/${pid}/file/${filePath}/`);
+        const data = await res.json();
+    
+        if (data.ok) {
+            window.EditorAPI.setValue(data.code || "");
+    
+            window.EditorProject.setProjectId(pid);
+            window.EditorProject.setCurrentFile(filePath);
+            window.EditorProject.resetLastSavedCode(data.code || "");
+            window.EditorProject.clearAutosaveTimer();
+    
+            const projectIdInput = document.getElementById("project_id");
+            const currentFilePathInput = document.getElementById("current_file_path");
+            const nameInput = document.getElementById("name");
+    
+            if (projectIdInput) projectIdInput.value = pid;
+            if (currentFilePathInput) currentFilePathInput.value = filePath;
+            if (nameInput) nameInput.value = filePath;
+        }
+    }
+
+    async function  createFile(pid){
+        let filename = prompt("New file name:");
+
+        if(!filename) return;
+
+        if(!filename.endsWith(".py")){
+            filename += ".py";
+        }
+
+        const res = await fetch(`/dashboard/editor/project/${pid}/create-file/`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({path:filename})
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+            goToProject(pid, filename);
+        } else {
+            alert("Could not create file");
+        }
+    }
+
+    async function createProject(classId, className) {
+        const name = prompt(`New project name for ${className}:`);
+        if (!name) return;
+    
+        const res = await fetch("/dashboard/editor/create-project/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify({
+                name,
+                class_id: classId
+            })
+        });
+    
+        const data = await res.json();
+    
+        if (data.ok) {
+            goToProject(data.project_id, "main.py");
+        } else {
+            alert(data.error || "Could not create project");
+        }
+    }
+
+
+    async function renameFile(projectId, oldPath){
+        const newName = prompt("New file name:", oldPath);
+
+        if(!newName || newName === oldPath) return;
+
+        const res = await fetch(`/dashboard/editor/project/${projectId}/rename-file/`, {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({old_path:oldPath, new_path:newName})
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+            goToProject(projectId, newName);
+        } else {
+            alert("Could not rename file");
+        }
+    }
+
+    async function deleteFile(projectId, path){
+        if(!confirm(`Are you sure you want to delete ${path}? This cannot be undone.`)){
+            return;
+        }
+
+        const res = await fetch(`/dashboard/editor/project/${projectId}/delete-file/`, {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "X-CSRFToken":getCsrfToken()
+            },
+            body:JSON.stringify({path})
+        });
+
+        const data = await res.json();
+
+        if(data.ok){
+            loadProjects();
+        } else {
+            alert("Could not delete file");
+        }
+    }
+
+    document.addEventListener("click", () => {
+        document.querySelectorAll(".file-menu")
+            .forEach(m => m.classList.remove("open"));
+    });
+
+    async function moveFile(fromProjectId, toProjectId, path) {
+        const res = await fetch(`/dashboard/editor/move-file/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+            },
+            body: JSON.stringify({
+                from_project: fromProjectId,
+                to_project: toProjectId,
+                path: path
+            })
+        });
+    
+        const data = await res.json();
+    
+        if (!data.ok) {
+            alert(data.error || "Move failed");
+            return false;
+        }
+    
+        return true;
+    }
+
+    function parseDjangoDatetime(dateStr) {
+        if (!dateStr) return "Unknown";
+        try {
+            // ISO format: "2026-08-10T16:02:48.507515"
+            const date = new Date(dateStr);
+            if (!isNaN(date)) {
+                return date.toLocaleString();
+            }
+        } catch (e) {}
+        return "Unknown";
+    }
+
+    async function populateProjectSelector() {
+        const modal = document.getElementById("projectSelectorModal");
+        if (!modal) {
+            return;
+        }
+        const res = await fetch("/dashboard/editor/projects/");
+        const data = await res.json();
+        const list = document.getElementById("projectList");
+
+        if (!data.classes || data.classes.length === 0) {
+            list.innerHTML = "<p style='color: #999;'>No classes yet.</p>";
+            return;
+        }
+
+        let html = "";
+
+        html += `<div style="margin-bottom: 30px;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">Create New Project</h4>`;
+        data.classes.forEach(cls => {
+            html += `
+                <button type="button" onclick="createProject(${cls.id}, '${cls.name.replace(/'/g, "\\'")}')" style="width: 100%; padding: 10px; margin-bottom: 8px;">
+                    + ${cls.name}
+                </button>
+            `;
+        });
+        html += `</div>`;
+
+        // Show existing projects below
+        html += `<div><h4 style="margin: 0 0 10px 0; color: #333;">Existing Projects</h4>`;
+        let hasProjects = false;
+
+        data.classes.forEach(cls => {
+            if (cls.projects && cls.projects.length > 0) {
+                hasProjects = true;
+                html += `<div style="margin-bottom: 15px;"><h5 style="margin: 0 0 8px 0; color: #666; font-size: 12px; text-transform: uppercase;">${cls.name}</h5>`;
+                cls.projects.forEach(proj => {
+                    const dateStr = parseDjangoDatetime(proj.last_edited);
+                    html += `
+                        <div onclick="goToProject(${proj.id})" style="padding: 10px; margin: 5px 0; background: #f0f0f0; border-radius: 4px; cursor: pointer;">
+                            <strong>${proj.name || 'Untitled'}</strong><br>
+                            <small style="color: #666;">Last edited: ${dateStr}</small>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+        });
+
+        if (!hasProjects) {
+            html += `<p style='color: #999; font-size: 14px;'>No existing projects yet. Create one above!</p>`;
+        }
+        html += `</div>`;
+
+        list.innerHTML = html;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const projectId = document.getElementById("project_id")?.value;
+
+        // Populate selector if no project is selected
+        if (!projectId) {
+            populateProjectSelector();
+        }
+
+        loadProjects().then(() => {
+            const activeProjectId = document.getElementById("project_id")?.value;
+            const activeFilePath = document.getElementById("current_file_path")?.value;
+
+            if (!activeProjectId || !activeFilePath) return;
+
+            document.querySelectorAll(".project").forEach(projectEl => {
+                const fileEl = projectEl.querySelector(
+                    `.project-file[data-project-id="${activeProjectId}"][data-path="${CSS.escape(activeFilePath)}"]`
+                );
+                if (fileEl) {
+                    fileEl.classList.add("active");
+                    projectEl.classList.add("open");
+
+                    const classGroup = projectEl.closest(".class-group");
+                    if (classGroup) {
+                        classGroup.classList.add("open");
+                    }
+                }
+            });
+        });
+    });
+
+  </script>
+{% endblock %}

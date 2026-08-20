@@ -1,90 +1,58 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
 
-<html>
+{% block title %}{{ student.user.get_short_name|default:student.user.username }}'s Dashboard{% endblock %}
 
-<head>
-    <title>{{ student.user.get_short_name|default:student.user.username }}'s Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-
-<body>
-
-    <h1>Welcome, {{ student.user.get_short_name|default:student.user.username }}</h1>
-
-    <a href="{% url 'student_assignments'%}">View all assignments</a>
-
+{% block content %}
 
     {% if classes %}
+    <div class="class-grid">
+        {%for class in classes%}
+            <div class="class-card">
+                <div class="class-card-title">
+                    <h1>{{ class.class.name }}</h1>
+                    <a href="{% url 'student_class_view' class.class.code %}" class = "button view-class-btn">
+                        View Class Page
+                    </a>
+                </div>
+                <div class = "dashboard-section">
+                    <h3> Upcoming Assignment </h3>
+                        {% if class.upcoming_assignments%}
+                            <div class="assignment-list compact">
+                                {% for assigned in class.upcoming_assignments %}
+                                <div class="assignment-card student-assignment-preview">
+                                    <div>
+                                        <strong>{{ assigned.assignment.title }}</strong><br>
+                                        <span class="upload-date">Due {{ assigned.due_date }}</span>
+                                    </div>
 
-    {%for class in classes%}
+                                    <a class="download-link"
+                                       href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
+                                        Open
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="muted">No upcoming assignments 🎉</p>
+                    {% endif %}
+                </div>
 
-    <h1>{{ class.class.name }}</h1>
-    <a href="{% url 'student_class_view' class.class.code %}">
-        View Class Page
-    </a>
-    <h2>My Files</h2>
-    <h4>Classwork</h4>
-    {% if class.cw_files%}
-    <ul>
-        {%for file in class.cw_files%}
-        <li>
-            <p>{{ file.file.name |cut:"student_files/"}}</p>
-            <i class="bi bi-file-earmark-code"></i>
-            <br>
-            <p> Uploaded {{student.last_cw_file.uploaded_at | date:"n/j/y"}}</p>
-            <a href="{% url 'download_file' file.id %}">
-                Download
-            </a>
-        </li>
-        {%endfor%}
-    </ul>
-    {%else%}
-    <p>No classwork uploaded yet.</p>
-    {%endif%}
+                <form id="uploadForm-{{ class.class.code }}"
+                      class="upload-form"
+                      method="post"
+                      enctype="multipart/form-data"
+                      action="{% url 'student_dashboard' %}"
+                      style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="uploaded_file" id="fileInput-{{ class.class.code }}" />
+                    <input type="hidden" name="class_code" value="{{ class.class.code }}">
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
-    <h4>Homework</h4>
-    {% if class.hw_files%}
-    <ul>
-        {%for file in class.hw_files%}
-        <li>
-
-            <p>{{ file.file.name |cut:"student_files/"}}</p>
-            <i class="bi bi-file-earmark-code"></i>
-            <br><br>
-            <a href="{% url 'download_file' file.id %}">
-                Download
-            </a>
-        </li>
-        {%endfor%}
-    </ul>
-    {%else%}
-    <p>No homework uploaded yet.</p>
-    {%endif%}
-
-
-    <h2>Upload Files</h2>
-    <h4>Upload Classwork Files</h4>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token%}
-        {{class.cw_form.as_p}}
-        <button type="submit" name="upload_cw">Upload</button>
-    </form>
-    <h4>Upload Homework Files</h4>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token%}
-        {{class.hw_form.as_p}}
-        <button type="submit" name="upload_hw">Upload</button>
-    </form>
-
-    {%endfor%}
-
-    {% endif %}
-    <br>
-    <form action="{% url 'logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-    </form>
-
-</body>
-
-</html>
+{% endblock %}

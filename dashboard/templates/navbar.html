@@ -1,0 +1,61 @@
+{% load static %}
+<div class="top-nav">
+  <!-- LOGO ON THE LEFT -->
+    <div class="logo">
+        <a href="{% url 'student_dashboard' %}">
+            <img src="{% static 'images/logo.png' %}" >
+        </a>
+    </div>
+        <div class="top-nav-right">
+          
+        {%if user.student%}
+          <a href="{% url 'student_dashboard' %}" 
+          class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+          Class
+        </a>
+        {% elif user.teacher%}
+          <a href="{% url 'teacher_dashboard' %}" 
+            class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}">
+            Dashboard
+          </a>
+        {%endif %}
+          <a href="{% url 'editor_view' %}" 
+          class="nav-link {% if request.resolver_match.url_name == 'editor_view' %}active{% endif %}">
+          Code
+        </a>
+      
+          {% if user.teacher.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" 
+            class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+            Admin
+          </a>
+          {% endif %}
+      
+          <span class="nav-divider"></span>
+
+          <div class="profile-menu">
+            <button class="profile-btn" id="profileMenuBtn">
+              <span class="profile-name">{{ user.get_full_name|default:user.username }}</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown">
+              <a href="{% url 'profile' %}" class="profile-menu-item">
+                <i class="bi bi-person"></i>
+                Profile
+              </a>
+              <a href="{% url 'projects' %}" class="profile-menu-item">
+                <i class="bi bi-folder"></i>
+                Projects
+              </a>
+              <div class="profile-dropdown-divider"></div>
+              <form action="{% url 'logout' %}" method="post" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="profile-menu-item logout-menu-item">
+                  <i class="bi bi-box-arrow-right"></i>
+                  Logout
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+    </div>      

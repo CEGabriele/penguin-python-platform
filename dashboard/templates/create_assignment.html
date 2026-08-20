@@ -1,18 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Assignment</title>
-</head>
-<body>
-    <h1>Create Assignment</h1>
+{%extends "base.html"%}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p}}
+{% block title %}Create Assignment{% endblock %}
 
-        <button type="submit">Create Assignment</button>
-    </form>
+{% block content %}
 
-    <a href="{% url 'teacher_dashboard' %}" >Go to dashboard </a>
+    <div class = "container">
+        <h1>Create Assignment</h1>
+        <form method="POST" enctype = "multipart/form-data">
+            {% csrf_token %}
+            <label for="title">Assignment Title:</label>
+            <input type="text" id="title" name="title" required><br><br>
 
-</html>
+            <label for="description">Description / Instructions:</label><br>
+            <textarea id="description" name="description" rows="4" cols="50" required></textarea><br><br>
+
+            <label for="curriculum">Curriculum / Level:</label>
+            <select name="curriculum" id="curriculum" required>
+                {% for curriculum in curricula %}
+                    <option value="{{ curriculum.id }}"
+                        {% if selected_curriculum and curriculum.id == selected_curriculum.id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ curriculum.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <br><br>
+
+            {% if selected_class %}
+                <hr>
+                <p>
+                    <strong>Assign to:</strong> {{ selected_class.name }}
+                </p>
+
+                <label for="due_date">Due date:</label>
+                <input type="date" name="due_date" id = "due_date" required>
+            {% endif %}
+
+            <button type="submit">Create Assignment</button>
+
+        
+        </form>
+{% endblock%}

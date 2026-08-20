@@ -1,47 +1,51 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{assignment.title}}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+{%extends "base.html"%}
+
+{% block title %}View Assignment{% endblock %}
+
+{% block content %}
 </head>
 <body>
-    <h1>{{assignment.title}} - {{assignment.for_class.name}}</h1>
-    {% if assignment.due_date %}
-        <h4>Due {{ assignment.due_date }}</h4>
-    {% endif %}
-    {%if assignment.description%}
-        <p>{{assignment.description}}</p>
-    {%endif%}
-    <h2>Student Submissions</h2>
-    <ul>
-        {% for student, files in student_submissions%}
-            <li>
-                <p>{{ student.user.get_full_name}}</p>
-
-                {%if files%}
-
-                    <ul>
-                        {% for file in files%}
-                            <li>
-                                <i class = "bi bi-file-earmark-code"></i>
-                                <br>
-                                <p> Uploaded {{file.uploaded_at | date:"n/j/y"}}</p>
-                                <a href="{% url 'download_file' file.id %}" >
-                                    Download
-                                </a> 
-                            </li>
-                        {%endfor%}
-                    </ul>
-                
-                {%endif%}
-
-            </li>
-        {% endfor%}
-    </ul>
-
-    <a href="{% url 'teacher_assignments'%}">Return to all assignments</a>
-    <br>
-    <a href="{% url 'teacher_dashboard'%}">Return to dashboard</a>
-        
-</body>
-</html>
+    {% include "navbar.html" %}
+        <!-- Header -->
+        <div class="page-header">
+            <h1 class="page-title">{{ assignment.title }}</h1>
+            <p class="page-subtitle">
+                Created {{ assignment.created_at|date:"F j, Y" }} by {{ assignment.created_by.get_full_name}}
+            </p>
+        </div>
+    
+        <!-- Assignment description -->
+        <section class="card">
+            <h2>Description</h2>
+    
+            {% if assignment.description %}
+                <p>{{ assignment.description|linebreaks }}</p>
+            {% else %}
+                <p class="muted">No description provided.</p>
+            {% endif %}
+        </section>
+    
+        <!-- Assigned classes -->
+        <section class="card">
+            <h2>Assigned To</h2>
+    
+            {% if assigned_classes %}
+                <ul class="assigned-class-list">
+                    {% for assigned in assigned_classes %}
+                        <li class="assigned-class-item">
+                            <strong>{{ assigned.for_class.name }}</strong>
+                            <span class="muted">
+                                — due {{ assigned.due_date|date:"M j, Y" }}
+                            </span>
+                            <a href="{% url 'teacher_class_view' assigned.for_class.code %}">
+                                View Class
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="muted">This assignment is not currently assigned to any classes.</p>
+            {% endif %}
+        </section>
+    
+    </div>    
+{%endblock%}

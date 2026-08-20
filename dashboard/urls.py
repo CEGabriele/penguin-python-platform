@@ -1,24 +1,44 @@
 from django.urls import path
-from .models import Student
-from . import views
-from .views import download_file_view, student_dashboard, teacher_dashboard, view_student, create_assignment, student_assignments, student_assignment_view, teacher_assignments_list, teacher_assignment_detail, create_homework_form, student_form_view, responses_view, student_class_view, teacher_class_view, resource_view, edit_resource
+from .views import *
 
 
 urlpatterns = [
-    path('download/<int:file_id>/', download_file_view, name = 'download_file'),
     path('student-dashboard/', student_dashboard, name = 'student_dashboard'),
     path('teacher-dashboard/', teacher_dashboard, name = 'teacher_dashboard'),
-    path('create-assignment/',  create_assignment, name = 'create_assignment'),
+    path('profile/', profile_view, name='profile'),
+    path('projects/', projects_view, name='projects'),
     path('view-student/<str:username>/', view_student, name = 'view_student'),
-    path('my-assignments', student_assignments, name = 'student_assignments'),
-    path('assignment-details/<int:assignment_id>/', student_assignment_view, name = 'assignment_details'),
-    path('assigned-assignments', teacher_assignments_list, name = 'teacher_assignments'),
-    path('teacher-assignment-details/<int:assignment_id>/', teacher_assignment_detail, name = "teacher_assignment_details"),
-    path('create-homework-form/', create_homework_form, name = "create_homework_form" ),
-    path('student-form/<int:form_id>', student_form_view, name = 'student_form_view'),
-    path('form-results/<int:form_id>/', responses_view, name = 'responses_view'),
     path('student-class-view/<str:class_code>/', student_class_view, name="student_class_view"),
     path('teacher-class-view/<str:class_code>/', teacher_class_view, name="teacher_class_view"),
-    path('view-resource/<int:resource_id>/', resource_view, name="resource_view"),
-    path('edit-resource/<int:resource_id>/', edit_resource, name="edit_resource")
+    path("admin-dashboard/", admin_dashboard, name="admin_dashboard"),
+    path("admin-class-view/<str:class_id>/", admin_class_view, name="admin_class_view"),
+    path("class/<int:class_id>/add-students/", add_students_to_class, name="add_students_to_class"),
+    path("class/<int:class_id>/edit/", edit_class, name="edit_class"),
+    path("class/<int:class_id>/delete/", delete_class, name="delete_class"),
+    path("admin/operations/", operations_dashboard, name="operations_dashboard"),
+    path('editor/',editor_view, name='editor_view'),
+    path('create-assignment/',create_assignment, name='create_assignment'),
+    path('admin-create-assignment/',admin_create_assignment, name='admin_create_assignment'),
+    path("assignment/<int:assigned_id>/submissions/", teacher_view_submissions, name="teacher_view_submissions"),
+    path("teacher-assignment/<int:assignment_id>/", teacher_assignment_detail, name="teacher_assignment_detail"),
+    path('assign_assignment_to_class/<int:assignment_id>/', assign_assignment_to_class, name='assign_assignment_to_class'),
+    path("assignment/<int:assigned_id>/submit/",submit_assignment,name="submit_assignment"),
+    path("editor/projects/", editor_projects),
+    path("editor/create-project/", create_editor_project),
+    path("editor/project/<int:project_id>/file/<path:file_path>/",editor_project_file),
+    path("editor/project/<int:project_id>/create-file/",create_project_file),
+    path("editor/project/<int:project_id>/files/", get_project_files),
+    path("editor/project/<int:project_id>/teacher-files/", get_project_files_for_teacher, name="teacher_project_files"),
+    path("editor/project/<int:project_id>/rename-file/", rename_file),
+    path("editor/project/<int:project_id>/delete-file/", delete_file),
+    path("editor/move-file/", move_file, name="move_file"),
+    path("editor/project/<int:project_id>/rename/", rename_project, name="rename_project"),
+    path("editor/project/<int:project_id>/delete/", delete_project, name="delete_project"),
+    path("project/<int:project_id>/feedback/", project_feedback, name="project_feedback"),
+    path("project/<int:project_id>/line-comment/", save_line_comment, name="save_line_comment"),
+    path("project/<int:project_id>/line-comment/<int:comment_id>/", delete_line_comment, name="delete_line_comment"),
+    path("api/worker/heartbeat/", worker_heartbeat, name="worker_heartbeat"),
+    path("api/metrics/active-workers/", active_workers_metrics, name="active_workers_metrics"),
+    path("api/metrics/active-users/", active_users_metrics, name="active_users_metrics"),
+    path("api/metrics/instance-status/", instance_status_metrics, name="instance_status_metrics"),
 ]

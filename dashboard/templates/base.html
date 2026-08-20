@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Dashboard{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=15">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    {% include "navbar.html" %}
+
+    <main class="page-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const profileMenuBtn = document.getElementById('profileMenuBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (profileMenuBtn && profileDropdown) {
+          profileMenuBtn.addEventListener('click', function() {
+            profileMenuBtn.classList.toggle('active');
+            profileDropdown.classList.toggle('active');
+          });
+
+          document.addEventListener('click', function(event) {
+            if (!event.target.closest('.profile-menu')) {
+              profileMenuBtn.classList.remove('active');
+              profileDropdown.classList.remove('active');
+            }
+          });
+        }
+      });
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Class - {{ class_obj.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 40px auto; padding: 20px;">
+    <h1>Edit Class: {{ class_obj.name }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="background: #f9f9f9; padding: 30px; border-radius: 8px;">
+            {% for field in form %}
+                <div style="margin-bottom: 20px;">
+                    <label for="{{ field.id_for_label }}" style="display: block; font-weight: 600; margin-bottom: 8px;">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div style="color: #d32f2f; font-size: 14px; margin-top: 5px;">
+                            {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            <button type="submit" style="background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                Save Changes
+            </button>
+            <a href="{% url 'admin_class_view' class_obj.id %}" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 16px;">
+                Cancel
+            </a>
+            <a href="{% url 'delete_class' class_obj.id %}" style="background: #dc3545; color: white; padding: 12px 24px; border: none; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 16px; margin-left: auto;">
+                Delete Class
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    input[type="text"],
+    input[type="time"],
+    input[type="date"],
+    select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    input[type="time"]:focus,
+    input[type="date"]:focus,
+    select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Assign to Class{% endblock %}
+
+{% block extra_css%}
+   <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+{% endblock %}
+{% block extra_head %}
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+{% endblock %}
+</head>
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Class</label><br>
+    <select name="class_id" required>
+        {% for class in classes %}
+            <option value="{{ class.id }}">{{ class.name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label>Due Date</label><br>
+    <input type="date" name="due_date" required><br><br>
+
+    <button type="submit">Assign</button>
+</form>
+{% block content%}

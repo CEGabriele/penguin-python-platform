@@ -1,38 +1,47 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
+{% load static %}
 
-<html>
+{% block title %}{{class.name}}{% endblock %}
 
-<head>
-   <title>{{class.name}} - {{class.day}}</title>
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
+{% block content %}
 
-<body>
-   <h1>{{class.name}} - {{class.day}}</h1>
-   <h3>{{class.teacher}}</h3>
-   <p><b>Email: </b>{{class.teacher.user.email}}</p>
-   <br>
-   <h3>Resources</h3>
-   <ul>
-      {%for resource in class.resources.all%}
-      <li>
-         {%if not resource.locked%}
-         <a href="{% url 'resource_view' resource.id %}">
-            <p>{{resource.title}}</p>
-         </a>
+   {% include "navbar.html" %}
+   <div class="class-page">
+      <div class="class-page-header">
+         <h1>{{class.name}}</h1>
+         {% if class.time %}
+            <p>{{class.day}} - {{class.time}}</p>
+         {% else %}
+            <p>{{class.day}}</p>
+         {% endif %}
+         <p>{{class.teacher}}</p>
+      </div>
 
-         {%endif%}
+      <div class="class-section">
+         <h3>Assignments</h3>
 
-      </li>
-      {%empty%}
-      <li>Nothing to see here.</li>
-      {%endfor%}
-   </ul>
-   <form action="{% url 'student_dashboard' %}" method="post" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit">Return to Dashboard</button>
-   </form>
+         <div class = "class-grid">
+         {% for assigned in assigned_assignments %}
+            <div class="assignment-card">
+               <strong>{{ assigned.assignment.title }}</strong><br>
+               Due: {{ assigned.due_date }}<br>
 
-</body>
+               {% if assigned.assignment.id in submitted_ids %}
+                     ✅ Submitted
+               {% else %}
+                     ❌ Not submitted
+               {% endif %}
 
-</html>
+               <br>
+               <a href="{% url 'editor_view' %}?assigned_id={{ assigned.id }}">
+                  Open Assignment
+            </a>
+            </div>
+         {% empty %}
+            <li>No assignments yet.</li>
+         {% endfor %}
+         </div>
+      </div>
+   </div>
+
+{% endblock %}

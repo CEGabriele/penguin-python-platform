@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta charset="UTF-8" />
+   <title>Penguin Python Editor</title>
+   <link rel="icon" type="image/x-icon" href="penguinlogo.jpg">
+
+   <link rel="stylesheet" href="../styles.css" />
+   <!-- load Monaco and Pyodide -->
+   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+   <script src="https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js"></script>
+</head>
+
+<body>
+   <div id="controls">
+      <button id="run" onclick="runCode()">Run</button>
+      <button id="stop" onclick="stopCode()">Stop</button>
+   </div>
+
+   <div id="main">
+      <div id="editor"></div>
+      <!-- dynamically opens and closes -->
+      <div id="graphics-container" style="display:none; text-align:center; background:#222; padding:5px;">
+         <!-- Pygame canvas -->
+         <canvas id="graphics-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
+         <!-- Turtle canvas -->
+         <canvas id="turtle-canvas" width="640" height="480" style="border:1px solid #444; display:none;"></canvas>
+      </div>
+
+      <div id="console"></div>
+   </div>
+
+   <script type="module" src="./main.js"></script>
+</body>
+
+</html>

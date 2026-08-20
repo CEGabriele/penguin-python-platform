@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 40px auto; padding: 20px;">
+    <h1>Create Assignment</h1>
+
+    <form method="post" style="background: #f9f9f9; padding: 30px; border-radius: 8px;">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 20px;">
+            <label for="title" style="display: block; font-weight: 600; margin-bottom: 8px;">Title</label>
+            <input type="text" name="title" id="title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="curriculum" style="display: block; font-weight: 600; margin-bottom: 8px;">Curriculum Level</label>
+            <select name="curriculum" id="curriculum" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                <option value="">-- Select Curriculum --</option>
+                {% for curriculum in curricula %}
+                    <option value="{{ curriculum.id }}">{{ curriculum.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="description" style="display: block; font-weight: 600; margin-bottom: 8px;">Description</label>
+            <textarea name="description" id="description" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; min-height: 200px; font-family: monospace;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" style="background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                Create Assignment
+            </button>
+            <a href="{% url 'admin_dashboard' %}" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 4px; text-decoration: none; display: inline-block; font-size: 16px;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
