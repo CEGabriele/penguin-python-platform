@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class LoadTestUser(HttpUser):
     """Base class for load testing users with session management."""
+    abstract = True
 
     def __init__(self, environment):
         super().__init__(environment)
@@ -355,6 +356,27 @@ class TeacherLoadTestUser(LoadTestUser):
 
         logger.info("✓ Teacher user logged in")
 
+        # Fetch the teacher's actual classes from the dashboard
+        self.class_codes = self.get_teacher_classes()
+        if not self.class_codes:
+            logger.warning("Teacher has no classes")
+        else:
+            logger.info(f"✓ Teacher has {len(self.class_codes)} class(es): {self.class_codes}")
+
+    def get_teacher_classes(self):
+        """Extract teacher's actual class codes from dashboard."""
+        try:
+            response = self.client.get("/dashboard/teacher-dashboard/")
+            if response.status_code != 200:
+                return []
+
+            # Extract class codes from links: /dashboard/teacher-class-view/<CODE>/
+            class_codes = re.findall(r'/dashboard/teacher-class-view/([A-Z0-9]+)/', response.text)
+            return list(set(class_codes))  # Remove duplicates
+        except Exception as e:
+            logger.error(f"Error fetching teacher classes: {e}")
+            return []
+
     @task(2)
     def view_teacher_dashboard(self):
         """View teacher dashboard."""
@@ -363,11 +385,10 @@ class TeacherLoadTestUser(LoadTestUser):
     @task(3)
     def view_class(self):
         """View a teacher's class."""
-        # Default test class code from setup_load_test
-        # In a real scenario, we'd extract this from the dashboard
-        test_codes = ["TEMP1", "TEMP2", "4A67B3"]  # Fallback codes
-        code = random.choice(test_codes)
+        if not self.class_codes:
+            return
 
+        code = random.choice(self.class_codes)
         self.client.get(
             f"/dashboard/teacher-class-view/{code}/",
             name="/dashboard/teacher-class-view/[class_code]/",
@@ -377,14 +398,25 @@ class TeacherLoadTestUser(LoadTestUser):
     @task(2)
     def view_submissions(self):
         """View student submissions (teacher view)."""
-        # View submissions for a specific assignment
-        # IDs would normally be extracted from class/assignment views
-        for assignment_id in [1, 2]:
-            self.client.get(
-                f"/dashboard/assignment/{assignment_id}/submissions/",
-                name="/dashboard/assignment/[id]/submissions/ [teacher]",
-                allow_redirects=True
-            )
+        if not self.class_codes:
+            return
+
+        # Get a random class and try to find assignments
+        code = random.choice(self.class_codes)
+        try:
+            response = self.client.get(f"/dashboard/teacher-class-view/{code}/")
+            if response.status_code == 200:
+                # Extract assignment IDs from the class view
+                assignment_ids = re.findall(r'/dashboard/assignment/(\d+)/submissions/', response.text)
+                if assignment_ids:
+                    assignment_id = random.choice(assignment_ids)
+                    self.client.get(
+                        f"/dashboard/assignment/{assignment_id}/submissions/",
+                        name="/dashboard/assignment/[id]/submissions/ [teacher]",
+                        allow_redirects=True
+                    )
+        except Exception as e:
+            logger.error(f"Error viewing submissions: {e}")
 
     @task(1)
     def view_student_code(self):

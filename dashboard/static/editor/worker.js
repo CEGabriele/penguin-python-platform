@@ -163,7 +163,6 @@ function autoWrapAsync(code) {
 // ---------------- LOAD PYODIDE ----------------
 async function ensurePyodide() {
   if (!pyodide) {
-  safePost({ type: "stdout", data: "Loading Python...\n" });
 
   pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/"

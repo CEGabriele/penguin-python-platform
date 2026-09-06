@@ -1081,7 +1081,15 @@ def editor_view(request):
     else:
         class_options = []
 
-    projects = CodeProject.objects.filter(owner=request.user).select_related("for_class")
+    # Only fetch needed fields to avoid loading file content unnecessarily
+    # File content will be loaded when user clicks on a specific project
+    projects = (
+        CodeProject.objects
+        .filter(owner=request.user)
+        .select_related("for_class")
+        .only("id", "name", "last_edited", "for_class__id", "for_class__name")
+        .order_by("-last_edited")
+    )
 
     grouped = defaultdict(list)
 
