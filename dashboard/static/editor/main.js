@@ -430,9 +430,13 @@ function builtinRead(file) {
 // replacing Skulpt's ontimer function with one that can handle multiple timers at a timer
 const turtleTimerQueue = {
   timers: [],
+  // set by stopCode so callbacks already running can't reschedule themselves
+  stopped: false,
   schedule(fn, delayMs) {
+    if (this.stopped) return null;
     const id = setTimeout(() => {
       this.timers = this.timers.filter(t => t.id !== id);
+      if (this.stopped) return;
       try {
         Sk.misceval.asyncToPromise(() => Sk.misceval.callsimOrSuspendArray(fn, []))
             .catch(err => {
@@ -448,6 +452,10 @@ const turtleTimerQueue = {
   clearAll() {
     this.timers.forEach(t => clearTimeout(t.id));
     this.timers = [];
+  },
+  stop() {
+    this.stopped = true;
+    this.clearAll();
   }
 };
 
@@ -479,6 +487,7 @@ Sk.onAfterImport = function (moduleName) {
 async function runWithSkulptTurtle(code) {
   // clear timer queue before running
   turtleTimerQueue.clearAll();
+  turtleTimerQueue.stopped = false;
   const container = document.getElementById("graphics-container");
   const pygameCanvas = document.getElementById("graphics-canvas");
   const turtleCanvas = document.getElementById("turtle-canvas");
@@ -559,6 +568,11 @@ async function stopCode() {
   inputInProgress = false;
   codeRunning = false;
   stopWorkerHeartbeat();
+
+  // cancel pending turtle ontimer callbacks and wipe Skulpt's drawing
+  turtleTimerQueue.stop();
+  const turtleTarget = document.getElementById('turtle-canvas');
+  if (turtleTarget) turtleTarget.innerHTML = '';
 
   if (worker){
     try { worker.terminate(); } catch {}

@@ -28,7 +28,7 @@ There is currently no meaningful test suite (`dashboard/tests.py` is the default
 ### Two runtime halves
 
 1. **Django backend** (`dashboard/`) — auth, class/assignment/submission data model, and a REST-ish JSON API for the code editor (autosave, file CRUD).
-2. **Client-side Python runtime** (`dashboard/static/editor/`) — a Pyodide-based in-browser Python interpreter running in a Web Worker (`worker.js`), with `main.js` (editor UI/orchestration) and `turtle.js` (canvas-based turtle graphics shim). Code never executes on the server — it runs in the student's browser via WebAssembly.
+2. **Client-side Python runtime** (`dashboard/static/editor/`) — a Pyodide-based in-browser Python interpreter running in a Web Worker (`worker.js`), with `main.js` (editor UI/orchestration). Turtle programs bypass Pyodide entirely and run on Skulpt (loaded in `editor_view.html`) — see below. `turtle.js` is a legacy shim and is not used for turtle graphics; ignore it. Code never executes on the server — it runs in the student's browser via WebAssembly.
 
 ### Roles and access control
 
@@ -65,7 +65,7 @@ The `editor/project/<id>/...` endpoints (rename/delete/move/create file, list fi
 Runs entirely in a Web Worker, loading Pyodide from a CDN (no server round-trip to execute code):
 - Injects a Python "bootstrap" (`PY_BOOTSTRAP`) that redirects `print`/`stdout` to `postMessage` and replaces `input()` with an async version that blocks on a JS `Future` resolved by an `input_response` message from the main thread — this is how the console UI provides interactive stdin.
 - `autoWrapAsync()` statically rewrites submitted code: any function whose body (transitively) calls something requiring `await` gets turned into `async def`, and its call sites get `await` inserted. This lets synchronous-looking student code use blocking `input()` without them writing `async`/`await` themselves. Be careful modifying this — it's regex-based source rewriting, not an AST transform, so edits can be fragile around edge cases (e.g. it explicitly special-cases a bare `action()` call pattern for turtle/pygame event loops).
-- `pygame-ce` is lazy-loaded via `pyodide.loadPackage` only when `usesPygame` is set. Turtle graphics is implemented separately in `turtle.js`, not via a Python package.
+- `pygame-ce` is lazy-loaded via `pyodide.loadPackage` only when `usesPygame` is set. Turtle graphics runs on **Skulpt**, not Pyodide: in `main.js`, `shouldUseSkulptTurtle()` checks for `import turtle` / `from turtle import` at the start of a line, and if found `runCode` hands the code to `runWithSkulptTurtle()` instead of the worker. Skulpt implements the standard CPython turtle API (`Screen().setup`, `bgcolor`, `shape`, etc.).
 - Project files are synced into Pyodide's in-memory FS (`pyodide.FS.writeFile`) by diffing against `lastProjectFiles` before each run, so only changed files get rewritten.
 
 ### Settings layering
