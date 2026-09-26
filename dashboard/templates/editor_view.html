@@ -66,10 +66,10 @@
 <div class="page-bubble">
 
     {% if assigned %}
-        <div class="assignment-context">
-            <strong>Assignment:</strong> {{ assigned.assignment.title }}<br>
-            <div style="white-space: pre-wrap; margin-top: 10px; line-height: 1.5;">{{ assigned.assignment.description }}</div>
-        </div>
+        <details class="assignment-context assignment-description" open>
+            <summary><strong>Assignment:</strong> {{ assigned.assignment.title }}</summary>
+            <div class="assignment-description-body">{{ assigned.assignment.description }}</div>
+        </details>
     {% endif %}
 
     <form method="post" id="editorForm">
