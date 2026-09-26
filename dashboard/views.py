@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm
+from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignmentEditForm, generate_unique_username
 from .models import *
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -489,6 +489,42 @@ def create_assignment(request):
     return render(request, "create_assignment.html", {"curricula": curricula, "selected_curriculum": selected_curriculum,
         "selected_class": selected_class
     })
+
+@login_required
+@teacher_required
+def edit_assignment(request, class_id, assignment_id):
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+    class_obj = get_object_or_404(Class, id=class_id)
+
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who owns the class
+    if not (teacher.is_admin or assignment.created_by == teacher):
+        return redirect('teacher_dashboard')
+    
+    assigned_classes = assignment.assigned_instances.select_related("for_class")
+
+    if request.method == "POST":
+        form = AssignmentEditForm(request.POST, instance=assignment)
+        if form.is_valid():
+            form.save()
+            return redirect('teacher_class_view', class_obj.code)
+    else:
+        form = AssignmentEditForm(instance=assignment)
+
+    return render(
+        request,
+        'edit_assignment.html',
+        {
+            'form': form,
+            'assignment': assignment,
+            'teacher': teacher,
+            'assigned_classes': assigned_classes,
+            'class_obj': class_obj
+        }
+    )
+
+
 @login_required
 @teacher_required
 def teacher_assignment_detail(request, assignment_id):
@@ -544,6 +580,25 @@ def assign_assignment_to_class(request, assignment_id):
         "assignment": assignment,
         "classes": classes,
     })
+
+@login_required
+@teacher_required
+def edit_due_date(request, assigned_id):
+    assigned = get_object_or_404(AssignedToClass, id=assigned_id)
+    teacher = request.user.teacher
+
+    # Check permission: must be admin or the teacher who created it
+    if not (teacher.is_admin or assigned.assignment.created_by == teacher):
+        return redirect('teacher_dashboard')
+
+    if request.method == "POST":
+        due_date = request.POST.get("due_date")
+        assigned.due_date = due_date
+        assigned.save()
+
+        return redirect("teacher_assignment_detail", assignment_id=assigned.assignment.id)
+
+    return render(request, "teacher_dashboard")
 
 @login_required
 @teacher_required

@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Student, Teacher, Class, Curriculum
+from .models import User, Student, Teacher, Class, Curriculum, Assignment
 from django.utils.html import format_html
 
 
@@ -132,3 +132,16 @@ class TeacherPasswordResetForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['teacher'].label_from_instance = lambda obj: f"{obj.user.get_full_name()} ({obj.user.username})"
+
+class AssignmentEditForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ['title', 'description', 'curriculum']
+        widgets = {
+            "time": forms.TimeInput(attrs={"type": "time"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].required = False
+        self.fields['curriculum'].required = False
