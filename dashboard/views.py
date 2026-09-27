@@ -143,6 +143,72 @@ def teacher_dashboard(request):
 
 @login_required
 @teacher_required
+@require_GET
+def check_duplicate_student(request):
+    if not request.user.teacher.is_admin:
+        return HttpResponseBadRequest()
+
+    first_name = request.GET.get('first_name', '').strip()
+    last_name = request.GET.get('last_name', '').strip()
+    if not (first_name and last_name):
+        return JsonResponse({'matches': []})
+
+    matches = (
+        Student.objects
+        .filter(user__first_name__iexact=first_name, user__last_name__iexact=last_name)
+        .select_related('user')
+        .prefetch_related('classes')
+        .order_by('user__username')
+    )
+
+    return JsonResponse({
+        'matches': [
+            {
+                'full_name': m.user.get_full_name(),
+                'username': m.user.username,
+                'classes': [f"{c.name} ({c.location})" for c in m.classes.all()],
+            }
+            for m in matches
+        ],
+        'resulting_username': generate_unique_username(first_name, last_name),
+    })
+
+
+@login_required
+@teacher_required
+@require_GET
+def check_duplicate_teacher(request):
+    if not request.user.teacher.is_admin:
+        return HttpResponseBadRequest()
+
+    first_name = request.GET.get('first_name', '').strip()
+    last_name = request.GET.get('last_name', '').strip()
+    if not (first_name and last_name):
+        return JsonResponse({'matches': []})
+
+    matches = (
+        Teacher.objects
+        .filter(user__first_name__iexact=first_name, user__last_name__iexact=last_name)
+        .select_related('user')
+        .prefetch_related('classes')
+        .order_by('user__username')
+    )
+
+    return JsonResponse({
+        'matches': [
+            {
+                'full_name': m.user.get_full_name(),
+                'username': m.user.username,
+                'classes': [f"{c.name} ({c.location})" for c in m.classes.all()],
+            }
+            for m in matches
+        ],
+        'resulting_username': generate_unique_username(first_name, last_name),
+    })
+
+
+@login_required
+@teacher_required
 def admin_dashboard(request):
     student_form = StudentCreationForm()
     teacher_form = TeacherCreationForm()
@@ -819,35 +885,50 @@ def active_workers_metrics(request):
 @require_GET
 def active_users_metrics(request):
     """
-    Returns count of currently authenticated users (logged-in sessions).
+    Returns users with recent activity (code edits in last N minutes).
+    Activity is determined by CodeProject.last_edited, not login sessions.
+    Query param: ?minutes=15 (default) to adjust activity window.
     Public endpoint for monitoring systems.
     """
-    from django.contrib.sessions.models import Session
     from django.contrib.auth.models import User
     import json
 
     try:
-        active_sessions = 0
-        for session in Session.objects.filter(expire_date__gte=timezone.now()):
-            try:
-                data = session.get_decoded()
-                if data.get('_auth_user_id'):
-                    active_sessions += 1
-            except:
-                pass
+        now = timezone.now()
+        recently_active_minutes = int(request.GET.get("minutes", 15))
+        time_threshold = now - timedelta(minutes=recently_active_minutes)
 
-        active_users = User.objects.filter(is_active=True).count()
+        # Users who edited code recently
+        recently_active_user_ids = set(
+            CodeProject.objects
+            .filter(last_edited__gte=time_threshold)
+            .values_list("owner_id", flat=True)
+            .distinct()
+        )
 
         # Count by role
-        students = User.objects.filter(student__isnull=False).count()
-        teachers = User.objects.filter(teacher__isnull=False).count()
+        recently_active_students = User.objects.filter(
+            id__in=recently_active_user_ids,
+            student__isnull=False
+        ).count()
+        recently_active_teachers = User.objects.filter(
+            id__in=recently_active_user_ids,
+            teacher__isnull=False
+        ).count()
+
+        total_users = User.objects.filter(is_active=True).count()
+        students_total = User.objects.filter(student__isnull=False).count()
+        teachers_total = User.objects.filter(teacher__isnull=False).count()
 
         return JsonResponse({
             "timestamp": timezone.now().isoformat() + "Z",
-            "active_sessions": active_sessions,
-            "total_users": active_users,
-            "students": students,
-            "teachers": teachers,
+            "activity_window_minutes": recently_active_minutes,
+            "recently_active": len(recently_active_user_ids),
+            "recently_active_students": recently_active_students,
+            "recently_active_teachers": recently_active_teachers,
+            "total_users": total_users,
+            "students": students_total,
+            "teachers": teachers_total,
         }, status=200)
     except Exception as e:
         logger.error(f"Active users metrics error: {e}")
@@ -1055,7 +1136,15 @@ def editor_view(request):
     else:
         class_options = []
 
-    projects = CodeProject.objects.filter(owner=request.user).select_related("for_class")
+    # Only fetch needed fields to avoid loading file content unnecessarily
+    # File content will be loaded when user clicks on a specific project
+    projects = (
+        CodeProject.objects
+        .filter(owner=request.user)
+        .select_related("for_class")
+        .only("id", "name", "last_edited", "for_class__id", "for_class__name")
+        .order_by("-last_edited")
+    )
 
     grouped = defaultdict(list)
 
@@ -1148,7 +1237,7 @@ def editor_projects(request):
             "last_edited": project.last_edited.isoformat() if project.last_edited else None,
         })
 
-    # Get orphaned projects (from deleted classes)
+    # Get projects from deleted classes
     orphaned_projects = (
         CodeProject.objects
         .filter(owner=request.user, for_class__isnull=True)
@@ -1174,7 +1263,7 @@ def editor_projects(request):
             "projects": projects_by_class_id[class_obj.id],
         })
 
-    # Add orphaned projects section if any exist
+    # Add projects  section if any exist
     if orphaned_list:
         result.append({
             "id": None,

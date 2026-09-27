@@ -652,6 +652,20 @@ a {
     font-size: 0.95rem;
     line-height: 1.4;
 }
+.assignment-description {
+    text-align: left;
+    flex-shrink: 0;
+}
+.assignment-description summary {
+    cursor: pointer;
+}
+.assignment-description-body {
+    white-space: pre-wrap;
+    margin-top: 10px;
+    line-height: 1.5;
+    max-height: 25vh;
+    overflow-y: auto;
+}
 
 
 /* ===== Light File Sidebar ===== */
