@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container" style="max-width: 600px; margin: 40px auto; padding: 20px;">
-   <h1>Edit Assignment: {{ title.name }}</h1>
+   <h1>Edit Assignment: {{ assignment.title}}</h1>
 
    <form method="post">
       {% csrf_token %}
@@ -35,7 +35,8 @@
                Cancel
             </a>
          </div>
-   </form>
+      </div>
+      </form>
 </div>
 
 <style>

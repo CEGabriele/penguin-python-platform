@@ -9,6 +9,7 @@ from django.db.models import OuterRef, Exists, Count, Q, Max
 from collections import defaultdict
 from django.db import connection
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
 from django.views.decorators.http import require_GET
@@ -658,13 +659,14 @@ def edit_due_date(request, assigned_id):
         return redirect('teacher_dashboard')
 
     if request.method == "POST":
-        due_date = request.POST.get("due_date")
-        assigned.due_date = due_date
-        assigned.save()
+        due_date = parse_date(request.POST.get("due_date", ""))
+        if due_date:
+            assigned.due_date = due_date
+            assigned.save()
 
         return redirect("teacher_assignment_detail", assignment_id=assigned.assignment.id)
 
-    return render(request, "teacher_dashboard")
+    return redirect("teacher_dashboard")
 
 @login_required
 @teacher_required

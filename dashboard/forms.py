@@ -222,4 +222,3 @@ class AssignmentEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['description'].required = False
-        self.fields['curriculum'].required = False
