@@ -2,83 +2,111 @@
 
 {% block title %}{{class.name}}{% endblock %}
 {% block extra_head%}
-   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
 {% endblock%}
 {% block content %}
-   <div class="class-page">
-      
-      <div class="class-page-header">
-         <h1>{{class.name}}</h1>
-         {% if class.time %}
-            <p>{{class.day}} - {{class.time}}</p>
-         {% else %}
-            <p>{{class.day}}</p>
-         {% endif %}
-         <a class="button" href="{% url 'create_assignment' %}?class={{ class.id }}">
-            Create New Assignment
-         </a>
-      </div>
-      
-      <div class = 'class-section'>
-         <h2>Students</h2>
-         <div class="student-grid">
-            {% for student in students%}
-               <div class = "student-card">
-                     <a href="{% url 'view_student' student.user.username%}" class = "button"> {{student.user.get_full_name|default:student.user.username}}</a>
-               </div>
-            {%empty%}
-               <p>No students enrolled yet.</p>
-            {%endfor%}
+<div class="class-page">
+
+   <div class="class-page-header">
+      <h1>{{class.name}}</h1>
+      {% if class.time %}
+      <p>{{class.day}} - {{class.time}}</p>
+      {% else %}
+      <p>{{class.day}}</p>
+      {% endif %}
+      <a class="button" href="{% url 'create_assignment' %}?class={{ class.id }}">
+         Create New Assignment
+      </a>
+   </div>
+
+   <div class='class-section'>
+      <h2>Students</h2>
+      <div class="student-grid">
+         {% for student in students%}
+         <div class="student-card">
+            <a href="{% url 'view_student' student.user.username%}" class="button">
+               {{student.user.get_full_name|default:student.user.username}}</a>
          </div>
+         {%empty%}
+         <p>No students enrolled yet.</p>
+         {%endfor%}
       </div>
-      <div class = 'class-section'>
-         <h2>Assigned Assignments</h2>
-         <div class="assignment-list">
-               {% for assigned in assigned_assignments %}
-                  <div class="assignment-card teacher-assignment-card">
-                     <div class="assignment-top">
-                           <div>
-                              <h3>{{ assigned.assignment.title }}</h3>
-                              <p class="muted">Due {{ assigned.due_date }}</p>
-                           </div>
-                           <div class="assignment-actions">
-                              <a class="button small-btn" href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
-                                 Assignment Details
-                              </a>
-                              <a class="button small-btn" href="{% url 'teacher_view_submissions' assigned.id %}">
-                                 View Submissions
-                              </a>
-                           </div>
+   </div>
+   <div class='class-section'>
+      <h2>Assigned Assignments</h2>
+      <div class="assignment-list">
+         {% for assigned in assigned_assignments %}
+         <div class="assignment-card teacher-assignment-card">
+            <div class="assignment-top">
+               <div>
+                  <h3>{{ assigned.assignment.title }}</h3>
+                  <p class="muted">Due {{ assigned.due_date }}</p>
+                  <div class="due-date">
+                     <button class="change-due-date">Change</button>
+                     <div class="change-date-form">
+                        <form method="post" action="{% url 'edit_due_date' assigned.id %}">
+                           {% csrf_token %}
+                           <input type="date" name="due_date" required>
+                           <button>Save</button>
+                        </form>
                      </div>
                   </div>
-               {% empty %}
-                  <p>No assignments assigned yet.</p>
-               {% endfor %}
-         </div>
-      </div>
 
-      
-      <div class = 'class-section'>
-         <h3>Assign new</h3>
-         {% for assignment in available_assignments %}
-         <div class="assignment-card">
-         <strong>{{ assignment.title }}</strong>
-         <p>{{ assignment.description }}</p>
-      
-         {% if assignment.id in assigned_assignment_ids %}
-            <span class="muted">Already assigned</span>
-         {% else %}
-            <form method="post"
-                  action="{% url 'assign_assignment_to_class' assignment.id %}">
-               {% csrf_token %}
-               <input type="hidden" name="class_id" value="{{ class.id }}">
-               <input type="date" name="due_date" required>
-               <button>Assign</button>
-            </form>
-         {% endif %}
+
+               </div>
+               <div class="assignment-actions">
+
+                  <a class="button small-btn" href="{% url 'teacher_assignment_detail' assigned.assignment.id %}">
+                     Assignment Details
+                  </a>
+                  <a class="button small-btn" href="{% url 'teacher_view_submissions' assigned.id %}">
+                     View Submissions
+                  </a>
+               </div>
+            </div>
          </div>
+         {% empty %}
+         <p>No assignments assigned yet.</p>
          {% endfor %}
       </div>
    </div>
 
+
+   <div class='class-section'>
+      <h3>Assign new</h3>
+      {% for assignment in available_assignments %}
+      <div class="assignment-card">
+         <strong>{{ assignment.title }}</strong>
+         <a class="button small-btn" href="{% url 'edit_assignment' class_id=class.id assignment_id=assignment.id %}">
+            Edit
+         </a>
+         <p>{{ assignment.description }}</p>
+
+         {% if assignment.id in assigned_assignment_ids %}
+         <span class="muted">Already assigned</span>
+         {% else %}
+         <form method="post" action="{% url 'assign_assignment_to_class' assignment.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="class_id" value="{{ class.id }}">
+            <input type="date" name="due_date" required>
+            <button>Assign</button>
+         </form>
+         {% endif %}
+      </div>
+      {% endfor %}
+   </div>
+</div>
+<script>
+   document.querySelectorAll(".change-due-date").forEach(button => {
+      button.parentNode.querySelector('.change-date-form').style.display = "none";
+      button.addEventListener("click", () => {
+         if (button.parentNode.querySelector('.change-date-form').style.display == "none") {
+            button.parentNode.querySelector('.change-date-form').style.display = "inherit";
+         } else {
+            button.parentNode.querySelector('.change-date-form').style.display = "none";
+         }
+
+      });
+   });
+</script>
 {%endblock%}
