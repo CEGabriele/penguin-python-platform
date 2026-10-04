@@ -178,7 +178,7 @@ class ClassCreationForm(forms.ModelForm):
 class ClassEditForm(forms.ModelForm):
     class Meta:
         model = Class
-        fields = ['name', 'day', 'time', 'location', 'curriculum']
+        fields = ['name', 'day', 'time', 'teacher', 'location', 'curriculum']
         widgets = {
             "time": forms.TimeInput(attrs={"type": "time"}),
         }
@@ -187,6 +187,7 @@ class ClassEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['time'].required = False
         self.fields['curriculum'].required = False
+        self.fields['teacher'].queryset = Teacher.objects.select_related('user').order_by('user__first_name', 'user__last_name')
 
 class StudentPasswordResetForm(forms.Form):
     student = forms.ModelChoiceField(
