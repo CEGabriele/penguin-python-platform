@@ -29,6 +29,37 @@ let statusSpan = document.getElementById("saveStatus");
 let workerReady = false;
 let workerReadyPromiseResolve = null;
 
+const TEXT_EXTENSIONS = [".py", ".txt"];
+const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
+
+function fileKind(path) {
+  const lower = String(path || "").toLowerCase();
+  const dot = lower.lastIndexOf(".");
+  const ext = dot === -1 ? "" : lower.slice(dot);
+  if (TEXT_EXTENSIONS.includes(ext)) return "text";
+  if (IMAGE_EXTENSIONS.includes(ext)) return "image";
+  return null;
+}
+window.fileKind = fileKind;
+
+function isPythonFile(path) {
+  return String(path || "").toLowerCase().endsWith(".py");
+}
+
+function editorLanguageFor(path) {
+  return isPythonFile(path) ? "python" : "plaintext";
+}
+
+function canSaveCurrentFile() {
+  return fileKind(currentFilePath) === "text";
+}
+
+// .txt files the running program has written, latest content per path.
+// Saved to the project when the program finishes or Stop is pressed.
+let filesWrittenByCode = {};
+const MAX_WRITTEN_FILES_PER_RUN = 20;
+const MAX_WRITTEN_FILE_BYTES = 1024 * 1024; // matches MAX_TEXT_BYTES in views.py
+
 // Worker heartbeat tracking
 const WORKER_SESSION_ID = 'worker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 let heartbeatInterval = null;
@@ -66,15 +97,18 @@ function waitForWorkerReady() {
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
 require(['vs/editor/editor.main'], function () {
   const hidden = document.getElementById("id_code");
-  
+  const initialFilePath = document.getElementById("current_file_path")?.value || "main.py";
+
+  // only empty Python files get the starter code; text files start blank
   const code =
     hidden && hidden.value !== ""
       ? hidden.value
-      : default_code;
-  
+      : (isPythonFile(initialFilePath) ? default_code : "");
+
+
   editor = monaco.editor.create(document.getElementById('editor'), {
-    value: code,
-    language: 'python',
+    value: fileKind(initialFilePath) === "image" ? "" : code,
+    language: editorLanguageFor(initialFilePath),
     theme: 'vs-dark',
     automaticLayout: true,
     scrollBeyondLastLine: false,
@@ -86,9 +120,9 @@ require(['vs/editor/editor.main'], function () {
     projectId = null;
   }
 
-  currentFilePath = document.getElementById("current_file_path")?.value || "main.py";
+  currentFilePath = initialFilePath;
 
-  if (window.IS_READONLY) {
+  if (window.IS_READONLY || !canSaveCurrentFile()) {
     editor.updateOptions({ readOnly: true });
   }
 
@@ -276,14 +310,21 @@ function attachWorkerHandlers(w) {
         }
         break;
       }
+      case 'file_written':
+        if (String(message.path || "").toLowerCase().endsWith(".txt")) {
+          filesWrittenByCode[message.path] = message.data ?? "";
+        }
+        break;
       case 'done':
         codeRunning = false;
         stopWorkerHeartbeat();
+        saveFilesWrittenByCode();
         break;
       case 'error':
         console_write(`<span style="color:red;">${message.error}</span>\n`);
         codeRunning = false;
         stopWorkerHeartbeat();
+        saveFilesWrittenByCode();
         break;
     }
   };
@@ -323,13 +364,31 @@ async function loadProjectFilesIfNeeded() {
   const data = await response.json();
 
   if (data.ok && data.files) {
-    cachedProjectFiles = data.files;
+    const files = { ...data.files };
+
+    // images are fetched as raw bytes so Python can load them
+    await Promise.all((data.images || []).map(async (path) => {
+      try {
+        const res = await fetch(projectFileRawUrl(projectId, path));
+        if (res.ok) files[path] = new Uint8Array(await res.arrayBuffer());
+      } catch (err) {
+        console.warn("Failed loading image:", path, err);
+      }
+    }));
+
+    cachedProjectFiles = files;
     cachedProjectId = projectId;
     return { ...cachedProjectFiles };
   }
 
   return {};
 }
+
+function projectFileRawUrl(pid, path) {
+  const encodedPath = String(path).split("/").map(encodeURIComponent).join("/");
+  return `/dashboard/editor/project/${pid}/raw/${encodedPath}`;
+}
+window.projectFileRawUrl = projectFileRawUrl;
 
 
 
@@ -347,10 +406,36 @@ async function runCode() {
 
   codeRunning = true;
   inputInProgress = false;
+  filesWrittenByCode = {};
   startWorkerHeartbeat();
 
+  // load the rest of the project (text files + images) so code can open them
+  const editorCode = editor.getValue();
+  let files = {};
+
+  if (projectId && projectId !== "None") {
+    try {
+      files = await loadProjectFilesIfNeeded();
+    } catch (err) {
+      console.warn("Failed loading project files:", err);
+    }
+  }
+  if (canSaveCurrentFile()) {
+    files[currentFilePath] = editorCode;
+    if (cachedProjectFiles) cachedProjectFiles[currentFilePath] = editorCode;
+  }
+
+  // a .txt or image file can't be run, so run the project's main.py instead
+  const entryPath = isPythonFile(currentFilePath) ? currentFilePath : "main.py";
+  if (typeof files[entryPath] !== "string") {
+    console_write("Nothing to run: open a .py file or add a main.py to this project.\n");
+    codeRunning = false;
+    stopWorkerHeartbeat();
+    return;
+  }
+
   // get code and check what is used
-  const rawCode = editor.getValue();
+  const rawCode = files[entryPath];
 
   const usesSkulptTurtle = shouldUseSkulptTurtle(rawCode);
   if (usesSkulptTurtle) {
@@ -385,24 +470,10 @@ async function runCode() {
     abortController = null;
   }
 
-  let files = {
-    [currentFilePath]: rawCode
-  };
-  
-  if (projectId && projectId !== "None") {
-    try {
-      files = await loadProjectFilesIfNeeded();
-      files[currentFilePath] = rawCode;
-    } catch (err) {
-      console.warn("Failed loading project files:", err);
-    }
-  }
-  
-  
   worker.postMessage({
     type: "run_project",
     files: files,
-    entry: currentFilePath,
+    entry: entryPath,
     usesPygame
   });
 }
@@ -470,6 +541,39 @@ function makeOntimerPatch() {
   });
 }
 
+// Fixes two Skulpt 1.2.0 bugs in the turtle methods that load images
+// (bgpic, register_shape, addshape):
+// 1. register_shape/addshape don't declare their arguments, so
+//    screen.register_shape("cat.png") fails with "takes 1 positional argument
+//    but 2 were given". Re-wrapping the original JS passes arguments through.
+// 2. When an image fails to load, Skulpt drops the error, so a misspelled
+//    name silently draws nothing. Raise it as a Python error instead.
+function makeImageMethodPatch(original, methodName) {
+  if (!original || original.$imagePatch) return original;
+  const impl = original.func_code;
+  const patched = new Sk.builtin.func(function (...args) {
+    const result = impl.apply(null, args.filter(a => a !== undefined));
+
+    if (result instanceof Sk.misceval.Suspension && result.data?.type === "Sk.promise") {
+      const resume = result.resume;
+      result.resume = function () {
+        if (this.data.error) {
+          const nameArg = args.find(a => a instanceof Sk.builtin.str);
+          const name = nameArg ? nameArg.v : "";
+          throw new Sk.builtin.IOError(
+            `${methodName}(): can't find an image called "${name}" in this project. ` +
+            `Check the spelling matches the file name in the sidebar and `
+          );
+        }
+        return resume.call(this);
+      };
+    }
+    return result;
+  });
+  patched.$imagePatch = true;
+  return patched;
+}
+
 Sk.onAfterImport = function (moduleName) {
   if (moduleName !== "turtle") return;
   const turtleMod = Sk.sysmodules.quick$lookup(new Sk.builtin.str("turtle"));
@@ -481,6 +585,15 @@ Sk.onAfterImport = function (moduleName) {
   const ScreenClass = turtleMod.$d.Screen;
   if (ScreenClass && ScreenClass.prototype && ScreenClass.prototype.ontimer) {
     ScreenClass.prototype.ontimer = makeOntimerPatch();
+  }
+
+  for (const name of ["bgpic", "register_shape", "addshape"]) {
+    if (turtleMod.$d[name]) {
+      turtleMod.$d[name] = makeImageMethodPatch(turtleMod.$d[name], name);
+    }
+    if (ScreenClass && ScreenClass.prototype && ScreenClass.prototype[name]) {
+      ScreenClass.prototype[name] = makeImageMethodPatch(ScreenClass.prototype[name], name);
+    }
   }
 };
 
@@ -520,6 +633,10 @@ async function runWithSkulptTurtle(code) {
   Sk.TurtleGraphics.target = "turtle-canvas";
   Sk.TurtleGraphics.width = size.width;
   Sk.TurtleGraphics.height = size.height;
+
+  Sk.TurtleGraphics.assets = projectId
+    ? (name) => projectFileRawUrl(projectId, name)
+    : {};
 
   try {
     await Sk.misceval.asyncToPromise(() =>
@@ -578,6 +695,9 @@ async function stopCode() {
     try { worker.terminate(); } catch {}
     worker = null;
   }
+
+  // the worker reports files as they're closed, so these are already here
+  saveFilesWrittenByCode();
 
   console_write(`
     <div style="
@@ -646,7 +766,7 @@ function getCookie(name) {
 }
 
 async function autosave() {
-  if (window.IS_READONLY) return;
+  if (window.IS_READONLY || !canSaveCurrentFile()) return;
   if (!editor || !editor.getModel()) return;
 
   const code = editor.getValue();
@@ -684,6 +804,61 @@ async function autosave() {
 
 }
 
+// Saves .txt files the program wrote (open("out.txt", "w") etc.) to the project.
+async function saveFilesWrittenByCode() {
+  const written = filesWrittenByCode;
+  filesWrittenByCode = {};
+
+  let paths = Object.keys(written);
+  if (!paths.length || !projectId || window.IS_READONLY) return;
+
+  if (paths.length > MAX_WRITTEN_FILES_PER_RUN) {
+    console_write(`Only the first ${MAX_WRITTEN_FILES_PER_RUN} text files your program wrote were saved.\n`);
+    paths = paths.slice(0, MAX_WRITTEN_FILES_PER_RUN);
+  }
+
+  const saved = [];
+  let createdNewFile = false;
+
+  for (const path of paths) {
+    const content = written[path];
+
+    if (new TextEncoder().encode(content).length > MAX_WRITTEN_FILE_BYTES) {
+      console_write(`<span style="color:red;">${escapeHtml(path)} is bigger than 1 MB, so it wasn't saved.</span>\n`);
+      continue;
+    }
+
+    try {
+      const response = await fetch(window.location.href, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ project_id: projectId, path, code: content }),
+      });
+      if (!response.ok) continue; // e.g. a teacher viewing a student's project
+
+      if (!cachedProjectFiles || !(path in cachedProjectFiles)) createdNewFile = true;
+      if (cachedProjectFiles) cachedProjectFiles[path] = content;
+      saved.push(path);
+
+      // keep the open file in sync, or the next autosave would overwrite it
+      if (path === currentFilePath && editor) {
+        lastSavedCode = content;
+        editor.setValue(content);
+      }
+    } catch (err) {
+      console.error("Saving written file failed:", path, err);
+    }
+  }
+
+  if (saved.length) {
+    console_write(`<span style="color:#7fb3d5;">Saved to your project: ${escapeHtml(saved.join(", "))}</span>\n`);
+    if (createdNewFile && typeof window.loadProjects === "function") window.loadProjects();
+  }
+}
+
 function onEditorChange() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(autosave, 600);
@@ -695,7 +870,7 @@ window.addEventListener("resize", () => {
 
 // Autosave immediately when leaving page or switching tabs
 window.addEventListener("beforeunload", () => {
-  if (window.IS_READONLY) return;
+  if (window.IS_READONLY || !canSaveCurrentFile()) return;
   if (!editor || !editor.getModel()) return;
   const code = editor.getValue();
   if (!projectId || code === lastSavedCode) return;

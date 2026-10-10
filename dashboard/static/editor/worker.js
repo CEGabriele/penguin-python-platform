@@ -23,6 +23,7 @@ self.safePost = (msg) => {
       method: msg.method,
       args: msg.args,
       error: msg.error ? String(msg.error) : undefined,
+      path: msg.path ? String(msg.path) : undefined,
     });
   } catch (err) {
     _origPostMessage({ type: "stdout", data: `[safePost error: ${err}]` });
@@ -85,7 +86,46 @@ def _input_abort():
     if _input_future and not _input_future.done():
         _input_future.set_exception(asyncio.CancelledError("Input aborted"))
         _input_future = None
-builtins.input = input 
+builtins.input = input
+
+# Report .txt files the program writes, as soon as each one is closed, so the
+# editor can save them to the project. Reporting on close (rather than scanning
+# when the run ends) means the editor already has them if Stop kills the worker.
+import io, os
+_real_open = io.open
+_PROJECT_DIR = os.getcwd()
+
+def _report_written_file(abspath):
+    rel = os.path.relpath(abspath, _PROJECT_DIR)
+    if rel.startswith("..") or not rel.lower().endswith(".txt"):
+        return
+    try:
+        with _real_open(abspath, "r", encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except Exception:
+        return
+    js.safePost(js.Object.fromEntries([
+        ["type", "file_written"], ["path", rel], ["data", content]
+    ]))
+
+def _tracking_open(file, mode="r", *args, **kwargs):
+    f = _real_open(file, mode, *args, **kwargs)
+    if isinstance(file, (str, os.PathLike)) and any(c in mode for c in "wax+"):
+        abspath = os.path.abspath(os.fspath(file))
+        real_close = f.close
+        def close():
+            was_closed = f.closed
+            real_close()
+            if not was_closed:
+                _report_written_file(abspath)
+        try:
+            f.close = close
+        except AttributeError:
+            pass
+    return f
+
+# io.open too, so pathlib's Path.write_text / Path.open are tracked
+builtins.open = io.open = _tracking_open
 `;
 
 // ---------------- AUTO ASYNC WRAPPER ----------------
@@ -207,7 +247,8 @@ self.onmessage = async (event) => {
       try {
         for (const [path, content] of Object.entries(projectFiles)) {
           if (lastProjectFiles[path] !== content) {
-            pyodide.FS.writeFile(path, content || "");
+            // text files are strings, images arrive as Uint8Array bytes
+            pyodide.FS.writeFile(path, content ?? "");
           }
         }
       

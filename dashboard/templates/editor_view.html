@@ -7,7 +7,7 @@
     {% endblock %}
     {% block extra_head%}
     <script>
-        window.WORKER_URL = "{% static 'editor/worker.js' %}?v=7";
+        window.WORKER_URL = "{% static 'editor/worker.js' %}?v=9";
         function toggleFolder(titleElement) {
             const group = titleElement.closest(".class-group");
             group.classList.toggle("open");
@@ -115,7 +115,16 @@
 
     </form>
     <div id="main">
+        {% if file_kind == "image" %}
+        <div id="editor" style="display:none;"></div>
+        <div id="image-preview">
+            <div class="image-preview-name">{{ code_name }}</div>
+            <img src="/dashboard/editor/project/{{ project_id }}/raw/{{ code_name|urlencode }}" alt="{{ code_name }}">
+            <div class="image-preview-hint">Use it in turtle by name, e.g. <code>screen.bgpic("{{ code_name }}")</code> or <code>screen.register_shape("{{ code_name }}")</code></div>
+        </div>
+        {% else %}
         <div id="editor"></div>
+        {% endif %}
         <div id="drag-divider"></div>
         <div id = "right-panel">
             <div id="feedback-badge" class="assignment-context" style="display:none; padding: 10px; margin: 5px; border-radius: 3px;>
@@ -250,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
-<script type="module" src="{% static 'editor/main.js' %}?v=7" defer></script>
+<script type="module" src="{% static 'editor/main.js' %}?v=12" defer></script>
 
 <script>
 
@@ -270,6 +279,8 @@ async function ajaxSave() {
     const code = window.EditorAPI.getValue();
     const projectId = document.getElementById("project_id").value;
     const path = document.getElementById("current_file_path").value || "main.py";
+
+    if (window.fileKind && window.fileKind(path) !== "text") return;
 
     if (!projectId) {
         status.textContent = "No project selected";
@@ -590,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
                     f.innerHTML = `
                         <span class="file-left">
-                            <i class="fa-solid fa-file"></i>
+                            <i class="fa-solid ${fileIconClass(file)}"></i>
                             ${file}
                         </span>
                         <div class="file-menu">
@@ -629,8 +640,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     New file
                 `;
                 newRow.onclick = () => createFile(project.id);
-    
+
                 filesDiv.appendChild(newRow);
+
+                const uploadRow = document.createElement("div");
+                uploadRow.className = "project-file new-file-row";
+                uploadRow.innerHTML = `
+                    <i class="fa-solid fa-image"></i>
+                    Upload image
+                `;
+                uploadRow.onclick = () => uploadImage(project.id);
+
+                filesDiv.appendChild(uploadRow);
     
                 projectDiv.appendChild(title);
                 projectDiv.appendChild(filesDiv);
@@ -666,12 +687,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function fileIconClass(path) {
+        const kind = window.fileKind ? window.fileKind(path) : "text";
+        if (kind === "image") return "fa-file-image";
+        if (path.toLowerCase().endsWith(".txt")) return "fa-file-lines";
+        return "fa-file-code";
+    }
+
     async function  createFile(pid){
-        let filename = prompt("New file name:");
+        let filename = prompt("New file name (.py or .txt):");
 
         if(!filename) return;
+        filename = filename.trim();
 
-        if(!filename.endsWith(".py")){
+        // no extension means a Python file; the server validates the rest
+        if(!filename.includes(".")){
             filename += ".py";
         }
 
@@ -687,10 +717,40 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
 
         if (data.ok) {
-            goToProject(pid, filename);
+            goToProject(pid, data.path || filename);
         } else {
-            alert("Could not create file");
+            alert(data.error || "Could not create file");
         }
+    }
+
+    function uploadImage(pid) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".png,.jpg,.jpeg,image/png,image/jpeg";
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch(`/dashboard/editor/project/${pid}/upload-file/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": getCsrfToken() },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.ok) {
+                goToProject(pid, data.path);
+            } else {
+                alert(data.error || "Could not upload image");
+            }
+        };
+
+        input.click();
     }
 
     async function createProject(classId, className) {
@@ -736,9 +796,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
 
         if (data.ok) {
-            goToProject(projectId, newName);
+            goToProject(projectId, data.path || newName);
         } else {
-            alert("Could not rename file");
+            alert(data.error || "Could not rename file");
         }
     }
 
