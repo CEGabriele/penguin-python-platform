@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest, FileResponse
 from .forms import StudentCreationForm, TeacherCreationForm, CurriculumCreationForm, ClassCreationForm, ClassEditForm, StudentPasswordResetForm, TeacherPasswordResetForm, AssignmentEditForm, generate_unique_username
 from .models import *
 from django.contrib.auth.decorators import login_required
@@ -13,6 +13,7 @@ from django.utils.dateparse import parse_date
 from django.core.files.base import ContentFile
 from django.utils.encoding import force_str
 from django.views.decorators.http import require_GET
+import os
 import time
 import logging
 from datetime import timedelta
@@ -1004,6 +1005,51 @@ def worker_heartbeat(request):
     cache.set("active_workers_registry", active_workers_dict, timeout=3600)
     return JsonResponse({"status": "active" if action == "start" else "stopped"}, status=200)
 
+# File types students can keep in a project. Text files open in the editor;
+# images are uploaded and previewed, and can be loaded from Python code.
+TEXT_EXTENSIONS = {".py", ".txt"}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+IMAGE_CONTENT_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_TEXT_BYTES = 1024 * 1024
+
+
+def file_kind(path):
+    """Return "text", "image", or None for an unsupported file type."""
+    ext = os.path.splitext(path or "")[1].lower()
+    if ext in TEXT_EXTENSIONS:
+        return "text"
+    if ext in IMAGE_EXTENSIONS:
+        return "image"
+    return None
+
+
+def normalize_text_file_path(path):
+    """Default extensionless names to .py; return None for disallowed types."""
+    path = (path or "").strip()
+    if not path:
+        return None
+    if not os.path.splitext(path)[1]:
+        path += ".py"
+    return path if file_kind(path) == "text" else None
+
+
+def read_project_files(project):
+    """Split a project's files into text contents and a list of image paths."""
+    files = {}
+    images = []
+    for pf in project.files.order_by("path"):
+        if file_kind(pf.path) == "image":
+            images.append(pf.path)
+            continue
+        try:
+            pf.file.open("rb")
+            files[pf.path] = force_str(pf.file.read(), errors="ignore")
+        except Exception:
+            files[pf.path] = ""
+    return files, images
+
+
 @login_required
 def editor_view(request):
     user = request.user
@@ -1061,11 +1107,12 @@ def editor_view(request):
             project_file = project.files.first()
 
         if project_file:
-            try:
-                project_file.file.open("rb")
-                initial_code = force_str(project_file.file.read(), errors="ignore")
-            except Exception:
-                initial_code = ""
+            if file_kind(project_file.path) != "image":
+                try:
+                    project_file.file.open("rb")
+                    initial_code = force_str(project_file.file.read(), errors="ignore")
+                except Exception:
+                    initial_code = ""
 
             code_name = project_file.path
 
@@ -1105,6 +1152,10 @@ def editor_view(request):
         project_id = data.get("project_id")
         if not project_id:
             return JsonResponse({"ok": False, "error": "Missing project_id"}, status=400)
+        if file_kind(path) != "text":
+            return JsonResponse({"ok": False, "error": "Only text files can be edited"}, status=400)
+        if len(code.encode()) > MAX_TEXT_BYTES:
+            return JsonResponse({"ok": False, "error": "File is too large (1 MB max)"}, status=400)
 
         project = get_object_or_404(CodeProject, id=project_id)
         if project.owner != user:
@@ -1164,6 +1215,7 @@ def editor_view(request):
         "user": user,
         "initial_code": initial_code,
         "code_name": code_name,
+        "file_kind": file_kind(code_name) or "text",
         "assigned": assigned,
         "is_readonly": is_readonly,
         "project_id": project.id if project else "",
@@ -1201,15 +1253,9 @@ def get_project_files(request, project_id):
     if project.owner != request.user:
         return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
 
-    files = {}
-    for pf in project.files.order_by("path"):
-        try:
-            pf.file.open("rb")
-            files[pf.path] = force_str(pf.file.read(), errors="ignore")
-        except:
-            files[pf.path] = ""
+    files, images = read_project_files(project)
 
-    return JsonResponse({"ok": True, "files": files})
+    return JsonResponse({"ok": True, "files": files, "images": images})
 
 @login_required
 def editor_projects(request):
@@ -1340,6 +1386,9 @@ def editor_project_file(request, project_id, file_path):
         path=file_path
     )
 
+    if file_kind(pf.path) == "image":
+        return JsonResponse({"ok": False, "error": "Not a text file"}, status=400)
+
     try:
         pf.file.open("rb")
         code = force_str(pf.file.read(), errors="ignore")
@@ -1359,13 +1408,12 @@ def create_project_file(request, project_id):
 
     data = json.loads(request.body)
 
-    path = data.get("path")
-
-    if not path:
+    if not data.get("path"):
         return JsonResponse({"ok": False})
-    
-    if not path.endswith(".py"):
-        path += ".py"
+
+    path = normalize_text_file_path(data.get("path"))
+    if not path:
+        return JsonResponse({"ok": False, "error": "Files must end in .py or .txt (use Upload image for pictures)"})
 
     project = get_object_or_404(
         CodeProject,
@@ -1383,8 +1431,83 @@ def create_project_file(request, project_id):
 
     return JsonResponse({
         "ok": True,
-        "created": created
+        "created": created,
+        "path": path
     })
+
+
+def is_valid_image_upload(uploaded, ext):
+    header = uploaded.read(8)
+    uploaded.seek(0)
+    if ext == ".png":
+        return header.startswith(b"\x89PNG\r\n\x1a\n")
+    return header.startswith(b"\xff\xd8\xff")
+
+
+@login_required
+def upload_project_file(request, project_id):
+
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    project = get_object_or_404(
+        CodeProject,
+        id=project_id,
+        owner=request.user
+    )
+
+    if project.submitted:
+        return JsonResponse({"ok": False, "error": "This project has been submitted"})
+
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return JsonResponse({"ok": False, "error": "No file uploaded"})
+
+    path = os.path.basename(uploaded.name or "").strip()
+    ext = os.path.splitext(path)[1].lower()
+
+    if not path or ext not in IMAGE_EXTENSIONS:
+        return JsonResponse({"ok": False, "error": "Images must be .png, .jpg, or .jpeg"})
+
+    if uploaded.size > MAX_IMAGE_BYTES:
+        return JsonResponse({"ok": False, "error": "Images must be 5 MB or smaller"})
+
+    if not is_valid_image_upload(uploaded, ext):
+        return JsonResponse({"ok": False, "error": "That file doesn't look like a valid image"})
+
+    if ProjectFile.objects.filter(project=project, path=path).exists():
+        return JsonResponse({"ok": False, "error": "A file with that name already exists"})
+
+    project_file = ProjectFile(project=project, path=path)
+    project_file.file.save(path, uploaded, save=True)
+
+    project.last_edited = timezone.now()
+    project.save(update_fields=["last_edited"])
+
+    return JsonResponse({"ok": True, "path": path})
+
+
+@login_required
+def project_file_raw(request, project_id, file_path):
+    project = get_object_or_404(CodeProject, id=project_id)
+
+    is_owner = project.owner == request.user
+    is_teacher = (
+        hasattr(request.user, "teacher")
+        and project.for_class
+        and project.for_class.teacher == request.user.teacher
+    )
+    if not (is_owner or is_teacher):
+        return HttpResponse("Access denied", status=403)
+
+    pf = get_object_or_404(ProjectFile, project=project, path=file_path)
+    ext = os.path.splitext(pf.path)[1].lower()
+    content_type = IMAGE_CONTENT_TYPES.get(ext, "text/plain; charset=utf-8")
+
+    pf.file.open("rb")
+    response = FileResponse(pf.file, content_type=content_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 @login_required
 @csrf_exempt
@@ -1392,11 +1515,21 @@ def rename_file(request, project_id):
     data = json.loads(request.body)
 
     oldPath = data.get("old_path")
-    newPath = data.get("new_path")
+    newPath = (data.get("new_path") or "").strip()
 
-    if not newPath.endswith(".py"):
-        newPath += ".py"
+    if not newPath:
+        return JsonResponse({"ok": False, "error": "Missing new file name"})
 
+    if file_kind(oldPath) == "image":
+        old_ext = os.path.splitext(oldPath)[1]
+        if not os.path.splitext(newPath)[1]:
+            newPath += old_ext
+        if file_kind(newPath) != "image":
+            return JsonResponse({"ok": False, "error": "Images must keep a .png, .jpg, or .jpeg extension"})
+    else:
+        newPath = normalize_text_file_path(newPath)
+        if not newPath:
+            return JsonResponse({"ok": False, "error": "Files must end in .py or .txt"})
 
     project = get_object_or_404(CodeProject, id=project_id, owner=request.user)
     old_file = get_object_or_404(ProjectFile, project=project, path=oldPath)
@@ -1419,7 +1552,7 @@ def rename_file(request, project_id):
     old_file.file.delete(save=False)
     old_file.delete()
 
-    return JsonResponse({"ok": True})
+    return JsonResponse({"ok": True, "path": newPath})
 @login_required
 @csrf_exempt
 def delete_file(request, project_id):
@@ -1461,19 +1594,13 @@ def get_project_files_for_teacher(request, project_id):
     if project.for_class.teacher != request.user.teacher:
         return JsonResponse({"ok": False, "error": "Access denied"}, status=403)
 
-    files = {}
-
-    for pf in project.files.all():
-        try:
-            pf.file.open("rb")
-            files[pf.path] = force_str(pf.file.read(), errors="ignore")
-        except:
-            files[pf.path] = ""
+    files, images = read_project_files(project)
 
     return JsonResponse({
         "ok": True,
         "project_name": project.name,
-        "files": files
+        "files": files,
+        "images": images
     })
 
 

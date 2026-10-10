@@ -174,6 +174,30 @@
             fileList.appendChild(item);
         });
 
+        (data.images || []).forEach(path => {
+            const item = document.createElement("div");
+            item.textContent = path;
+            item.className = "file-item-view";
+
+            item.onclick = () => {
+                document.querySelectorAll(`#fileList-${projectId} .file-item-view`)
+                    .forEach(el => el.classList.remove("active"));
+
+                item.classList.add("active");
+                feedbackManager.currentFile = path;
+
+                // images have no lines to comment on, so just show the picture
+                const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+                const img = document.createElement("img");
+                img.src = `/dashboard/editor/project/${projectId}/raw/${encodedPath}`;
+                img.alt = path;
+                img.style.maxWidth = "100%";
+                fileContent.replaceChildren(img);
+            };
+
+            fileList.appendChild(item);
+        });
+
         // Auto-open main.py
         let firstFile = Object.keys(files).find(f => f === "main.py");
         if (!firstFile) firstFile = Object.keys(files)[0];

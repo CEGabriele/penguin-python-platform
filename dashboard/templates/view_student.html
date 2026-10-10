@@ -129,9 +129,10 @@
         fileContent.textContent = "";
 
         const files = data.files;
+        const images = data.images || [];
         const filePaths = Object.keys(files);
 
-        if (!filePaths.length) {
+        if (!filePaths.length && !images.length) {
             fileContent.textContent = "No files found.";
             return;
         }
@@ -152,6 +153,27 @@
             fileList.appendChild(item);
         });
 
+        images.forEach(path => {
+            const item = document.createElement("div");
+            item.textContent = path;
+            item.className = "file-item-view";
+
+            item.onclick = () => {
+                document.querySelectorAll(`#fileList-${projectId} .file-item-view`)
+                    .forEach(el => el.classList.remove("active"));
+
+                item.classList.add("active");
+                showProjectImage(fileContent, projectId, path);
+            };
+
+            fileList.appendChild(item);
+        });
+
+        if (!filePaths.length) {
+            fileList.firstElementChild?.click();
+            return;
+        }
+
         let firstFile = filePaths.find(f => f === "main.py");
         if (!firstFile) firstFile = filePaths[0];
 
@@ -164,6 +186,15 @@
         }
 
         fileContent.textContent = files[firstFile] || "";
+    }
+
+    function showProjectImage(container, projectId, path) {
+        const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+        const img = document.createElement("img");
+        img.src = `/dashboard/editor/project/${projectId}/raw/${encodedPath}`;
+        img.alt = path;
+        img.style.maxWidth = "100%";
+        container.replaceChildren(img);
     }
 </script>
 {% endblock %}
