@@ -15,6 +15,7 @@ First, set up the test data with realistic classes, assignments, students, and p
 
 ```bash
 export DJANGO_SETTINGS_MODULE=mysite.settings.dev
+export LOAD_TEST_PASSWORD=<choose a password for the test accounts>
 python manage.py setup_load_test --num-students 10 --num-classes 2
 ```
 
@@ -24,7 +25,7 @@ This creates:
 - M test classes with assignments
 - Pre-created projects for each student/assignment/class combination
 
-All test accounts use password: `<removed>`
+All test accounts use the password in `LOAD_TEST_PASSWORD`. The load test scripts read the same variable, so keep it set in any terminal where you run them.
 
 ### 2. Start Django Dev Server
 

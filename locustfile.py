@@ -3,23 +3,24 @@ Comprehensive load test for the Penguin Coding School dashboard and editor.
 
 Setup: First run:
   export DJANGO_SETTINGS_MODULE=mysite.settings.dev
+  export LOAD_TEST_PASSWORD=<password for the test accounts>
   python manage.py setup_load_test --num-students 10 --num-classes 2
 
-Then run the load test (production):
-  locust -f locustfile.py --host=https://portal.penguincodingschool.com
-
-Or for local testing:
+Then run the load test (LOAD_TEST_PASSWORD must be set in this shell too):
   locust -f locustfile.py --host=http://localhost:8000
 
 Then open http://localhost:8089 in your browser
 """
 from locust import HttpUser, task, between, events
+import os
 import random
 import logging
 import re
 import json
 
 logger = logging.getLogger(__name__)
+
+LOAD_TEST_PASSWORD = os.environ["LOAD_TEST_PASSWORD"]
 
 
 class LoadTestUser(HttpUser):
@@ -249,7 +250,7 @@ class StudentLoadTestUser(LoadTestUser):
         num_students = 10  # Must match setup_load_test default
         student_num = random.randint(1, num_students)
         username = f"loadtest_student{student_num}"
-        password = "<removed>"
+        password = LOAD_TEST_PASSWORD
 
         if not self.login(username, password):
             raise Exception(f"Failed to login as {username}")
@@ -349,7 +350,7 @@ class TeacherLoadTestUser(LoadTestUser):
     def on_start(self):
         """Initialize teacher user."""
         username = "loadtest_teacher1"
-        password = "<removed>"
+        password = LOAD_TEST_PASSWORD
 
         if not self.login(username, password):
             raise Exception(f"Failed to login as {username}")

@@ -4,10 +4,11 @@ Tests that students can run code concurrently without breaking the server/editor
 
 Install: pip install playwright
 Setup browsers: playwright install
-Run: python load_test_browser.py
+Run: LOAD_TEST_HOST=http://localhost:8000 LOAD_TEST_PASSWORD=... python load_test_browser.py
 """
 
 import asyncio
+import os
 import time
 import logging
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
@@ -15,7 +16,8 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://portal.penguincodingschool.com"
+BASE_URL = os.environ.get("LOAD_TEST_HOST", "http://localhost:8000")
+LOAD_TEST_PASSWORD = os.environ["LOAD_TEST_PASSWORD"]
 
 # Test code samples to run
 CODE_SAMPLES = [
@@ -53,7 +55,7 @@ async def load_editor_and_run_code(student_num, test_duration_seconds=60):
             logger.info(f"[Student {student_num}] Logging in...")
             await page.goto(f"{BASE_URL}/accounts/login/")
             await page.fill('input[name="username"]', f'loadtest_student{student_num}')
-            await page.fill('input[name="password"]', '<removed>')
+            await page.fill('input[name="password"]', LOAD_TEST_PASSWORD)
             await page.click('button[type="submit"]')
 
             try:
