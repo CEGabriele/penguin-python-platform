@@ -5,6 +5,9 @@ echo "Capacity Test: Finding CPU Breaking Point"
 echo "======================================================"
 echo ""
 
+# Usage: LOAD_TEST_HOST=https://your-site.example.com ./capacity_test.sh
+HOST="${LOAD_TEST_HOST:?Set LOAD_TEST_HOST to the site to test}"
+
 # Test at different concurrency levels
 for USERS in 10 25 50 75 100 150 200; do
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -12,7 +15,7 @@ for USERS in 10 25 50 75 100 150 200; do
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Run Locust test and capture output
-  OUTPUT=$(locust -f locustfile_simple.py --host=https://portal.penguincodingschool.com \
+  OUTPUT=$(locust -f locustfile_simple.py --host="$HOST" \
     --headless -u $USERS -r 10 -t 2m 2>&1)
 
   # Extract stats from output (look for Aggregated line)
@@ -26,8 +29,8 @@ for USERS in 10 25 50 75 100 150 200; do
   # Get CPU after test
   sleep 2
   echo "Instance metrics after test:"
-  CPU=$(curl -s https://portal.penguincodingschool.com/dashboard/api/metrics/instance-status/ 2>/dev/null | jq -r '.cpu_percent // "N/A"')
-  MEM=$(curl -s https://portal.penguincodingschool.com/dashboard/api/metrics/instance-status/ 2>/dev/null | jq -r '.memory_percent // "N/A"')
+  CPU=$(curl -s "$HOST/dashboard/api/metrics/instance-status/" 2>/dev/null | jq -r '.cpu_percent // "N/A"')
+  MEM=$(curl -s "$HOST/dashboard/api/metrics/instance-status/" 2>/dev/null | jq -r '.memory_percent // "N/A"')
   echo "  CPU: ${CPU}%"
   echo "  Memory: ${MEM}%"
 

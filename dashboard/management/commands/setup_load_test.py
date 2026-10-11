@@ -1,8 +1,10 @@
 """
 Django management command to set up test data for load testing.
-Run with: python manage.py setup_load_test
+Run with: LOAD_TEST_PASSWORD=... python manage.py setup_load_test
 """
-from django.core.management.base import BaseCommand
+import os
+
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from dashboard.models import Student, Teacher, Class, Curriculum, Assignment, AssignedToClass, CodeProject, ProjectFile
 from django.utils import timezone
@@ -30,20 +32,23 @@ class Command(BaseCommand):
         num_students = options['num_students']
         num_classes = options['num_classes']
 
+        password = os.environ.get('LOAD_TEST_PASSWORD')
+        if not password:
+            raise CommandError("Set the LOAD_TEST_PASSWORD environment variable before running this command.")
+
         self.stdout.write("Setting up load test data...")
 
         # Create or get test teacher
         teacher_user, created = User.objects.get_or_create(
             username='loadtest_teacher1',
             defaults={
-                'password': '<removed>',
                 'first_name': 'Load',
                 'last_name': 'Test Teacher',
                 'email': 'loadtest_teacher@example.com'
             }
         )
         if created:
-            teacher_user.set_password('<removed>')
+            teacher_user.set_password(password)
             teacher_user.save()
             self.stdout.write(f"Created teacher user: {teacher_user.username}")
 
@@ -100,14 +105,13 @@ class Command(BaseCommand):
             student_user, created = User.objects.get_or_create(
                 username=f'loadtest_student{i+1}',
                 defaults={
-                    'password': '<removed>',
                     'first_name': f'Student{i+1}',
                     'last_name': 'LoadTest',
                     'email': f'loadtest_student{i+1}@example.com'
                 }
             )
             if created:
-                student_user.set_password('<removed>')
+                student_user.set_password(password)
                 student_user.save()
 
             student, _ = Student.objects.get_or_create(user=student_user)
@@ -151,6 +155,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Load test data setup complete!"))
         self.stdout.write("")
         self.stdout.write("Test Credentials:")
-        self.stdout.write(f"  Teacher: loadtest_teacher1 / <removed>")
-        self.stdout.write(f"  Students: loadtest_student1..{num_students} / <removed>")
+        self.stdout.write(f"  Teacher: loadtest_teacher1 (password from LOAD_TEST_PASSWORD)")
+        self.stdout.write(f"  Students: loadtest_student1..{num_students} (password from LOAD_TEST_PASSWORD)")
         self.stdout.write(f"  Total: {num_students} students in {num_classes} classes with {len(assignments)} assignments each")
